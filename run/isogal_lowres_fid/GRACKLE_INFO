@@ -1,0 +1,86 @@
+2022-03-04 13:33:36
+
+The Grackle Version 3.2.dev2
+Git Branch   master
+Git Revision 8feca8ed43706475d7743e10aa7d2cd2107b78e6
+
+Grackle build options:
+
+   MACHINE: Cloudbreak
+   MACHINE-NAME: cloudbreak
+
+   CONFIG_PRECISION  [precision-{32,64}]                     : 64
+   CONFIG_OPT  [opt-{warn,debug,high,aggressive}]            : high
+   CONFIG_OMP  [omp-{on,off}]                                : off
+
+Grackle build flags:
+
+CPP = /usr/bin/cpp
+CC  = /usr/bin/gcc
+CXX = /usr/bin/g++
+FC  = /usr/bin/gfortran
+F90 = /usr/bin/gfortran
+LD  = /usr/bin/g++
+LIBTOOL = /usr/bin/libtool
+
+DEFINES = -DLINUX -DH5_USE_16_API   -DCONFIG_BFLOAT_8
+
+INCLUDES = -I/home/jstrack/yt-conda/include     -I.
+
+CPPFLAGS = -P -traditional 
+CFLAGS   =  -O2 
+CXXFLAGS =  -O2 
+FFLAGS   = -fno-second-underscore -ffixed-line-length-132 -O2 
+F90FLAGS = -fno-second-underscore -O2 
+LDFLAGS  =  
+
+LIBS     = -L/home/jstrack/yt-conda/lib -lhdf5 -lz -lgfortran  -L/home/jstrack/Enzo/grackle/lib 
+
+Grackle run-time parameters:
+use_grackle                       = 1
+with_radiative_cooling            = 1
+primordial_chemistry              = 2
+dust_chemistry                    = 0
+metal_cooling                     = 1
+UVbackground                      = 1
+grackle_data_file                 = /home/jstrack/enzo/grackle/grackle_data_files/input/CloudyData_UVB=HM2012.h5
+cmb_temperature_floor             = 1
+Gamma                             = 1.6667
+h2_on_dust                        = 1
+use_dust_density_field            = 0
+photoelectric_heating             = 0
+photoelectric_heating_rate        = 8.5e-26
+use_isrf_field                    = 0
+interstellar_radiation_field      = 1.7
+use_volumetric_heating_rate       = 0
+use_specific_heating_rate         = 0
+three_body_rate                   = 0
+cie_cooling                       = 0
+h2_optical_depth_approximation    = 0
+ih2co                             = 1
+ipiht                             = 1
+HydrogenFractionByMass            = 0.76
+DeuteriumToHydrogenRatio          = 6.8e-05
+SolarMetalFractionByMass          = 0.01295
+local_dust_to_gas_ratio           = 0.009387
+NumberOfTemperatureBins           = 600
+CaseBRecombination                = 0
+TemperatureStart                  = 1
+TemperatureEnd                    = 1e+09
+NumberOfDustTemperatureBins       = 250
+DustTemperatureStart              = 1
+DustTemperatureEnd                = 1500
+Compton_xray_heating              = 0
+LWbackground_sawtooth_suppression = 0
+LWbackground_intensity            = 0
+UVbackground_redshift_on          = 7
+UVbackground_redshift_off         = 0
+UVbackground_redshift_fullon      = 6
+UVbackground_redshift_drop        = 0
+cloudy_electron_fraction_factor   = 0.00915396
+use_radiative_transfer            = 0
+radiative_transfer_coupled_rate_solver = 0
+radiative_transfer_intermediate_step = 0
+radiative_transfer_hydrogen_only  = 0
+self_shielding_method             = 0
+H2_self_shielding                 = 0
