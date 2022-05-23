@@ -395,7 +395,7 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   DiskGravityStellarBulgeR           = 4.0E-4;      // Mpc
   DiskGravityDarkMatterR             = 2.3E-2;      // Mpc
   DiskGravityDarkMatterDensity       = 3.81323E-25; // CGS
-
+  DiskGravityDarkMatterMass 	     = 1e12; //IF ON FIRE I DID THIS
   SelfGravity                 = FALSE;             // off
   SelfGravityGasOff           = FALSE;             // off
   AccretionKernal             = FALSE;             // off

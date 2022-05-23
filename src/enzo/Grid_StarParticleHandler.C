@@ -157,6 +157,25 @@ extern "C" void FORTRAN_NAME(star_maker4)(int *nx, int *ny, int *nz,
  	     int *imetalSNIa, float *metalSNIa, float *metalfSNIa);
 
 
+extern "C" void FORTRAN_NAME(star_maker6)(
+            int *nx, int *ny, int *nz,
+            float *d, float *dm, float *temp, 
+            float *u, float *v, float *w, float *h2,
+            float *cooltime, 
+            float *dt, float *r, float *metal, 
+            float *dx, FLOAT *t, float *z, int *procnum,
+            float *d1, float *x1, float *v1, float *t1,
+            int *nmax, 
+            FLOAT *xstart, FLOAT *ystart, FLOAT *zstart, int *ibuff, 
+            int *imetal, hydro_method *imethod, int *stochasticformation,
+            float *mintdyn, int *tindsf, int *veldivcrit, int *selfboundcrit,
+            int *thermalcrit, int* jeansmasscrit, int *h2crit, 
+            float *odthresh, float *masseff, float *smthresh, float *tempthresh, 
+            int *level,
+            int *np, 
+            FLOAT *xp, FLOAT *yp, FLOAT *zp, float *up, float *vp, float *wp,
+            float *mp, float *tdp, float *tcp, float *metalf,
+            int *imetalSNIa, float *metalSNIa, float *metalfSNIa);
  extern "C" void FORTRAN_NAME(star_maker7)(int *nx, int *ny, int *nz,
              float *d, float *dm, float *temp, float *u, float *v, float *w,
                 float *cooltime,
@@ -778,7 +797,7 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
     int NumberOfNewParticles = 0;
  
 #ifdef STAR1
-    //    if (StarParticleCreation == 1) {
+    //    if (StarParticleCreation == 1) 
     if (0) {
       FORTRAN_NAME(star_maker1)(
        GridDimension, GridDimension+1, GridDimension+2,
@@ -830,7 +849,43 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
       for (i = NumberOfNewParticlesSoFar; i < NumberOfNewParticles; i++)
           tg->ParticleType[i] = NormalStarType;
     } 
+   if (STARMAKE_METHOD(HOPKINS_STAR)) {
+     //---- MODIFIED CEN OSTRIKER ALGORITHM FOLLOWING HOPKINS ET AL 2013
+     printf("In starmaker6 \n"); 
+     NumberOfNewParticlesSoFar = NumberOfNewParticles;
 
+     FORTRAN_NAME(star_maker6)(
+       GridDimension, GridDimension+1, GridDimension+2,
+       BaryonField[DensNum], dmfield, temperature, 
+       BaryonField[Vel1Num], BaryonField[Vel2Num], BaryonField[Vel3Num], // 9
+       BaryonField[H2INum],
+       cooling_time,
+       &dtFixed, BaryonField[NumberOfBaryonFields], MetalPointer,        // 14
+       &CellWidthTemp, &Time, &zred, &MyProcessorNumber,
+       &DensityUnits, &LengthUnits, &VelocityUnits, &TimeUnits,          // 22
+       &MaximumNumberOfNewParticles,
+       CellLeftEdge[0], CellLeftEdge[1],CellLeftEdge[2], &GhostZones,
+       &MetallicityField, &HydroMethod, &StarMakerStochasticStarFormation, // 30
+       &StarMakerMinimumDynamicalTime, &StarMakerTimeIndependentFormation,
+       &StarMakerVelDivCrit, &StarMakerSelfBoundCrit, 
+       &StarMakerThermalCrit, &StarMakerJeansMassCrit, &StarMakerH2Crit, 
+       &StarMakerOverDensityThreshold, &StarMakerMassEfficiency,
+       &StarMakerMinimumMass, &StarMakerTemperatureThreshold,            // 41
+       &level,
+       &NumberOfNewParticles, 
+       tg->ParticlePosition[0], 
+       tg->ParticlePosition[1], 
+       tg->ParticlePosition[2],
+       tg->ParticleVelocity[0], 
+       tg->ParticleVelocity[1],
+       tg->ParticleVelocity[2],
+       tg->ParticleMass, tg->ParticleAttribute[1], tg->ParticleAttribute[0],
+       tg->ParticleAttribute[2],
+       &StarMakerTypeIaSNe, BaryonField[MetalIaNum], tg->ParticleAttribute[3]);
+
+     for (i = NumberOfNewParticlesSoFar; i < NumberOfNewParticles; i++)
+         tg->ParticleType[i] = NormalStarType;   
+   }
     if (STARMAKE_METHOD(MOM_STAR)) {
 
       //---- UNIGRID ALGORITHM (NO JEANS MASS)

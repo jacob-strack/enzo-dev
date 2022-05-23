@@ -78,11 +78,10 @@
 
 #define SolarLuminosity                 3.9e33
 
-
+#define Mpc				3.0857e24
 
 /* Megaparsec [cm] */
-
-#define Mpc_cm                             3.0857e24
+#define Mpc_cm                            3.0857e24
 
 /* kiloparsec [cm] */
 

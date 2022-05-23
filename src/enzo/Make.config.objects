@@ -13,9 +13,11 @@
 #-----------------------------------------------------------------------
 # Default Enzo object files
 #-----------------------------------------------------------------------
-
 OBJS_CONFIG_LIB = \
   MHDLoopInit.o \
+	Grid_GalaxySimulationInitializeGrid.o \
+	Grid_GrackleCustomCoolRate.o \
+	GalaxySimulationInitialize.o \
   Grid_MHDLoopInitGrid.o \
         acml_st1.o \
 	ActiveParticle.o \
@@ -273,7 +275,6 @@ OBJS_CONFIG_LIB = \
 	GadgetIonizeParamsTable.o \
 	GadgetMakeCoolingTable.o \
 	GadgetReadIonizeParams.o \
-	GalaxySimulationInitialize.o \
 	GenerateGridArray.o \
 	GetNodeFreeMemory.o \
 	GetUnits.o \
@@ -511,7 +512,6 @@ OBJS_CONFIG_LIB = \
 	Grid_GadgetCoolingTime.o \
 	Grid_Gadgetfindabundancesandrates.o \
 	Grid_GadgetEquilibriumCooling.o \
-	Grid_GalaxySimulationInitializeGrid.o \
     	Grid_GetActiveParticlePosition.o \
         Grid_GetEnclosedMass.o \
         Grid_GetEnclosedMassInShell.o \
@@ -827,6 +827,7 @@ OBJS_CONFIG_LIB = \
         read_bt.o \
         read_bv.o \
         ReadDataHierarchy.o \
+	ReadEquilibriumTable.o \
         ReadFile.o \
         ReadGridFile.o \
         ReadIntFile.o \
@@ -922,6 +923,7 @@ OBJS_CONFIG_LIB = \
         star_maker3.o \
         star_maker4.o \
 	star_maker5.o \
+	star_maker6.o \
         star_maker7.o \
 	star_maker8.o \
 	star_maker9.o \

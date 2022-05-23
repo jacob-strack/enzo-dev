@@ -91,6 +91,7 @@ int MHDLine(float **Prim, float **priml, float **primr,
 
   else {
     printf("MHD solver undefined\n");
+    printf("RIEMANN %hu RECON %hu HYDRO %hu", RiemannSolver, ReconstructionMethod, HydroMethod);
     return FAIL;
     //throw(EnzoFatalException("MHD solver undefined.: "__FILE__));
   }

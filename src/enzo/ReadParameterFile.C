@@ -293,7 +293,7 @@ int ReadParameterFile(FILE *fptr, TopGridData &MetaData, float *Initialdt)
     ret += sscanf(line, "ImplicitProblem = %"ISYM, &ImplicitProblem);
     ret += sscanf(line, "RadiativeTransferFLD   = %"ISYM, &RadiativeTransferFLD);
 #ifdef EMISSIVITY
-    ret += sscanf(line, "StarMakerEmissivityField = %"ISYM,
+    ret += sscanf(line, "StarMakerEmissivityField = %"ISYM, 
 		  &StarMakerEmissivityField);
     ret += sscanf(line, "uv_param = %"FSYM, &uv_param);
 #endif
@@ -967,6 +967,21 @@ int ReadParameterFile(FILE *fptr, TopGridData &MetaData, float *Initialdt)
     ret += sscanf(line, "StarMakerMinimumMass = %"FSYM, &StarMakerMinimumMass);
     ret += sscanf(line, "StarMakerMinimumDynamicalTime = %"FSYM,
                   &StarMakerMinimumDynamicalTime);
+    ret += sscanf(line, "StarMakerVelDivCrit = %"ISYM,
+      &StarMakerVelDivCrit);    
+    ret += sscanf(line, "StarMakerSelfBoundCrit = %"ISYM,
+      &StarMakerSelfBoundCrit);
+    ret += sscanf(line, "StarMakerThermalCrit = %"ISYM,
+      &StarMakerThermalCrit);
+    ret += sscanf(line, "StarMakerJeansMassCrit = %"ISYM,
+      &StarMakerJeansMassCrit);    
+    ret += sscanf(line, "StarMakerH2Crit = %"ISYM,
+      &StarMakerH2Crit);    
+    ret += sscanf(line, "StarMakerStochasticStarFormation = %"ISYM,
+      &StarMakerStochasticStarFormation); 
+    ret += sscanf(line, "StarMakerTemperatureThreshold = %"FSYM,
+      &StarMakerTemperatureThreshold);
+    
     ret += sscanf(line, "StarMassEjectionFraction = %"FSYM,
 		  &StarMassEjectionFraction);
     ret += sscanf(line, "StarMetalYield = %"FSYM, &StarMetalYield);
@@ -983,7 +998,14 @@ int ReadParameterFile(FILE *fptr, TopGridData &MetaData, float *Initialdt)
     ret += sscanf(line, "StarMakerUseJeansMass = %"ISYM,
 		  &StarMakerUseJeansMass);
 
-    ret += sscanf(line, "StarClusterUseMetalField = %"ISYM,
+    ret += sscanf(line, "StarMakerDensityThreshold = %"FSYM, &StarMakerDensityThreshold);
+    ret += sscanf(line, "StarFeedbackDelayTime = %"FSYM, &StarFeedbackDelayTime);
+    ret += sscanf(line, "StarFeedbackDeltaT = %"FSYM, &StarFeedbackDeltaT);
+    ret += sscanf(line, "StarFeedbackUVLuminosity = %"FSYM, &StarFeedbackUVLuminosity);
+    ret += sscanf(line, "StarMakerJeansMassCriterion = %"ISYM, &StarMakerJeansMassCriterion);
+    ret += sscanf(line, "StarMakerEarlyStellarFeedback = %"ISYM, &StarMakerEarlyStellarFeedback);
+
+    ret += sscanf(line, "StarClusterUseMetalField = %"ISYM, 
 		  &StarClusterUseMetalField);
     ret += sscanf(line, "StarClusterMinDynamicalTime = %"FSYM,
 		  &StarClusterMinDynamicalTime);
