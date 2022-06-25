@@ -396,6 +396,7 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   DiskGravityDarkMatterR             = 2.3E-2;      // Mpc
   DiskGravityDarkMatterDensity       = 3.81323E-25; // CGS
   DiskGravityDarkMatterMass 	     = 1e12; //IF ON FIRE I DID THIS
+  DiskGravityDarkMatterConcentration = 10; //this was missing and was what was messing things up w an interpolation error
   SelfGravity                 = FALSE;             // off
   SelfGravityGasOff           = FALSE;             // off
   AccretionKernal             = FALSE;             // off
@@ -472,6 +473,10 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   GloverChemistryModel        = 0;                 // 0ff
   CRModel                     = 0;                 // off
   CRDiffusion                 = 0;                 // off
+  CRHeating                   = 0;                 // off                                                                          
+  CRStreaming                 = 0;                 // off                                                                          
+  CRStreamVelocityFactor      = 1.0;                // Alfven velocity (only relevant when CRStreaming == 1)                        
+  CRStreamStabilityFactor     = 1000.0;             // This should be large and calibrated for each simulation
   CRkappa                     = 0.0;
   CRCourantSafetyNumber       = 0.5;
   CRFeedback                  = 0.0;               // no stellar feedback into CRs

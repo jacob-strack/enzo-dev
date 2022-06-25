@@ -2299,7 +2299,6 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 
 
   /* Initialization for isolated galaxy sims */
-  /*Modified on 3/3/22 to match isogal code
   int GalaxySimulationInitializeGrid(
 				     FLOAT DiskRadius,
 				     float GalaxyMass,
@@ -2322,9 +2321,49 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 				     float GalaxySimulationInflowDensity,
 				     int level,
 				     float GalaxySimulationCR = 0.0 );
-  */
-    int _GalaxySimulationInitialization = 0; 
-    int GalaxySimulationInitializeGrid(                                                                                     FLOAT DiskRadius,                                                                    FLOAT GalaxyMass,                                                                    FLOAT GasMass,                                                                       FLOAT DiskPosition[MAX_DIMENSION],                                                   FLOAT ScaleHeightz,                                                                  FLOAT ScaleHeightR,                                                                  FLOAT GalaxyTruncationRadius,                                        FLOAT DiskDensityCap,                                                                                FLOAT DMConcentration,                                                               FLOAT DiskTemperature,                                                               FLOAT InitialTemperature,                                                            FLOAT UniformDensity,                                                                int   EquilibrateChem,                                                               int   GasHalo,                                                                       FLOAT GasHaloScaleRadius,                                                            FLOAT GasHaloDensity,                                                                FLOAT GasHaloDensity2,                                                               FLOAT GasTemperature,                                                                FLOAT GasAlpha,                                                                      FLOAT GasZeta,                                                                       FLOAT GasZeta2,                                                                      FLOAT GasCoreEntropy,                                                                FLOAT GasHaloRatio,                                                                  FLOAT GasMetallicity,                                                                int   UseHaloRotation,                                                               FLOAT RotationScaleVelocity,                                                         FLOAT RotationScaleRadius,                                                           FLOAT RotationPowerLawIndex,                                                         FLOAT DiskMetallicityEnhancementFactor,                                              FLOAT AngularMomentum[MAX_DIMENSION],                                                FLOAT UniformVelocity[MAX_DIMENSION],                                                int UseMetallicityField,                                                             FLOAT GalaxySimulationInflowTime,                                                    FLOAT GalaxySimulationInflowDensity,                                                 int level,                                                                           FLOAT GalaxySimulationInitialBfield[MAX_DIMENSION],                                                                                                                       int GalaxySimulationInitialBfieldTopology,                                           FLOAT GalaxySimulationCR = 0.0                                                  );                     
+
+  int _GalaxySimulationInitialization = 0; 
+  int GalaxySimulationInitializeGrid(
+				     FLOAT DiskRadius,
+				     FLOAT GalaxyMass,
+				     FLOAT GasMass,
+				     FLOAT DiskPosition[MAX_DIMENSION], 
+				     FLOAT ScaleHeightz,
+				     FLOAT ScaleHeightR, 
+				     FLOAT GalaxyTruncationRadius,
+			             FLOAT DiskDensityCap,
+				     FLOAT DMConcentration,
+				     FLOAT DiskTemperature,
+				     FLOAT InitialTemperature,
+				     FLOAT UniformDensity,
+				     int   EquilibrateChem,
+				     int   GasHalo,
+				     FLOAT GasHaloScaleRadius,
+				     FLOAT GasHaloDensity,
+				     FLOAT GasHaloDensity2,
+				     FLOAT GasTemperature,
+				     FLOAT GasAlpha,
+				     FLOAT GasZeta,
+				     FLOAT GasZeta2,
+				     FLOAT GasCoreEntropy,
+				     FLOAT GasHaloRatio,
+				     FLOAT GasMetallicity,
+				     int   UseHaloRotation,
+				     FLOAT RotationScaleVelocity,
+				     FLOAT RotationScaleRadius,
+				     FLOAT RotationPowerLawIndex,
+				     FLOAT DiskMetallicityEnhancementFactor,
+				     FLOAT AngularMomentum[MAX_DIMENSION],
+				     FLOAT UniformVelocity[MAX_DIMENSION], 
+				     int UseMetallicityField, 
+				     FLOAT GalaxySimulationInflowTime,
+				     FLOAT GalaxySimulationInflowDensity,
+				     int level,
+				     FLOAT GalaxySimulationInitialBfield[MAX_DIMENSION],
+				     int GalaxySimulationInitialBfieldTopology,
+				     FLOAT GalaxySimulationCR = 0.0
+				);
+
   /* Free expansion test */
   int FreeExpansionInitializeGrid(int FreeExpansionFullBox,
 				  float FreeExpansionDensity,

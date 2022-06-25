@@ -37,7 +37,7 @@
 
 /* ergs per eV */
 
-#define erg_eV                          1.60217653e-12
+#define erg_eV                          1.602176e-12
 
 /* eV per erg */
 

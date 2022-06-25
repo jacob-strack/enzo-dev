@@ -333,6 +333,7 @@ int grid::InterpolateFieldValues(grid *ParentGrid
 		 this->GridLeftEdge[0], this->GridLeftEdge[1], 
 		 this->GridLeftEdge[2], this->GridRightEdge[0], 
 	     this->GridRightEdge[1], this->GridRightEdge[2]);
+      printf("Density Field \n");
       ENZO_FAIL("interpolation error");
     }
 
@@ -383,7 +384,8 @@ int grid::InterpolateFieldValues(grid *ParentGrid
 		     this->GridLeftEdge[0], this->GridLeftEdge[1], 
 		 this->GridLeftEdge[2], this->GridRightEdge[0],
 		 this->GridRightEdge[1], this->GridRightEdge[2]);
-	  ENZO_FAIL("interpolation error");
+	  printf("Field value %s", DataLabel[field]); 
+	  ENZO_FAIL("interpolation error?");
 	}
       }
  

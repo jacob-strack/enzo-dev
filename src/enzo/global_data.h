@@ -440,6 +440,11 @@ EXTERN int CRDiffusion;
  *    1.0 -- All feedback into CR field
  */
 EXTERN float CRFeedback;
+//next 4 lines added during debugging bc they were missing from here but in enzo-dev
+EXTERN int CRHeating; // 0 is off, 1 is on
+EXTERN int CRStreaming; // 0 is off, 1 is on 
+EXTERN float CRStreamVelocityFactor;
+EXTERN float CRStreamStabilityFactor;
 EXTERN float CRkappa;
 EXTERN float CRCourantSafetyNumber;
 EXTERN float CRdensFloor;
@@ -841,6 +846,7 @@ EXTERN int iS1;
 EXTERN int iS2;
 EXTERN int iS3;
 EXTERN int iEint;
+EXTERN int iCR;//this was in clean enzo build but not here so i added it during debug
 EXTERN float SmallRho;
 EXTERN float SmallP;
 EXTERN float SmallEint;
