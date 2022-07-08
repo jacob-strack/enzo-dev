@@ -53,7 +53,7 @@ float GetMagneticUnits(float DensityUnits, float LengthUnits, float TimeUnits);
 int ReadEquilibriumTable(char * name, FLOAT Time);
 int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr, 
 			  HierarchyEntry &TopGrid, TopGridData &MetaData, ExternalBoundary &Exterior)
-{
+{/*
   char *DensName    = "Density";
   char *TEName      = "TotalEnergy";
   char *GEName      = "GasEnergy";
@@ -81,7 +81,33 @@ char *BxName      = "Bx";
 char *ByName      = "By";
 char *BzName      = "Bz";
 char *PhiName     = "Phi";
-  
+  */
+
+  char *DensName    = "Density";
+  char *TEName      = "TotalEnergy";
+  char *GEName      = "GasEnergy";
+  char *Vel1Name    = "x-velocity";
+  char *Vel2Name    = "y-velocity";
+  char *Vel3Name    = "z-velocity";
+  char *CRName      = "CREnergyDensity";
+  char *ElectronName = "Electron_Density";
+  char *HIName    = "HI_Density";
+  char *HIIName   = "HII_Density";
+  char *HeIName   = "HeI_Density";
+  char *HeIIName  = "HeII_Density";
+  char *HeIIIName = "HeIII_Density";
+  char *HMName    = "HM_Density";
+  char *H2IName   = "H2I_Density";
+  char *H2IIName  = "H2II_Density";
+  char *DIName    = "DI_Density";
+  char *DIIName   = "DII_Density";
+  char *HDIName   = "HDI_Density";
+  char *MetalName   = "Metal_Density";
+  char *MetalIaName = "MetalSNIa_Density";
+  char *BxName      = "Bx";
+  char *ByName      = "By";
+  char *BzName      = "Bz";
+  char *PhiName     = "Phi";
   /* declarations */
 
   char  line[MAX_LINE_LENGTH];
@@ -253,7 +279,8 @@ dummy[0] = 0;
 		  &GalaxySimulationAngularMomentum[0],
 		  &GalaxySimulationAngularMomentum[1],
 		  &GalaxySimulationAngularMomentum[2]);
-   switch(Enzo_Version){
+   printf("Enzo Version %d \n", Enzo_Version);
+switch(Enzo_Version){
 	case 2: //set values of variables only in isogal build
 	    ret += sscanf(line, "GalaxySimulationDiskDensityCap = %"FSYM,
 			  &GalaxySimulationDiskDensityCap);    
@@ -631,7 +658,40 @@ switch(Enzo_Version){
 
  for (i = 0; i < count; i++)
    DataUnits[i] = NULL;
-
+ //fields used in isogal build 
+if(Enzo_Version==2){  
+if( UseMHD ){
+      DataLabel[count++] = BxName;
+      DataLabel[count++] = ByName;
+      DataLabel[count++] = BzName;
+  }
+  if (HydroMethod == MHD_RK){
+      DataLabel[count++] = PhiName;
+  }
+ if (MultiSpecies) {
+   DataLabel[count++] = ElectronName;
+   DataLabel[count++] = HIName;
+   DataLabel[count++] = HIIName;
+   DataLabel[count++] = HeIName;
+   DataLabel[count++] = HeIIName;
+   DataLabel[count++] = HeIIIName;
+   if (MultiSpecies > 1) {
+     DataLabel[count++] = HMName;
+     DataLabel[count++] = H2IName;
+     DataLabel[count++] = H2IIName;
+   }
+   if (MultiSpecies > 2) {
+     DataLabel[count++] = DIName;
+     DataLabel[count++] = DIIName;
+     DataLabel[count++] = HDIName;
+   }
+ }
+}
+ for (i = 0; i < count; i++)
+   DataUnits[i] = NULL;
+ if(Enzo_Version==2){
+ MHDCTSetupFieldLabels();
+}
  /* Write parameters to parameter output file */
 
  if (MyProcessorNumber == ROOT_PROCESSOR) {
