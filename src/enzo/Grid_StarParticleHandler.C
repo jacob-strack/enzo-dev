@@ -851,7 +851,6 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
     } 
    if (STARMAKE_METHOD(HOPKINS_STAR)) {
      //---- MODIFIED CEN OSTRIKER ALGORITHM FOLLOWING HOPKINS ET AL 2013
-     printf("In starmaker6 \n"); 
      NumberOfNewParticlesSoFar = NumberOfNewParticles;
 
      FORTRAN_NAME(star_maker6)(

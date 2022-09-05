@@ -53,36 +53,7 @@ float GetMagneticUnits(float DensityUnits, float LengthUnits, float TimeUnits);
 int ReadEquilibriumTable(char * name, FLOAT Time);
 int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr, 
 			  HierarchyEntry &TopGrid, TopGridData &MetaData, ExternalBoundary &Exterior)
-{/*
-  char *DensName    = "Density";
-  char *TEName      = "TotalEnergy";
-  char *GEName      = "GasEnergy";
-  char *Vel1Name    = "x-velocity";
-  char *Vel2Name    = "y-velocity";
-  char *Vel3Name    = "z-velocity";
-  char *CRName      = "CREnergyDensity";
-  char *MetalName   = "Metal_Density";
-  char *MetalIaName = "MetalSNIa_Density";
-
-//definitions of fields that are only used for isogal	
-char *ElectronName = "Electron_Density";
-char *HIName    = "HI_Density";
-char *HIIName   = "HII_Density";
-char *HeIName   = "HeI_Density";
-char *HeIIName  = "HeII_Density";
-char *HeIIIName = "HeIII_Density";
-char *HMName    = "HM_Density";
-char *H2IName   = "H2I_Density";
-char *H2IIName  = "H2II_Density";
-char *DIName    = "DI_Density";
-char *DIIName   = "DII_Density";
-char *HDIName   = "HDI_Density";
-char *BxName      = "Bx";
-char *ByName      = "By";
-char *BzName      = "Bz";
-char *PhiName     = "Phi";
-  */
-
+{
   char *DensName    = "Density";
   char *TEName      = "TotalEnergy";
   char *GEName      = "GasEnergy";
@@ -279,9 +250,6 @@ dummy[0] = 0;
 		  &GalaxySimulationAngularMomentum[0],
 		  &GalaxySimulationAngularMomentum[1],
 		  &GalaxySimulationAngularMomentum[2]);
-   printf("Enzo Version %d \n", Enzo_Version);
-switch(Enzo_Version){
-	case 2: //set values of variables only in isogal build
 	    ret += sscanf(line, "GalaxySimulationDiskDensityCap = %"FSYM,
 			  &GalaxySimulationDiskDensityCap);    
 	    ret += sscanf(line, "GalaxySimulationEquilibrateChem = %"FSYM,
@@ -328,14 +296,14 @@ switch(Enzo_Version){
 	    ret += sscanf(line, "RiemannSolver = %"ISYM, &RiemannSolver);
 	    ret += sscanf(line, "ReconstructionMethod = %"ISYM, &ReconstructionMethod);
 
-   } 
+    
     /* if the line is suspicious, issue a warning */
     if (ret == 0 && strstr(line, "=") && strstr(line, "GalaxySimulation") 
 	&& line[0] != '#' && !strstr(line,"RPSWind") && !strstr(line,"PreWind"))
       fprintf(stderr, "warning: the following parameter line was not interpreted:\n%s\n", line);
 
   } // end input from parameter file
-
+  printf("Through reading inputs \n"); 
   /* fix wind values wrt units */
   float DensityUnits, LengthUnits, TemperatureUnits, TimeUnits, VelocityUnits;
   double MassUnits;
@@ -344,8 +312,7 @@ switch(Enzo_Version){
     fprintf(stderr, "Error in GetUnits.\n");
     return FAIL;
   }
-  switch(Enzo_Version){
-	case 2: //routines that setup dark matter variables and clean up chem stuff
+  if(Enzo_Version==2){
 	  // If using DiskGravity, make two GalaxySimulation parameters consistent
 	  if (DiskGravity > 0) {
 	    GalaxySimulationGalaxyMass = DiskGravityDarkMatterMass;
@@ -380,33 +347,6 @@ switch(Enzo_Version){
   } // end DiskGravity if
 
   /* set up grid */
-switch(Enzo_Version){
-	case 1: //Call to the grid Intializer for stock case
-	       	if (TopGrid.GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
-							       GalaxySimulationGalaxyMass, 
-							       GalaxySimulationGasMass,
-							       GalaxySimulationDiskPosition, 
-							       GalaxySimulationDiskScaleHeightz,
-							       GalaxySimulationDiskScaleHeightR,
-							       GalaxySimulationTruncationRadius, 
-							       GalaxySimulationDarkMatterConcentrationParameter,
-							       GalaxySimulationDiskTemperature, 
-							       GalaxySimulationInitialTemperature,
-							       GalaxySimulationUniformDensity,
-							       GalaxySimulationGasHalo,
-							       GalaxySimulationGasHaloScaleRadius,
-							       GalaxySimulationGasHaloDensity,
-							       GalaxySimulationAngularMomentum,
-							       GalaxySimulationUniformVelocity,
-							       GalaxySimulationUseMetallicityField,
-							       GalaxySimulationInflowTime,
-							       GalaxySimulationInflowDensity,0,
-							       GalaxySimulationCR )
-		      == FAIL) {
-	      ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grid.");
-	  }// end subgrid if
-		break; 
-	case 2: //Call to grid initializer for isogal build
 
 	  if (TopGrid.GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
 					GalaxySimulationGalaxyMass, 
@@ -452,9 +392,8 @@ switch(Enzo_Version){
 	    else {
 		TopGrid.GridData->_GalaxySimulationInitialization = 1;
 	    }
-	    break;
 
-}
+
   /* Convert minimum initial overdensity for refinement to mass
      (unless MinimumMass itself was actually set). */
 switch(Enzo_Version){
@@ -500,35 +439,6 @@ switch(Enzo_Version){
 	break;
       LevelHierarchyEntry *Temp = LevelArray[level+1];
       while (Temp != NULL) {
-	switch(Enzo_Version){
-		case 1: 
-			if (Temp->GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
-								       GalaxySimulationGalaxyMass, 
-								       GalaxySimulationGasMass,
-								       GalaxySimulationDiskPosition, 
-								       GalaxySimulationDiskScaleHeightz,
-								       GalaxySimulationDiskScaleHeightR,
-								       GalaxySimulationTruncationRadius, 
-								       GalaxySimulationDarkMatterConcentrationParameter,
-								       GalaxySimulationDiskTemperature, 
-								       GalaxySimulationInitialTemperature,
-								       GalaxySimulationUniformDensity,
-								       GalaxySimulationGasHalo,
-								       GalaxySimulationGasHaloScaleRadius,
-								       GalaxySimulationGasHaloDensity,
-								       GalaxySimulationAngularMomentum,
-								       GalaxySimulationUniformVelocity,
-								       GalaxySimulationUseMetallicityField,
-								       GalaxySimulationInflowTime,
-								       GalaxySimulationInflowDensity,level,
-								       GalaxySimulationCR )
-			      == FAIL) {
-			    ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grid.");
-			}// end subgrid if
-
-			Temp = Temp->NextGridThisLevel;
-			break; 
-	case 2: //call to isogal Grid constructor
 		if (Temp->GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
 					GalaxySimulationGalaxyMass, 
 					GalaxySimulationGasMass,
@@ -574,8 +484,6 @@ switch(Enzo_Version){
 		Temp->GridData->_GalaxySimulationInitialization = 1;
 	    }
 	    	Temp = Temp->NextGridThisLevel;
-	    	break;
-	}	
     } // end: loop over levels
 }//end of switch statement
     /* Loop back from the bottom, restoring the consistency among levels. */
@@ -637,6 +545,28 @@ switch(Enzo_Version){
     GalaxySimulationPreWindVelocity[2] = 0.0;
   }
 
+  // If we used the Equilibrium Table, delete it
+  if (GalaxySimulationEquilibrateChem && Enzo_Version == 2){
+    if (MultiSpecies) {
+      delete [] EquilibriumTable.HI;
+      delete [] EquilibriumTable.HII;
+      delete [] EquilibriumTable.HeI;
+      delete [] EquilibriumTable.HeII;
+      delete [] EquilibriumTable.HeIII;
+      delete [] EquilibriumTable.de;
+      if (MultiSpecies > 1) {
+        delete [] EquilibriumTable.HM;
+        delete [] EquilibriumTable.H2I;
+        delete [] EquilibriumTable.H2II;
+      }
+      if (MultiSpecies > 2) {
+        delete [] EquilibriumTable.DI;
+        delete [] EquilibriumTable.DII;
+        delete [] EquilibriumTable.HDI;
+      }
+    }
+  }
+
  /* set up field names and units */
 
  int count = 0;
@@ -649,18 +579,7 @@ switch(Enzo_Version){
    DataLabel[count++] = Vel2Name;
  if(MetaData.TopGridRank > 2)
    DataLabel[count++] = Vel3Name;
- if(CRModel)
-   DataLabel[count++] = CRName;
- if (GalaxySimulationUseMetallicityField)
-   DataLabel[count++] = MetalName;
- if (StarMakerTypeIaSNe)
-   DataLabel[count++] = MetalIaName;
-
- for (i = 0; i < count; i++)
-   DataUnits[i] = NULL;
- //fields used in isogal build 
-if(Enzo_Version==2){  
-if( UseMHD ){
+  if( UseMHD){
       DataLabel[count++] = BxName;
       DataLabel[count++] = ByName;
       DataLabel[count++] = BzName;
@@ -668,6 +587,10 @@ if( UseMHD ){
   if (HydroMethod == MHD_RK){
       DataLabel[count++] = PhiName;
   }
+ if(CRModel)
+   DataLabel[count++] = CRName;
+ //fields used in isogal build  was an if here with Enzo_Version 2 removed bc stock toggle fields were not being set right
+if(Enzo_Version == 2){ 
  if (MultiSpecies) {
    DataLabel[count++] = ElectronName;
    DataLabel[count++] = HIName;
@@ -687,11 +610,16 @@ if( UseMHD ){
    }
  }
 }
+ if(GalaxySimulationUseMetallicityField)
+   DataLabel[count++] = MetalName;
+ if (StarMakerTypeIaSNe)
+   DataLabel[count++] = MetalIaName;
+printf("count1: %.e \n", count);
+for(int l = 0; l < count; l++)
+printf("DataLabel: %s \n", DataLabel[l]);
  for (i = 0; i < count; i++)
    DataUnits[i] = NULL;
- if(Enzo_Version==2){
  MHDCTSetupFieldLabels();
-}
  /* Write parameters to parameter output file */
 
  if (MyProcessorNumber == ROOT_PROCESSOR) {
@@ -754,7 +682,7 @@ if( UseMHD ){
  MPI_Bcast(&PointSourceGravityCoreRadius,1,DataType,ROOT_PROCESSOR, MPI_COMM_WORLD);
 
 #endif
-
+printf("count2: %d \n", count);
  return SUCCESS;
 
 }

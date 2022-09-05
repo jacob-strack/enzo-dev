@@ -209,6 +209,10 @@ class grid
   int TimestepsSinceCreation; 	// Not really since creation anymore... 
   				// resets everytime the grid outputs
 
+//MHD Data (added)
+
+
+
 // density and pressure history for one-zone collapse
 // for calculating effective gamma
   float **freefall_density;
@@ -2299,7 +2303,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 
 
   /* Initialization for isolated galaxy sims */
-  int GalaxySimulationInitializeGrid(
+  /*int GalaxySimulationInitializeGrid(
 				     FLOAT DiskRadius,
 				     float GalaxyMass,
 				     float GasMass,
@@ -2321,7 +2325,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 				     float GalaxySimulationInflowDensity,
 				     int level,
 				     float GalaxySimulationCR = 0.0 );
-
+*/
   int _GalaxySimulationInitialization = 0; 
   int GalaxySimulationInitializeGrid(
 				     FLOAT DiskRadius,
