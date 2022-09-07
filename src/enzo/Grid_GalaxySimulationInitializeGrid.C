@@ -402,9 +402,9 @@ if(Enzo_Version == 2){
 	MagneticField[1][n] = 2.23e-16;
 	MagneticField[2][n] = 3.23e-16;
 	
-	MagneticField[B1Num][n] = 1.23e-16;
-	MagneticField[B2Num][n] = 2.23e-16;
-	MagneticField[B3Num][n] = 3.23e-16;	
+	MagneticField[B1Num][i] = 1.23e-16;
+	MagneticField[B2Num][j] = 2.23e-16;
+	MagneticField[B3Num][k] = 3.23e-16;	
 	
 	if (UseMetallicityField && Enzo_Version == 2) {
 	  /* Set a background metallicity value that will scale with density.
@@ -696,7 +696,7 @@ if(r_sph < DiskRadius){//this if seems to only be in the stock build but might b
 	  case 0: //uniform
 	    for (dim = 0; dim < GridRank; dim++) {
 	      if( UseMHDCT ){
-		MagneticField[dim][n] = GalaxySimulationInitialBfield[dim]; 
+		//MagneticField[dim][n] = GalaxySimulationInitialBfield[dim]; 
 	      }
 	      BaryonField[B1Num+dim][n] = GalaxySimulationInitialBfield[dim];
 	    }
