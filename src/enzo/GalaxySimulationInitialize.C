@@ -488,6 +488,8 @@ switch(Enzo_Version){
 }//end of switch statement
     /* Loop back from the bottom, restoring the consistency among levels. */
 
+    MHD_ProjectE=FALSE;
+    MHD_ProjectB=TRUE;
     for (level = MaximumRefinementLevel; level > 0; level--) {
       LevelHierarchyEntry *Temp = LevelArray[level];
       while (Temp != NULL) {
@@ -499,6 +501,8 @@ switch(Enzo_Version){
 	Temp = Temp->NextGridThisLevel;
       }
     }
+    MHD_ProjectE=TRUE;
+    MHD_ProjectB=FALSE;
 
   } // end: if (GalaxySimulationRefineAtStart)
 
