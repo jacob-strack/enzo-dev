@@ -69,8 +69,8 @@ LOCAL_MPI_INSTALL     =
 LOCAL_HDF4_INSTALL    = 
 LOCAL_HYPRE_INSTALL   = 
 LOCAL_ACML_INSTALL    = 
-LOCAL_HDF5_INSTALL    = $(TACC_HDF5_DIR)
-LOCAL_GRACKLE_INSTALL = 
+LOCAL_HDF5_INSTALL    =$(TACC_HDF5_DIR)
+LOCAL_GRACKLE_INSTALL =/home1/08627/tg879265/local
 
 #-----------------------------------------------------------------------
 # Compiler settings
