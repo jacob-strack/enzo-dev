@@ -349,7 +349,7 @@ if(Enzo_Version == 2){//might not be totally necessary but currently something b
   struct CGMdata CGM_data(8192);
 if(Enzo_Version == 2){
   largest_rad = sqrt(3) * (far_right - far_left) / 2.0 * LengthUnits;
-  halo_init(CGM_data, this, largest_rad); //COMMENTED OUT WHEN MAKING UNIFORM BOX FOR GRACKLE ISSUE THING
+  halo_init(CGM_data, this, largest_rad);
   // for (int i=0; i<CGM_data.nbins; ++i)
   //   printf("%g %g %g %g\n", CGM_data.rad[i], CGM_data.n_rad[i], CGM_data.T_rad[i], CGM_data.press[i]);
   }
@@ -377,18 +377,293 @@ if(Enzo_Version == 2){
   FLOAT r_sph, x, y = 0, z = 0;
   int n = 0, iter;
 
-  //loop over dims to create uniform box, trying to figure out what is going on with grackle and the UVB no heating in and out of refined region
-  
   for (k = 0; k < GridDimension[2]; k++)
     for (j = 0; j < GridDimension[1]; j++)
       for (i = 0; i < GridDimension[0]; i++, n++) {
-		//setting things back to uniform initial values
-		BaryonField[DensNum][n] = UniformDensity;
-		BaryonField[1][n] = InitialTemperature/TemperatureUnits / ((Gamma-1.0)*mu);
-		if (DualEnergyFormalism)
-	  		BaryonField[2][n] = BaryonField[1][n];
-		for(dim = 0; dim < GridRank; dim++)
-			BaryonField[vel+dim][n] = 0; 
+	//MagneticField[0][n] = 1.23e-16; 
+	//MagneticField[1][n] = 2.23e-16;
+	//MagneticField[2][n] = 3.23e-16;
+	if (UseMetallicityField && Enzo_Version == 2) {
+	  /* Set a background metallicity value that will scale with density.
+	     If the cell is in the disk, this wifll be increased by a factor
+	     of 3.  This should really be a parameter that is read in -- DWS */ 
+	  initial_metallicity = GalaxySimulationGasHaloMetallicity;
+	}
+
+	/* Compute position */
+
+	x = CellLeftEdge[0][i] + 0.5*CellWidth[0][i];
+	if (GridRank > 1)
+	  y = CellLeftEdge[1][j] + 0.5*CellWidth[1][j];
+	if (GridRank > 2)
+	  z = CellLeftEdge[2][k] + 0.5*CellWidth[2][k];
+
+	for (dim = 0; dim < MAX_DIMENSION; dim++){
+	  Velocity[dim] = 0;
+	  disk_vel[dim] = 0;
+	}
+	/* Find distance from center. */
+
+	r_sph = sqrt(POW(fabs(x-DiskPosition[0]), 2) +
+		     POW(fabs(y-DiskPosition[1]), 2) +
+		     POW(fabs(z-DiskPosition[2]), 2) );
+	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
+    
+	/*
+	  r_cyl = sqrt(POW(fabs(x-DiskPosition[0]), 2) +
+	  POW(fabs(y-DiskPosition[1]), 2) );
+	*/
+	if(Enzo_Version == 2){
+	density = HaloGasDensity(r_sph, CGM_data)/DensityUnits;
+	temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
+}
+	if(Enzo_Version == 1){
+	density = HaloGasDensity(r_sph)/DensityUnits;
+	temperature = disk_temp = init_temp = HaloGasTemperature(r_sph);
+}
+//if(r_sph < DiskRadius){//this if seems to only be in the stock build but might be what was messing up the isogal B field
+	FLOAT xpos, ypos, zpos, rsph, zheight, rcyl, theta; 
+
+	float CellMass;
+	FLOAT rp_hat[3];
+	FLOAT yhat[3];
+
+	/* Loop over dims if using Zeus (since vel's face-centered). */
+
+	for (dim = 0; dim < 1+(HydroMethod == Zeus_Hydro ? GridRank : 0);
+	     dim++) {
+
+	  /* Compute position. */
+
+	  xpos = x-DiskPosition[0]-(dim == 1 ? 0.5*CellWidth[0][0] : 0.0);
+	  ypos = y-DiskPosition[1]-(dim == 2 ? 0.5*CellWidth[1][0] : 0.0);
+	  zpos = z-DiskPosition[2]-(dim == 3 ? 0.5*CellWidth[2][0] : 0.0);
+
+	  /* Compute z and r_perp (AngularMomentum is angular momentum 
+	     and must have unit length). */    
+
+	  /* magnitude of z = r.L in L direction */
+
+	  zheight = AngularMomentum[0]*xpos + 
+	    AngularMomentum[1]*ypos +
+	    AngularMomentum[2]*zpos;
+
+	  /* position in plane of disk */
+
+	  rp_hat[0] = xpos - zheight*AngularMomentum[0];
+	  rp_hat[1] = ypos - zheight*AngularMomentum[1];
+	  rp_hat[2] = zpos - zheight*AngularMomentum[2];
+	  rcyl = sqrt(rp_hat[0]*rp_hat[0] + rp_hat[1]*rp_hat[1] + rp_hat[2]*rp_hat[2]);//called drad in stock
+	  drcyl = rcyl; //reminder to rename stuff if this works
+	  /* Normalize the vector r_perp = unit vector pointing along plane of disk */
+
+	  rp_hat[0] = rp_hat[0]/rcyl;
+	  rp_hat[1] = rp_hat[1]/rcyl;
+	  rp_hat[2] = rp_hat[2]/rcyl;
+      
+
+	  /* If requested, calculate velocity for CGM halo.
+	   * Will be replaced wtih disk velocity later if appropriate */
+	  if (UseHaloRotation && Enzo_Version == 2){
+	    /* polar angle as measured from the angular momentum vector*/
+	    theta = acos(zheight/r_sph);
+
+	    halo_vmag = RotationScaleVelocity // code units
+	      * POW(r_sph/RotationScaleRadius, 
+		    RotationPowerLawIndex);
+
+	    if (r_sph <= RotationScaleRadius)
+	      halo_vmag = RotationScaleVelocity;
+
+	    halo_vmag *= sin(theta)*sin(theta);
+	  
+	    /* Cylindrical velocity */
+	    Velocity[0] = halo_vmag * (AngularMomentum[1]*rp_hat[2] -
+				       AngularMomentum[2]*rp_hat[1]);
+	    Velocity[1] = halo_vmag * (AngularMomentum[2]*rp_hat[0] -
+				       AngularMomentum[0]*rp_hat[2]);
+	    Velocity[2] = halo_vmag * (AngularMomentum[0]*rp_hat[1] -
+				       AngularMomentum[1]*rp_hat[0]);
+	}  
+
+	  disk_dens = 0.0;//????? this may be not here for Enzo_Version == 1, shove into if statement for now.
+  
+	if (r_sph < DiskRadius) {//added if statement i think this needs to be here for both enzo versions
+
+	    /* Beyond truncation radius */
+	    if( fabs(rcyl*LengthUnits/Mpc) > TruncRadius && Enzo_Version == 2 ){
+	      disk_dens = 0.0;
+	      break;
+	    }
+
+	    /* Find another vector perpendicular to r_perp and AngularMomentum */
+
+	    yhat[0] = AngularMomentum[1]*rp_hat[2] - AngularMomentum[2]*rp_hat[1];
+	    yhat[1] = AngularMomentum[2]*rp_hat[0] - AngularMomentum[0]*rp_hat[2];
+	    yhat[2] = AngularMomentum[0]*rp_hat[1] - AngularMomentum[1]*rp_hat[0];
+
+	    /* generate rotation matrix */
+	    FLOAT inv[3][3],temp;
+	    int i,j;
+	    // matrix of basis vectors in coordinate system defined by the galaxy
+	    inv[0][0] = rp_hat[0];
+	    inv[0][1] = yhat[0];
+	    inv[0][2] = AngularMomentum[0];
+        
+	    inv[1][0] = rp_hat[1];
+	    inv[1][1] = yhat[1];
+	    inv[1][2] = AngularMomentum[1];
+        
+	    inv[2][0] = rp_hat[2];
+	    inv[2][1] = yhat[2];
+	    inv[2][2] = AngularMomentum[2];
+
+	    // Matrix is orthogonal by construction so inverse = transpose
+	    for (i=0;i<3;i++)
+	      for (j=i+1;j<3;j++){
+		temp = inv[i][j];
+		inv[i][j] = inv[j][i];
+		inv[j][i] = temp;
+	      }
+	    if( fabs(drcyl*LengthUnits/Mpc_cm) > TruncRadius && Enzo_Version == 1){
+		disk_dens == 0.0;
+		break; 
+		}
+	    DiskDensity = (GasMass * SolarMass
+			   / (8.0*pi*ScaleHeightz*Mpc*POW(ScaleHeightR*Mpc,2.0)))
+	      / DensityUnits;   //Code units (rho_0) 
+
+	    CellMass = gauss_mass(rcyl*LengthUnits, zheight*LengthUnits,
+				  xpos*LengthUnits, ypos*LengthUnits,
+				  zpos*LengthUnits, inv, 
+				  DiskDensity*DensityUnits,
+				  ScaleHeightR*Mpc, ScaleHeightz*Mpc, 
+				  CellWidth[0][0]*LengthUnits);
+
+	    disk_dens = CellMass/POW(CellWidth[0][0]*LengthUnits,3)/DensityUnits;
+
+	    if ((disk_dens > DiskDensityCap) && (DiskDensityCap > 0) && Enzo_Version == 2)//density cap only in isogal
+	      disk_dens = DiskDensityCap;
+
+	    /* Inside CGM */
+	    if ((disk_dens < density) && Enzo_Version == 2)
+	      break;
+
+	    //
+	    // calculate velocity
+	    //
+
+	    if (PointSourceGravity > 0 )
+	      DiskVelocityMag = gasvel(rcyl, DiskDensity, ExpansionFactor,
+				       GalaxyMass, ScaleHeightR,
+				       ScaleHeightz, DMConcentration, Time);
+
+	    else if( DiskGravity > 0 && Enzo_Version ==2) // me
+	      DiskVelocityMag = DiskGravityCircularVelocity(r_sph*LengthUnits,
+							    rcyl*LengthUnits,
+							    zheight*LengthUnits)
+		/VelocityUnits;
+	    else if(DiskGravity>0 && Enzo_Version==1){
+		
+	      CellMass = gauss_mass(rcyl*LengthUnits,zheight*LengthUnits, xpos*LengthUnits, ypos*LengthUnits, zpos*LengthUnits, inv,
+				    DiskDensity*DensityUnits,ScaleHeightR*Mpc_cm, ScaleHeightz*Mpc_cm, CellWidth[0][0]*LengthUnits);
+
+	      disk_dens = CellMass/POW(CellWidth[0][0]*LengthUnits,3)/DensityUnits;
+	      DiskVelocityMag = DiskPotentialCircularVelocity(CellWidth[0][0], zheight*LengthUnits, disk_dens, disk_temp);
+	    }
+        
+	    if (PointSourceGravity*DiskGravity != FALSE ) 
+	      ENZO_FAIL("Cannot activate both PointSource and Disk gravity options for Isolated Galaxy");
+	  if(Enzo_Version == 1){
+	    if (dim == 0) {
+	      CellMass = gauss_mass(drcyl*LengthUnits,zheight*LengthUnits, xpos*LengthUnits, ypos*LengthUnits, zpos*LengthUnits, inv, 
+				    DiskDensity*DensityUnits,ScaleHeightR*Mpc_cm, ScaleHeightz*Mpc_cm, CellWidth[0][0]*LengthUnits);
+	      disk_dens = CellMass/POW(CellWidth[0][0]*LengthUnits,3)/DensityUnits;
+	    }
+
+	    /* If we're above the disk, then exit. */
+
+	    if (disk_dens < density)
+	      break;
+
+	    /* Compute velocity magnitude (divided by drad). 
+	       This assumes PointSourceGravityPosition and Disk center 
+	       are the same. */
+}
+	    /* Compute velocty: L x r_perp. */
+	    if (dim == 0 || dim == 1)
+	      disk_vel[0] = DiskVelocityMag*(AngularMomentum[1]*rp_hat[2] -
+					     AngularMomentum[2]*rp_hat[1]);
+	    if (dim == 0 || dim == 2)
+	      disk_vel[1] = DiskVelocityMag*(AngularMomentum[2]*rp_hat[0] -
+					     AngularMomentum[0]*rp_hat[2]);
+	    if (dim == 0 || dim == 3)
+	      disk_vel[2] = DiskVelocityMag*(AngularMomentum[0]*rp_hat[1] -
+					     AngularMomentum[1]*rp_hat[0]);
+
+	  } // end: if (r_sph < DiskRadius)
+
+	  /* Replace CGM ("Halo") defaults with disk if dense enough; i.e.
+	   * replace 'density', 'temperature', 'initial_metallicity', and
+	   * 'Velocity' (which are currently set to CGM values) with their
+	   * appropriate disk values */
+       
+	  if (disk_dens > density && fabs(rcyl*LengthUnits/Mpc) <= TruncRadius){
+       	  if(Enzo_Version == 2){ 
+	    density = disk_dens;
+	    temperature = DiskTemperature;
+        }
+	 if(Enzo_Version==1){
+		density = disk_dens; 
+		if(disk_temp > init_temp)
+			disk_temp = DiskTemperature;
+		temperature = disk_temp;
+		if(temperature > 1.0e7)
+			temperature = init_temp;
+}
+	    /* Here we're setting the disk to be X times more enriched -- DWS */
+	    if( UseMetallicityField && Enzo_Version == 2 )
+	      initial_metallicity *= GalaxySimulationDiskMetallicityEnhancementFactor;
+	   if(UseMetallicityField && Enzo_Version == 1)
+		BaryonField[MetalNum][n] = density; 
+           if(Enzo_Version == 2){ 
+	    /* Replace default/CGM velocity with disk velocity */
+	    Velocity[0] = disk_vel[0];
+	    Velocity[1] = disk_vel[1];
+	    Velocity[2] = disk_vel[2];
+}
+}
+	  }
+
+//	} // end: loop over dims 
+
+
+	/* Set density. */
+	BaryonField[0][n] = density;
+
+	if (UseMetallicityField && Enzo_Version == 2) {
+	  BaryonField[MetalNum][n] = initial_metallicity 
+	    * CoolData.SolarMetalFractionByMass 
+	    * density;
+	}
+
+	/* This should probably be scaled with density in some way to be
+	   a proper metallicity -- DWS (loop redundancy addressed by CEK) */
+	if (StarMakerTypeIaSNe)
+	  BaryonField[MetalIaNum][n] = 1.0e-10;
+	for (dim = 0; dim < GridRank; dim++){
+	  BaryonField[vel+dim][n] = Velocity[dim] + UniformVelocity[dim];
+	/* Set energy (thermal and then total if necessary). */
+}
+	BaryonField[1][n] = temperature/TemperatureUnits / ((Gamma-1.0)*mu);
+	if (DualEnergyFormalism)
+	  BaryonField[2][n] = BaryonField[1][n];
+	if (HydroMethod != Zeus_Hydro)
+	  for (dim = 0; dim < GridRank; dim++)
+	    BaryonField[1][n] += 0.5*POW(BaryonField[vel+dim][n], 2);
+	if (BaryonField[1][n] <= 0.0)
+	  printf("G_GSIC: negative or zero energy  n = %"ISYM"  temp = %"FSYM"   e = %"FSYM"\n",
+		 n, temperature, BaryonField[1][n]);
 	if ( UseMHD && Enzo_Version == 2 ){
 	  switch ( GalaxySimulationInitialBfieldTopology ){
 	  case 0: //uniform
@@ -439,6 +714,66 @@ if(Enzo_Version == 2){
 	} // if(MultiSpecies)
 	}
       } // end loop over grids
+  //loop over dims to create uniform box, trying to figure out what is going on with grackle and the UVB no heating in and out of refined region
+  
+  for (k = 0; k < GridDimension[2]; k++)
+    for (j = 0; j < GridDimension[1]; j++)
+      for (i = 0; i < GridDimension[0]; i++, n++) {
+		//setting things back to uniform initial values
+		BaryonField[0][n] = UniformDensity;
+		//BaryonField[1][n] = InitialTemperature/TemperatureUnits / ((Gamma-1.0)*mu);
+	//	if (DualEnergyFormalism)
+	 // 		BaryonField[2][n] = BaryonField[1][n];
+/*	if ( UseMHD && Enzo_Version == 2 ){
+	  switch ( GalaxySimulationInitialBfieldTopology ){
+	  case 0: //uniform
+	    for (dim = 0; dim < GridRank; dim++) {
+	      if( UseMHDCT ){
+		MagneticField[dim][n] = GalaxySimulationInitialBfield[dim]; 
+	      }
+	      BaryonField[B1Num+dim][n] = GalaxySimulationInitialBfield[dim];
+	    }
+	    break;
+          default:
+	    ENZO_FAIL("undefined value of GalaxySimulationInitialBfieldTopology");
+	  }
+	  BaryonField[1][n] += 0.5*(BaryonField[B1Num][n]*BaryonField[B1Num][n]
+				    +BaryonField[B2Num][n]*BaryonField[B2Num][n]
+				    +BaryonField[B3Num][n]*BaryonField[B3Num][n])/
+	    BaryonField[0][n];
+	}//UseMHD
+	if( CRModel )
+	  BaryonField[CRNum][n] = BaryonField[DensNum][n] * GalaxySimulationCR;
+	// Set multispecies fields!
+	// this attempts to set them such that species conservation is maintained,
+	// using the method in CosmologySimulationInitializeGrid.C
+	if(Enzo_Version == 2){
+	if(MultiSpecies){
+	  if (MultiSpecies == 3)
+	    setup_chem(BaryonField[DensNum][n], temperature, EquilibrateChem,
+		       BaryonField[DeNum][n], BaryonField[HINum][n], BaryonField[HIINum][n],
+		       BaryonField[HeINum][n], BaryonField[HeIINum][n], BaryonField[HeIIINum][n],
+		       BaryonField[HMNum][n], BaryonField[H2INum][n], BaryonField[H2IINum][n],
+		       BaryonField[DINum][n], BaryonField[DIINum][n], BaryonField[HDINum][n]);
+	  else if (MultiSpecies == 2) {
+	    float temp;
+	    setup_chem(BaryonField[DensNum][n], temperature, EquilibrateChem,
+		       BaryonField[DeNum][n], BaryonField[HINum][n], BaryonField[HIINum][n],
+		       BaryonField[HeINum][n], BaryonField[HeIINum][n], BaryonField[HeIIINum][n],
+		       BaryonField[HMNum][n], BaryonField[H2INum][n], BaryonField[H2IINum][n],
+		       temp, temp, temp);
+	  }
+	  else {
+	    float temp;
+	    setup_chem(BaryonField[DensNum][n], temperature, EquilibrateChem,
+		       BaryonField[DeNum][n], BaryonField[HINum][n], BaryonField[HIINum][n],
+		       BaryonField[HeINum][n], BaryonField[HeIINum][n], BaryonField[HeIIINum][n],
+		       temp, temp, temp,
+		       temp, temp, temp);
+	  }
+	} // if(MultiSpecies)
+	}*/
+	
 }
   CenterMagneticField();
   return SUCCESS;
