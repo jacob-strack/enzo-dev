@@ -639,7 +639,6 @@ if(Enzo_Version == 2){
 
 
 	/* Set density. */
-	printf("Enzo Version %d \n", Enzo_Version);
 	BaryonField[0][n] = density;
 
 	if (UseMetallicityField && Enzo_Version == 2) {
@@ -715,6 +714,7 @@ if(Enzo_Version == 2){
 	} // if(MultiSpecies)
 	}
       } // end loop over grids
+  if(UseMHDCT)
   CenterMagneticField();
   return SUCCESS;
 
