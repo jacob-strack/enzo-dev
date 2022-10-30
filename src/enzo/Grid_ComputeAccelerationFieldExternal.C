@@ -42,10 +42,8 @@ int CosmologyComputeExpansionFactor(FLOAT time, FLOAT *a, FLOAT *dadt);
  
 int grid::ComputeAccelerationFieldExternal()
 {
- 
   /* Return if this does not concern us */
   if (!(UniformGravity || PointSourceGravity || DiskGravity || ExternalGravity)) return SUCCESS;
-
   /* Return if this grid is not on this processor. */
  
   if (MyProcessorNumber != ProcessorNumber)
@@ -109,7 +107,7 @@ int grid::ComputeAccelerationFieldExternal()
      ----------------------------------------------------------------- */
  
   if (PointSourceGravity > 0) {
- 
+    ENZO_FAIL("pointsource"); 
     FLOAT a = 1.0, accel, dadt, radius, rcubed, rsquared, 
       xpos, ypos = 0.0, zpos = 0.0, rcore,x ;
  
@@ -174,7 +172,7 @@ int grid::ComputeAccelerationFieldExternal()
 	      } else {
 		rcore = PointSourceGravityCoreRadius/LengthUnits;  // convert from CGS to code
 	      }
-
+          ENZO_FAIL("pointsource2");
 	      FLOAT x = radius/rcore;
 
 	      // BWO, July 2009: MassUnitsDouble is CGS mass units if ProblemType == 31,
@@ -549,7 +547,6 @@ int grid::ComputeAccelerationFieldExternal()
   /* -----------------------------------------------------------------
      ExternalGravity 1: another similar way for a NFW profile
      ----------------------------------------------------------------- */
-
   if (ExternalGravity == 1) {
     
     /* Specify NFW parameters by hand here 
@@ -745,7 +742,7 @@ int grid::ComputeAccelerationFieldExternal()
      ----------------------------------------------------------------- */
  
   if (UniformGravity) {
- 
+    ENZO_FAIL("UniformGravity"); 
     for (dim = 0; dim < GridRank; dim++) {
  
       /* Set constant for this dimension. */

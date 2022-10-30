@@ -439,7 +439,7 @@ if(Enzo_Version == 2){
 	} // if(MultiSpecies)
 	}
       } // end loop over grids
-}
+  if(UseMHDCT)
   CenterMagneticField();
   return SUCCESS;
 
@@ -463,8 +463,7 @@ double NFWDarkMatterMassEnclosed(double r){ //there is a problem when this funct
   // if the latter is in use, same with GSGalaxyMass & DGDarkMatterMass
 
   M = GalaxySimulationGalaxyMass * SolarMass;  // halo total mass in CGS
-  C = GalaxySimulationDMConcentration;  // concentration parameter for NFW halo
-  
+  C = GalaxySimulationDMConcentration;  // concentration parameter for NFW halo 
   R200 = POW(3.0/(4.0*pi)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
   Rs = R200/C;  // scale radius of NFW halo in CGS
   rho_0 = 200.0*POW(C,3)/3.0/(log(1.0+C) - C/(1.0+C))*rho_crit;  // rho_0 for NFW halo in CGS
@@ -932,6 +931,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     return Ticm;
 
   } else if(GalaxySimulationGasHalo == 1){
+    printf("DMM %e", DiskPotentialDarkMatterMass(R));
     /* gets temperature as a function of radius given by virial theorem */
     return GravConst*DiskPotentialDarkMatterMass(R)*mu*mh/(3.0*kboltz*R*LengthUnits);//did have NFWDarkMatterMassEnclosed, but something was wrong with that function
     
@@ -1343,6 +1343,7 @@ double halo_dP_dr(double r, double P, grid* Grid) {
    Input is the radius in CGS units and returns the MAGNITUDE of the 
    acceleration in CGS units.  */
 double halo_g_of_r(double r){
+  printf("g(r) = %e", GravConst*NFWDarkMatterMassEnclosed(r)/(r*r));
   return GravConst*NFWDarkMatterMassEnclosed(r)/(r*r); 
 }
 
@@ -1403,6 +1404,7 @@ float gasvel(FLOAT radius, float DiskDensity, FLOAT ExpansionFactor, float Galax
 
      if (SelfGravity==1){
 	M_Tot=M_DM+M_gas;
+    printf("Mtot = %.e", M_Tot);
      }
      else{
 	M_Tot=M_DM;
@@ -1447,12 +1449,12 @@ float gasvel(FLOAT radius, float DiskDensity, FLOAT ExpansionFactor, float Galax
 
      V_Circ = sqrt(r*Acc)*100;       //cms-1
 
-     /*      printf("r = %g  M_Tot = %g  Acc = %g  M_DM = %g  M_gas = %g  f_C = %g\n",
+           printf("r = %g  M_Tot = %g  Acc = %g  M_DM = %g  M_gas = %g  f_C = %g\n",
 	     r, M_Tot, Acc, M_DM, M_gas, f_C);
      printf("r_s = %g  DMConcentration = %g  r_200 = %g  r/r_s = %g\n",
 	     r_s, DMConcentration, r_200, r/r_s);
      printf("EF = %g  H = %g  OMEGA = %g\n", ExpansionFactor, H, OMEGA);
-     printf("radius = %g  v_circ = %g\n", radius, V_Circ);  */
+     printf("radius = %g  v_circ = %g\n", radius, V_Circ);  
 
      return (V_Circ/VelocityUnits);  //code units
 }
