@@ -33,6 +33,7 @@ int CosmologyComputeExpansionFactor(FLOAT time, FLOAT *a, FLOAT *dadt);
  
 int grid::AddExternalAcceleration()
 {
+    ENZO_FAIL("why did you get here?");
  
   /* -----------------------------------------------------------------
      Problem: SphericalInfall

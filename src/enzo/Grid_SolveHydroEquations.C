@@ -411,11 +411,14 @@ int grid::SolveHydroEquations(int CycleNumber, int NumberOfSubgrids,
     /* Prepare Gravity. */
 
     int GravityOn = 0, FloatSize = sizeof(float);
-    if (SelfGravity || UniformGravity || PointSourceGravity || DiskGravity || ExternalGravity )
-      GravityOn = 1;
+    if (SelfGravity || UniformGravity || PointSourceGravity || DiskGravity || ExternalGravity ){
+        GravityOn = 1;
+    }
 #ifdef TRANSFER
-    if (RadiationPressure)
-      GravityOn = 1;
+    if (RadiationPressure){
+        ENZO_FAIL("sky road sky road ditch");
+        GravityOn = 1;
+    }
 #endif    
 
     //Some setup for MHDCT

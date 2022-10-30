@@ -29,7 +29,7 @@ int grid::AddRadiationPressureAcceleration()
 
   /* Return if this does not concern us */
   if (!(RadiativeTransfer && RadiationPressure)) return SUCCESS;
-
+  ENZO_FAIL("radiationpressureacceleration");
   /* Return if this grid is not on this processor. */
 
   if (MyProcessorNumber != ProcessorNumber)
