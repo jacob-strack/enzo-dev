@@ -43,6 +43,7 @@
 
 // Function prototypes
  
+void MHDCTSetupFieldLabels();
 void WriteListOfFloats(FILE *fptr, int N, float floats[]);
 void WriteListOfFloats(FILE *fptr, int N, FLOAT floats[]);
 void WriteListOfInts(FILE *fptr, int N, int nums[]);
@@ -691,7 +692,7 @@ int NestedCosmologySimulationInitialize(FILE *fptr, FILE *Outfptr,
   }
  
   // set up field names and units
- 
+  MHDCTSetupFieldLabels(); 
   i = 0;
   DataLabel[i++] = DensName;
 
@@ -703,15 +704,17 @@ int NestedCosmologySimulationInitialize(FILE *fptr, FILE *Outfptr,
   DataLabel[i++] = TEName;
   if (DualEnergyFormalism)
     DataLabel[i++] = GEName;
-  if (HydroMethod == MHD_RK) {
-    DataLabel[i++] = BxName;
-    DataLabel[i++] = ByName;
-    DataLabel[i++] = BzName;
-    DataLabel[i++] = PhiName;
-    if(UsePoissonDivergenceCleaning){
-      DataLabel[i++] = Phi_pName;
-    }
+  if (UseMHD) {
+	  DataLabel[i++] = BxName;
+	  DataLabel[i++] = ByName;
+	  DataLabel[i++] = BzName;
   }
+  if (HydroMethod == MHD_RK)
+	  DataLabel[i++] = PhiName;
+  if(UsePoissonDivergenceCleaning){
+	  DataLabel[i++] = Phi_pName;
+  }
+
    if (MultiSpecies) {
     DataLabel[i++] = ElectronName;
     DataLabel[i++] = HIName;
