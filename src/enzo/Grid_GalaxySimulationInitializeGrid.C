@@ -378,7 +378,7 @@ if(Enzo_Version == 2){
   int n = 0, iter;
 
   //loop over dims to create uniform box, trying to figure out what is going on with grackle and the UVB no heating in and out of refined region
-  
+  printf("DensNum %d \n", DensNum); 
   for (k = 0; k < GridDimension[2]; k++)
     for (j = 0; j < GridDimension[1]; j++)
       for (i = 0; i < GridDimension[0]; i++, n++) {
@@ -1250,7 +1250,7 @@ double halo_S_of_r(double r, grid* Grid){
     double Lambda = 7;
     double dens = mh/DensityUnits; // code
     double vx=0, vy=0, vz=0;
-    double hi, hii, hei, heii, heiii, de, hm, h2i, h2ii, di, dii, hdi, metal; // species
+    double hi = 0, hii=0, hei=0, heii=0, heiii=0, de=0, hm=0, h2i=0, h2ii=0, di=0, dii=0, hdi=0, metal=0; // species
     int dim=1;
 
     // setup_chem has densities in code, temperature in K

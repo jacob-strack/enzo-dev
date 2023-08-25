@@ -1201,6 +1201,7 @@ EXTERN int GalaxySimulationRPSWind;
  */
 EXTERN float GalaxySimulationRPSWindShockSpeed;
 EXTERN float GalaxySimulationRPSWindDelay;
+EXTERN int GalaxySimulationDebugHold;
 
 EXTERN float GalaxySimulationRPSWindDensity;
 EXTERN float GalaxySimulationRPSWindTotalEnergy;

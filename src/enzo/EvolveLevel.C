@@ -387,7 +387,6 @@ int EvolveLevel(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
      from the level above (or loop once for the top level). */
  
   EXTRA_OUTPUT_MACRO(1, "Before Time Loop")
-
   while ((CheckpointRestart == TRUE)
         || (dtThisLevelSoFar[level] < dtLevelAbove)) {
     if(CheckpointRestart == FALSE) {
@@ -755,7 +754,6 @@ int EvolveLevel(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
                       b) copy any overlapping zones from siblings. */
  
     EXTRA_OUTPUT_MACRO(2,"After SolveHydroEquations grid loop")
-
     if (UsePoissonDivergenceCleaning != 0){
 
 #ifdef FAST_SIB
@@ -870,8 +868,6 @@ int EvolveLevel(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
     DeleteSUBlingList( NumberOfGrids, SUBlingList );
 
     EXTRA_OUTPUT_MACRO(4,"After UFG")
-
-
     if(UseMHDCT == TRUE && MHD_ProjectE == TRUE){
       for(grid1=0;grid1<NumberOfGrids; grid1++){
         Grids[grid1]->GridData->MHD_UpdateMagneticField(level, LevelArray[level+1], FALSE);

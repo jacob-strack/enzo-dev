@@ -85,13 +85,29 @@ int grid::ComputeAccelerationField(int DifferenceType, int level)
   }
  
   /* Difference potential. */
- 
   FORTRAN_NAME(comp_accel)(PotentialField, AccelerationField[0],
       AccelerationField[1], AccelerationField[2], &GridRank, &DifferenceType,
 	    GravitatingMassFieldDimension, GravitatingMassFieldDimension+1,
 	      GravitatingMassFieldDimension+2,
 	    GridDimension, GridDimension+1, GridDimension+2,
             Offset, Offset+1, Offset+2, CellSize, CellSize+1, CellSize+2);
+  int dim2;
+  int size2 = 1;
+  if (AccelerationField[0] != NULL)
+  {
+    for (dim2 = 0; dim2 < GridRank; dim2++)
+      size2 *= GridDimension[dim2]; //x*y*z
+    for (int z = 0; z < *GravitatingMassFieldDimension; z++)
+    for(int k = 0; k < GridDimension[2]; k++)
+      for(int j = 0; j < GridDimension[1]; j++)
+        for(int i = 0; i < GridDimension[0]; i++)
+    for (int index2 = 0; index2 < size2; index2++){
+    AccelerationField[0][index2] *=0; 
+    AccelerationField[1][index2] *=0; 
+    AccelerationField[2][index2] *=0;//if these fix the problem its somewhere in here. It did fix the problem. 
+    }
+  }
+ 
  
   /* Smooth if necessary. */
  
@@ -109,6 +125,7 @@ int grid::ComputeAccelerationField(int DifferenceType, int level)
   }
 #endif /* SMOOTH_ACCEL */
  
+  
   return SUCCESS;
 }
  

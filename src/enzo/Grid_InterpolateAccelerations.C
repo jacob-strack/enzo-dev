@@ -172,6 +172,7 @@ int grid::InterpolateAccelerations(grid *FromGrid)
  
   if (NumberOfBaryonFields > 0)
     for (dim = 0; dim < GridRank; dim++) {
+      printf("Interpolating Acceleration Field for cells \n");
  
       /* If using zeus, then shift the offset since accelerations are
 	 face centered. */
@@ -181,7 +182,6 @@ int grid::InterpolateAccelerations(grid *FromGrid)
 				CellWidth[dim][0])/CellWidth[dim][0];
  
       /* Call a fortran routine to do the work. */
- 
       FORTRAN_NAME(int_grid_cic)(FromGrid->AccelerationField[dim],
 				 AccelerationField[dim], &GridRank,
 				 FromGrid->GridDimension,

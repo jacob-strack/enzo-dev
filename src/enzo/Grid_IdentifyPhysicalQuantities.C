@@ -104,7 +104,7 @@ int grid::IdentifyPhysicalQuantities(int &DensNum, int &GENum, int &Vel1Num,
   DensNum = GENum = Vel1Num = Vel2Num = Vel3Num = TENum = 0;
     
   /* Find Density, if possible. */
-
+ 
   if ((DensNum = FindField(Density, FieldType, NumberOfBaryonFields)) < 0) {
         ENZO_FAIL("Cannot find density.");
   }

@@ -37,7 +37,6 @@ int grid::ComputeAccelerations(int level)
     return SUCCESS;
  
   int DiffType;
-
   if (NumberOfParticles > 0 || NumberOfActiveParticles > 0) {
   
     /* Set differencing type to be used (normal, face-centered) or

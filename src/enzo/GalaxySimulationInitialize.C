@@ -82,7 +82,7 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
 
   char  line[MAX_LINE_LENGTH];
   int   dim, ret, level, disk, i;
-
+  static int GalaxySimulationDebugHold = FALSE;
   /* make sure it is 3D */
   
   if (MetaData.TopGridRank != 3) {
@@ -294,7 +294,7 @@ dummy[0] = 0;
 	    ret += sscanf(line, "HydroMethod = %"ISYM, &HydroMethod);
 	    ret += sscanf(line, "RiemannSolver = %"ISYM, &RiemannSolver);
 	    ret += sscanf(line, "ReconstructionMethod = %"ISYM, &ReconstructionMethod);
-
+        ret += sscanf(line, "GalaxySimulationDebugHold = %"ISYM, &GalaxySimulationDebugHold);
     
     /* if the line is suspicious, issue a warning */
     if (ret == 0 && strstr(line, "=") && strstr(line, "GalaxySimulation") 
@@ -683,7 +683,7 @@ printf("DataLabel: %s \n", DataLabel[l]);
  MPI_Datatype DataType = (sizeof(float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
  MPI_Bcast(&PointSourceGravityConstant,1,DataType,ROOT_PROCESSOR, MPI_COMM_WORLD);
  MPI_Bcast(&PointSourceGravityCoreRadius,1,DataType,ROOT_PROCESSOR, MPI_COMM_WORLD);
-
+while(GalaxySimulationDebugHold){}
 #endif
 printf("count2: %d \n", count);
  return SUCCESS;

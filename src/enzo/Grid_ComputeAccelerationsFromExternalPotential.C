@@ -50,7 +50,7 @@ int grid::ComputeAccelerationsFromExternalPotential(int DifferenceType,
   if (MyProcessorNumber != ProcessorNumber)
     return SUCCESS;
 
-
+  printf("In ComputeAccelerationsFromExternalPotential \n");
  int DiffFlag = 1, size = 1, i, dim, Offset[MAX_DIMENSION] = {0,0,0};
   float CellSize[MAX_DIMENSION] = {1,1,1};
 

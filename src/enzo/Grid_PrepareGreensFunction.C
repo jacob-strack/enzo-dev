@@ -27,7 +27,7 @@
  
 int grid::PrepareGreensFunction()
 {
- 
+  printf("In PrepareGreensFunction . . . \n");
   /* Declarations. */
  
   int i, j, k, dim;
