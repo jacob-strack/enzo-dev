@@ -51,8 +51,9 @@ void MHDCTSetupFieldLabels();
 float GetMagneticUnits(float DensityUnits, float LengthUnits, float TimeUnits);		
 int ReadEquilibriumTable(char * name, FLOAT Time);
 int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr, 
-			  HierarchyEntry &TopGrid, TopGridData &MetaData, ExternalBoundary &Exterior)
+			  HierarchyEntry &TopGrid, TopGridData &MetaData, ExternalBoundary &Exterior, int SetBaryons)
 {
+  fprintf(stderr, "aaaa I have started 1%d \n", MyProcessorNumber);
   char *DensName    = "Density";
   char *TEName      = "TotalEnergy";
   char *GEName      = "GasEnergy";
@@ -347,7 +348,10 @@ dummy[0] = 0;
 
   /* set up grid */
 
-	  if (TopGrid.GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
+  HierarchyEntry *CurrentGrid; // all level 0 grids on this processor first
+  CurrentGrid = &TopGrid;
+  while (CurrentGrid != NULL) {
+	  CurrentGrid->GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
 					GalaxySimulationGalaxyMass, 
 					GalaxySimulationGasMass,
 					GalaxySimulationDiskPosition, 
@@ -383,16 +387,12 @@ dummy[0] = 0;
 					GalaxySimulationInflowDensity,0,
 					GalaxySimulationInitialBfield,
 					GalaxySimulationInitialBfieldTopology,
-					GalaxySimulationCR
-							       )
-		      == FAIL) {
-	      ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grid.");
-	  }// end subgrid if
-	    else {
-		TopGrid.GridData->_GalaxySimulationInitialization = 1;
-	    }
-
-
+					GalaxySimulationCR,
+          SetBaryons
+							       );
+    CurrentGrid = CurrentGrid->NextGridThisLevel;
+  }
+  
   /* Convert minimum initial overdensity for refinement to mass
      (unless MinimumMass itself was actually set). */
 switch(Enzo_Version){
@@ -416,7 +416,7 @@ switch(Enzo_Version){
 	  break;
 }
   /* If requested, refine the grid to the desired level. */
-
+if(SetBaryons){
   if (GalaxySimulationRefineAtStart) {
 
     /* Declare, initialize and fill out the LevelArray. */
@@ -474,7 +474,8 @@ switch(Enzo_Version){
 					GalaxySimulationInflowDensity,level,
 					GalaxySimulationInitialBfield,
 					GalaxySimulationInitialBfieldTopology,
-					GalaxySimulationCR
+					GalaxySimulationCR, 
+          SetBaryons
 								   )
 		      == FAIL) {
 		    ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grid.");
@@ -504,7 +505,7 @@ switch(Enzo_Version){
     MHD_ProjectB=FALSE;
 
   } // end: if (GalaxySimulationRefineAtStart)
-
+} 
   /* If Galaxy is Subject to ICM Wind, Initialize the exterior */
 
   if ( GalaxySimulationRPSWind > 0 ) {
@@ -569,9 +570,8 @@ switch(Enzo_Version){
       }
     }
   }
-
+if(SetBaryons){
  /* set up field names and units */
-
  int count = 0;
  DataLabel[count++] = DensName;
  DataLabel[count++] = TEName;
@@ -617,9 +617,7 @@ if(Enzo_Version == 2){
    DataLabel[count++] = MetalName;
  if (StarMakerTypeIaSNe)
    DataLabel[count++] = MetalIaName;
-printf("count1: %.e \n", count);
 for(int l = 0; l < count; l++)
-printf("DataLabel: %s \n", DataLabel[l]);
  for (i = 0; i < count; i++)
    DataUnits[i] = NULL;
  MHDCTSetupFieldLabels();
@@ -673,6 +671,7 @@ printf("DataLabel: %s \n", DataLabel[l]);
    fprintf(Outfptr, "GalaxySimulationAngularMomentum = ");
    WriteListOfFloats(Outfptr, MetaData.TopGridRank, GalaxySimulationAngularMomentum);
  }
+}
 
 #ifdef USE_MPI
 
@@ -685,7 +684,6 @@ printf("DataLabel: %s \n", DataLabel[l]);
  MPI_Bcast(&PointSourceGravityCoreRadius,1,DataType,ROOT_PROCESSOR, MPI_COMM_WORLD);
 while(GalaxySimulationDebugHold){}
 #endif
-printf("count2: %d \n", count);
  return SUCCESS;
 
 }

@@ -102,7 +102,7 @@ int TestGravityInitialize(FILE *fptr, FILE *Outfptr, HierarchyEntry &TopGrid,
 int TestOrbitInitialize(FILE *fptr, FILE *Outfptr, HierarchyEntry &TopGrid,
                         TopGridData &MetaData);
 int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr, HierarchyEntry &TopGrid,
-                        TopGridData &MetaData, ExternalBoundary &Exterior);
+                        TopGridData &MetaData, ExternalBoundary &Exterior, int SetBaryons);
 int TestGravitySphereInitialize(FILE *fptr, FILE *Outfptr,
 			       HierarchyEntry &TopGrid, TopGridData &MetaData);
 int SphericalInfallInitialize(FILE *fptr, FILE *Outfptr,
@@ -517,7 +517,7 @@ int InitializeNew(char *filename, HierarchyEntry &TopGrid,
   
   // 31) GalaxySimulation
   if (ProblemType == 31)
-    ret = GalaxySimulationInitialize(fptr, Outfptr, TopGrid, MetaData,Exterior);
+    ret = GalaxySimulationInitialize(fptr, Outfptr, TopGrid, MetaData,Exterior, 0);//SetBaryons should be 0 here 
 
   // 35) Shearing Box Simulation
   if (ProblemType == 35) 
@@ -990,7 +990,13 @@ int InitializeNew(char *filename, HierarchyEntry &TopGrid,
   if (ProblemType == 59)
     if (DrivenFlowInitialize(fptr, Outfptr, TopGrid, MetaData, 1) == FAIL)
       ENZO_FAIL("Error in DrivenFlowInitialize with SetBaryons");
-  
+
+
+  if (ProblemType == 31)
+   if(GalaxySimulationInitialize(fptr, Outfptr, TopGrid, MetaData,Exterior, 1) == FAIL)
+       ENZO_FAIL("Error in GalaxySimulationInitialize with SetBaryons");
+
+  fprintf(stderr, "aaaa InitializeNew %d \n", MyProcessorNumber);
   // For problem 60, using ParallelGridIO, read in data only after
   // partitioning grid.
  
