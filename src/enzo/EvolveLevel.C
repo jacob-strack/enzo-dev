@@ -696,7 +696,7 @@ int EvolveLevel(TopGridData *MetaData, LevelHierarchyEntry *LevelArray[],
       Grids[grid1]->GridData->ActiveParticleHandler
         (Grids[grid1]->NextGridNextLevel, level ,dtLevelAbove,
          NumberOfNewActiveParticles[grid1]);
-
+      Grids[grid1]->GridData->AddSeedFieldFeedback(.1);
       /* Include shock-finding */
 
       Grids[grid1]->GridData->ShocksHandler();

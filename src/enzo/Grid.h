@@ -2368,7 +2368,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 				     FLOAT GalaxySimulationCR = 0.0, 
                  int SetBaryons = 0
 				);
-
+  /* Single Star Test Problem initialize grid */
   /* Free expansion test */
   int FreeExpansionInitializeGrid(int FreeExpansionFullBox,
 				  float FreeExpansionDensity,
@@ -2867,7 +2867,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
   int RemoveParticle(int ID, bool disable=false);
 
   int RemoveActiveParticle(PINT ID, int NewProcessorNumber);
-  
+  int AddSeedFieldFeedback(float tau); 
   int AddFeedbackSphere(Star *cstar, int level, float radius, float DensityUnits,
 			float LengthUnits, float VelocityUnits, 
 			float TemperatureUnits, float TimeUnits, double EjectaDensity, 

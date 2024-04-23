@@ -133,6 +133,11 @@ int Star::SetFeedbackFlag(FLOAT Time)
     break;
 
    //this->type = abs_type;
+ case PARTICLE_TYPE_STAR:
+   printf("CORRECT PARTICLE TYPE \n");
+   if(UseMagneticSupernovaFeedback)
+     this->FeedbackFlag = SUPERNOVA_SEEDFIELD;
+   break;
 
   }
 

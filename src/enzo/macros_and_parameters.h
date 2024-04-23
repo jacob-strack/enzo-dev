@@ -547,6 +547,7 @@ typedef long long int   HDF5_hid_t;
 #define SINGLE_SUPERNOVA 12
 #define DISTR_FEEDBACK 13
 #define MOM_STAR 14
+#define FORCE_STAR 15
 
 #define STARMAKE_METHOD(A) (StarParticleCreation >> (A) & 1)
 #define STARFEED_METHOD(A) (StarParticleFeedback >> (A) & 1)
@@ -564,7 +565,7 @@ typedef long long int   HDF5_hid_t;
 #define MBH_THERMAL 7
 #define MBH_JETS 8
 #define COLOR_FIELD 9
-
+#define SUPERNOVA_SEEDFIELD 11
 /* Sink particle accretion modes */
 
 #define LOCAL_ACCRETION 0  // accrete a fraction of the mass in the cell

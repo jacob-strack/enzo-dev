@@ -27,6 +27,7 @@ public:
 	snsf_source_terms getSourceTerms(double dx, double dy, double dz, double enzoTime);
 	
         FLOAT* getPosition();
+        FLOAT getTime();
 private:
 	FLOAT location[3];
 	FLOAT zHat[3];

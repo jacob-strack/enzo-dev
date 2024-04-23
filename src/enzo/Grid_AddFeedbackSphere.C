@@ -44,6 +44,8 @@
 
 int FindField(int field, int farray[], int numfields);
 
+void mt_init(unsigned_int seed);
+
 int grid::AddFeedbackSphere(Star *cstar, int level, float radius, float DensityUnits, 
 			    float LengthUnits, float VelocityUnits, 
 			    float TemperatureUnits, float TimeUnits, double EjectaDensity, 
@@ -988,6 +990,63 @@ int grid::AddFeedbackSphere(Star *cstar, int level, float radius, float DensityU
 
   //cstar->FeedbackFlag = NO_FEEDBACK;
 
+  //printf("Star Feedback Flag %s \n", cstar->FeedbackFlag);
+  // Create a randomly-oriented SuperNova object and add it to the SuperNova Grid list
+  if (cstar->FeedbackFlag == SUPERNOVA_SEEDFIELD) {
+    if(0){
+      printf("ADDING MAGNETIC FEEDBACK . . . \n");
+      SuperNova P = SuperNova();
+      int mt_seed = 100;
+      mt_init(mt_seed);
+      float random_u = (float)mt_seed/100.0; // random variable from 0 to 1
+      float random_v = (float)mt_seed/100.0;
+      float random_phi = 2*M_PI*random_u; // 0 to 2pi                                                                                    
+      float random_theta = acos(2*random_v-1); // 0 to pi                                                                                
+      // Setting up randomly oriented magnetic feedback of supernova
+      float phi_x = sin(random_theta)*cos(random_phi);
+      float phi_y = sin(random_theta)*sin(random_phi);
+      float phi_z = cos(random_theta);
+
+      // Birthtime of supernova is at the end of a star particle's life
+      float sn_birthtime = cstar->BirthTime + cstar->LifeTime;
+      printf("lifetime %.5e \n", cstar->LifeTime);
+      // Convert units to system units
+      // Converting time from years to seconds, then internal units
+      float sn_duration = MagneticSupernovaDuration * 3.1556952e7 / TimeUnits;
+      // Converting radius from parsecs to cm, then internal units
+      float sn_radius = MagneticSupernovaRadius * 3.0856775714e18 / LengthUnits;
+      // Converting energy from ergs to internal units
+      float MassUnits = DensityUnits * POW(LengthUnits, 3);
+      float sn_energy = MagneticSupernovaEnergy / (MassUnits*VelocityUnits*VelocityUnits);
+      printf("sn birthtime: %.5e duration %.5e \n", sn_birthtime, sn_duration);
+      // Creates a supernova with magnetic feedback set by user-defined parameters and 
+      // adds it to supernova list
+      if((Time > sn_birthtime) && (Time < sn_birthtime + MagneticSupernovaDuration)){
+        P.setValues(phi_x, phi_y, phi_z, cstar->pos[0], cstar->pos[1], cstar->pos[2], 
+		     sn_radius, sn_birthtime, sn_duration, sn_energy);
+        printf("positions %.5e %.5e %.5e \n", cstar->pos[0], cstar->pos[1], cstar->pos[2]);
+        this->MagneticSupernovaList.push_back(P);
+	printf("Added supernova to list \n"); 
+      }
+    }
+   
+   if(UseMagneticSupernovaFeedback && HydroMethod == 6){
+     printf("sn add feedback w/ hydro method 6 \n"); //This is where I think I need to add the magnetic feedback for CT
+     SuperNova P = SuperNova(); 
+     float sn_birthtime = cstar->BirthTime + cstar->LifeTime;
+     float sn_duration = MagneticSupernovaDuration * 3.1556952e7 / TimeUnits;  
+     float sn_radius = MagneticSupernovaRadius * 3.0856775714e18 / LengthUnits;
+     float MassUnits = DensityUnits * POW(LengthUnits, 3);
+     float sn_energy = MagneticSupernovaEnergy / (MassUnits*VelocityUnits*VelocityUnits);
+     //Make new supernova object and set parameters (lifetime, birthtime, coordinate axes)
+     //Add supernova object to list
+     //Loop over supernova list and add feedback with curl of time derivative of vector potential (maybe put this elsewhere, needs to be called each timestep, connect to where check for star particle death happens
+     P.setValues(0,0,0, cstar->pos[0], cstar->pos[1], cstar->pos[2],sn_radius, sn_birthtime,sn_duration,sn_energy);
+     this->MagneticSupernovaList.push_back(P);    
+}
+
+  }
+  
 
   return SUCCESS;
 

@@ -145,7 +145,6 @@ int TurbulenceSimulationInitialize(FILE *fptr, FILE *Outfptr,
                                   TopGridData &MetaData);
 int TurbulenceSimulationReInitialize(HierarchyEntry *TopGrid,
                                     TopGridData &MetaData);
- 
 int TracerParticleCreation(FILE *fptr, HierarchyEntry &TopGrid,
                            TopGridData &MetaData);
 
@@ -590,7 +589,6 @@ int InitializeNew(char *filename, HierarchyEntry &TopGrid,
   if (ProblemType == 90)
     ret = TestStarParticleInitialize(fptr, Outfptr, TopGrid, MetaData, 
 				     Initialdt);
-  
   /* 101) 3D Collapse */
   if (ProblemType == 101) {
     ret = Collapse3DInitialize(fptr, Outfptr, TopGrid, MetaData);

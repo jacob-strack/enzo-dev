@@ -1054,6 +1054,11 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   MagneticSupernovaRadius = 300.0;      // Total injection radius of magnetic field in parsecs
   MagneticSupernovaDuration = 5e4  ;    // Total duration of magnetic feedback in years
   MagneticSupernovaEnergy = 1.0e51;    // Total energy (ergs) injected per star particle (supernova)
-
+  
+  /* Forced Star Formation for testing */ 
+  for(dim=0;dim<MAX_DIMENSION;dim++){
+    ForceStarPosition[dim] = 0.5; //code units
+  }
+  ForceStarTime = 0;
   return SUCCESS;
 }

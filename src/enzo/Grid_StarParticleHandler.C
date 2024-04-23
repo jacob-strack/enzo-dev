@@ -150,8 +150,7 @@ extern "C" void FORTRAN_NAME(star_maker4)(int *nx, int *ny, int *nz,
              int *nmax, FLOAT *xstart, FLOAT *ystart, FLOAT *zstart, 
      		 int *ibuff, 
              int *imetal, hydro_method *imethod, float *mintdyn,
-             float *odthresh, float *smthrest, int *level,
-	         int *np, 
+             float *odthresh, float *smthrest, int *level,int *np, 
              FLOAT *xp, FLOAT *yp, FLOAT *zp, float *up, float *vp, float *wp,
 	     float *mp, float *tdp, float *tcp, float *metalf,
  	     int *imetalSNIa, float *metalSNIa, float *metalfSNIa);
@@ -248,6 +247,8 @@ int star_maker9(int *nx, int *ny, int *nz, int *size,
 		int *typeold, PINT *idold, int *ctype,
 		float *jlrefine, float *temp, float *gamma, float *mu,
 		int *nproc, int *nstar);
+
+int star_maker_force(int *nx, int *ny, int *nz, int *size, float *u, float *v, float*w, float *dt, FLOAT *t, FLOAT *xp, FLOAT *yp, FLOAT *zp, float *up, float *vp, float *wp, float *mp, int *ctype, float *tcp, float *tdp, int *nstar);
 
 extern "C" void FORTRAN_NAME(star_maker_ssn)(int *nx, int *ny, int *nz,
     float *d, float *dm, float *temp, float *u, float *v, float *w,
@@ -848,7 +849,7 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 
       for (i = NumberOfNewParticlesSoFar; i < NumberOfNewParticles; i++)
           tg->ParticleType[i] = NormalStarType;
-    } 
+    }
    if (STARMAKE_METHOD(HOPKINS_STAR)) {
      //---- MODIFIED CEN OSTRIKER ALGORITHM FOLLOWING HOPKINS ET AL 2013
      NumberOfNewParticlesSoFar = NumberOfNewParticles;
@@ -1325,6 +1326,14 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
           tg->ParticleType[i] = NormalStarType;
 
     }
+   if (STARMAKE_METHOD(FORCE_STAR)){
+        NumberOfNewParticlesSoFar = NumberOfNewParticles;
+        if(star_maker_force(GridDimension, GridDimension+1, GridDimension+2,&size,BaryonField[Vel1Num],BaryonField[Vel2Num],BaryonField[Vel3Num], &dtFixed, &Time, tg->ParticlePosition[0], tg->ParticlePosition[1], tg->ParticlePosition[2], tg->ParticleVelocity[0], tg->ParticleVelocity[1], tg->ParticleVelocity[2],tg->ParticleMass, tg->ParticleType, tg->ParticleAttribute[0], tg->ParticleAttribute[1],&NumberOfNewParticles) == FAIL){
+        ENZO_FAIL("Error in star_maker_now");
+        }
+      for (i = NumberOfNewParticlesSoFar; i < NumberOfNewParticles; i++)
+          tg->ParticleType[i] = NormalStarType;
+   }
 
     /* This creates sink particles which suck up mass off the grid. */
 

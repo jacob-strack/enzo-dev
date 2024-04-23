@@ -14,7 +14,8 @@
 # Default Enzo object files
 #-----------------------------------------------------------------------
 OBJS_CONFIG_LIB = \
-  MHDLoopInit.o \
+    MHDLoopInit.o \
+    Grid_AddSeedFieldFeedback.o \
 	Grid_GalaxySimulationInitializeGrid.o \
 	Grid_GrackleCustomCoolRate.o \
 	GalaxySimulationInitialize.o \
@@ -930,6 +931,7 @@ OBJS_CONFIG_LIB = \
 	star_maker10.o \
 	star_maker_h2reg.o \
     star_maker_ssn.o \
+    star_maker_now.o \
 	StratifiedMediumExplosionInitialize.o \
         SupernovaRestartInitialize.o \
         SysMkdir.o \

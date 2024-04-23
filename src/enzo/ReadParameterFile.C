@@ -1130,6 +1130,8 @@ int ReadParameterFile(FILE *fptr, TopGridData &MetaData, float *Initialdt)
     ret += sscanf(line, "StarMakerMinimumMassRampEndMass = %"FSYM,
 		  &StarMakerMinimumMassRampEndMass);
 
+    ret += sscanf(line, "ForceStarPosition = %"FSYM" %"FSYM" %"FSYM, &ForceStarPosition[0], &ForceStarPosition[1], &ForceStarPosition[2]);
+    ret += sscanf(line, "ForceStarTime = %"FSYM, &ForceStarTime);
     /* Read Movie Dump parameters */
 
     ret += sscanf(line, "MovieSkipTimestep = %"ISYM, &MovieSkipTimestep);

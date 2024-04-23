@@ -74,7 +74,7 @@ int grid::TestStarParticleInitializeGrid(float TestStarParticleStarMass,
 
   for (i = 0; i < NumberOfParticles; i++) {
     ParticleNumber[i] = i;
-    ParticleType[i] = PARTICLE_TYPE_STAR;
+    ParticleType[i] = -PARTICLE_TYPE_STAR;
   }
 
   /* Set central particle. */ 
@@ -94,7 +94,7 @@ int grid::TestStarParticleInitializeGrid(float TestStarParticleStarMass,
   
   ParticleAttribute[2][0] = 0.0;  // Metal fraction
   ParticleAttribute[3][0] = 0.0;  // metalfSNIa
-
+  ParticleAttribute[1][0] = 3*Myr_s/TimeUnits; //Need star to die quick for testing magnetic SN feedback
   return SUCCESS;
 }
 

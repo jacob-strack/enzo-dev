@@ -246,6 +246,10 @@ void Star::CalculateFeedbackParameters(float &Radius,
 
     
     break;
+  
+  case SUPERNOVA_SEEDFIELD:
+    Radius = MagneticSupernovaRadius * pc_cm / (LengthUnits);
+    break;      
 
   } // ENDSWITCH FeedbackFlag
   

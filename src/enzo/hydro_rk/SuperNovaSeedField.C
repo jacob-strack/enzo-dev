@@ -63,6 +63,9 @@ void SuperNova::setValues(FLOAT phi_x, FLOAT phi_y, FLOAT phi_z,  FLOAT x, FLOAT
 FLOAT* SuperNova::getPosition(){
   return location;
 }
+FLOAT SuperNova::getTime(){
+    return timeStarted;
+}
 
 static FLOAT Magnitude(FLOAT x[3]){
 	
@@ -221,7 +224,7 @@ snsf_source_terms SuperNova::getSourceTerms(double dx, double dy, double dz, dou
        
 	S.dUtot = norm_factor*r_scale*db_t_exp*b_t_exp;
 	S.dUb = (S.bx*S.dbx + S.by*S.dby + S.bz*S.dbz);
-	
+        printf("SOURCETERMS %.5e %.5e %.5e \n", S.bx, S.by, S.bz);	
 
 	return S;
 	

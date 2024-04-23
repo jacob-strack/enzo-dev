@@ -1217,5 +1217,6 @@ EXTERN int UseMagneticSupernovaFeedback;
 EXTERN float MagneticSupernovaRadius;
 EXTERN float MagneticSupernovaDuration;
 EXTERN float MagneticSupernovaEnergy;
-
+EXTERN float ForceStarPosition[MAX_DIMENSION];
+EXTERN float ForceStarTime;
 #endif
