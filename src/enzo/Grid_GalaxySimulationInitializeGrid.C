@@ -187,7 +187,6 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
            int SetBaryons
           )
 {
-    fprintf(stderr, "aaaa I have started p:%d mp:%d \n", ProcessorNumber, MyProcessorNumber);
   /* declarations */
 
   int dim, i, j, k, m, field, disk, size, MetalNum, MetalIaNum, vel;

@@ -994,7 +994,6 @@ int InitializeNew(char *filename, HierarchyEntry &TopGrid,
    if(GalaxySimulationInitialize(fptr, Outfptr, TopGrid, MetaData,Exterior, 1) == FAIL)
        ENZO_FAIL("Error in GalaxySimulationInitialize with SetBaryons");
 
-  fprintf(stderr, "aaaa InitializeNew %d \n", MyProcessorNumber);
   // For problem 60, using ParallelGridIO, read in data only after
   // partitioning grid.
  

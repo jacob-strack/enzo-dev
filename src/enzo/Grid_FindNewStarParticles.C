@@ -36,9 +36,6 @@ int grid::FindNewStarParticles(int level)
   int i;
   Star *NewStar, *cstar;
   bool exists;
-  printf("number of particles %d \n", NumberOfParticles);
-  for(int j = 0; j<NumberOfParticles; j++)
-      printf("Type %d Birth %.5e Death %.5e \n", ParticleType[j], ParticleAttribute[0][j], ParticleAttribute[0][j] + ParticleAttribute[1][j]);
   for (i = 0; i < NumberOfParticles; i++)
     if (ParticleType[i] == -PARTICLE_TYPE_SINGLE_STAR ||
        (ParticleType[i] == -PARTICLE_TYPE_STAR && UseMagneticSupernovaFeedback &&

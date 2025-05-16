@@ -15,6 +15,7 @@
 
 #include "preincludes.h"
 #include "performance.h"
+#include "EnzoTiming.h"
 #include "macros_and_parameters.h"
 #include "typedefs.h"
 #include "global_data.h"
@@ -270,7 +271,7 @@ int grid::GrackleWrapper()
 #endif // TRANSFER
 
   /* Call the chemistry solver. */
-
+  TIMER_START("Chemistry_Solver");
   if (solve_chemistry(&grackle_units, &my_fields, (double) dt_cool) == FAIL){
     fprintf(stderr, "Error in Grackle solve_chemistry.\n");
     return FAIL;
@@ -315,6 +316,7 @@ int grid::GrackleWrapper()
 
   LCAPERF_STOP("grid_GrackleWrapper");
 
+  TIMER_STOP("Chemistry_Solver");
 #endif
   return SUCCESS;
 }

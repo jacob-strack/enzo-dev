@@ -31,7 +31,6 @@ int grid::AddSeedFieldFeedback(float tau){
     if(ProcessorNumber != MyProcessorNumber){
         return SUCCESS;
     }
-    printf("In Grid_SeedFieldFeedback \n");
     if(UseMagneticSupernovaFeedback && HydroMethod == 6){
         snsf_source_terms S;
         int igrid, index;

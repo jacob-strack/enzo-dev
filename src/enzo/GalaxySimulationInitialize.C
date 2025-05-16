@@ -53,7 +53,6 @@ int ReadEquilibriumTable(char * name, FLOAT Time);
 int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr, 
 			  HierarchyEntry &TopGrid, TopGridData &MetaData, ExternalBoundary &Exterior, int SetBaryons)
 {
-  fprintf(stderr, "aaaa I have started 1%d \n", MyProcessorNumber);
   char *DensName    = "Density";
   char *TEName      = "TotalEnergy";
   char *GEName      = "GasEnergy";
