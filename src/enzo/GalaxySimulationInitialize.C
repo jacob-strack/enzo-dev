@@ -78,6 +78,10 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   char *ByName      = "By";
   char *BzName      = "Bz";
   char *PhiName     = "Phi";
+  char *PotName     = "PotentialField";
+  char *Acceleration0Name = "Acceleration_x";
+  char *Acceleration1Name = "Acceleration_y";
+  char *Acceleration2Name = "Acceleration_z";
   /* declarations */
 
   char  line[MAX_LINE_LENGTH];
@@ -117,6 +121,8 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   FLOAT GalaxySimulationGasHaloScaleRadius,
 	GalaxySimulationGasHaloDensity;
 
+  int GalaxySimulationIterateRebuildHierarchy = TRUE; // IF you have a solution senstive AMR strategy, this should be true.
+  int GalaxySimulationStaticHierarchyAfterInit = TRUE; // IF you have a solution senstive AMR strategy, this should be true.
   int   GalaxySimulationRefineAtStart,
     GalaxySimulationUseMetallicityField;
 		
@@ -202,6 +208,10 @@ dummy[0] = 0;
     ret += sscanf(line, "GalaxySimulationEnzoVersion		       = %"ISYM, &Enzo_Version); //added int value to specify which version of enzo to use 
     ret += sscanf(line, "GalaxySimulationRefineAtStart = %"ISYM,
 		  &GalaxySimulationRefineAtStart);
+    ret += sscanf(line, "GalaxySimulationIterateRebuildHierarchy = %"ISYM,
+		  &GalaxySimulationIterateRebuildHierarchy);
+    ret += sscanf(line, "GalaxySimulationStaticHierarchyAfterInit = %"ISYM,
+		  &GalaxySimulationStaticHierarchyAfterInit);
     ret += sscanf(line, "GalaxySimulationUseMetallicityField = %"ISYM,
 		  &GalaxySimulationUseMetallicityField);
     ret += sscanf(line, "GalaxySimulationInitialTemperature = %"FSYM,
@@ -429,6 +439,7 @@ if(SetBaryons){
        and re-initialize the level after it is created. */
 
     for (level = 0; level < MaximumRefinementLevel; level++) {
+	    if(GalaxySimulationIterateRebuildHierarchy || level==0)
       if (RebuildHierarchy(&MetaData, LevelArray, level) == FAIL) {
 	fprintf(stderr, "Error in RebuildHierarchy.\n");
 	return FAIL;
@@ -503,6 +514,8 @@ if(SetBaryons){
     MHD_ProjectE=TRUE;
     MHD_ProjectB=FALSE;
 
+    if ( GalaxySimulationStaticHierarchyAfterInit )
+        MetaData.StaticHierarchy=TRUE;
   } // end: if (GalaxySimulationRefineAtStart)
 } 
   /* If Galaxy is Subject to ICM Wind, Initialize the exterior */
@@ -576,6 +589,13 @@ if(SetBaryons){
  DataLabel[count++] = TEName;
  if (DualEnergyFormalism)
    DataLabel[count++] = GEName;
+ if ( WritePotential )
+     DataLabel[count++] = PotName;
+ if(WriteAcceleration){
+     DataLabel[count++] = Acceleration0Name;
+     DataLabel[count++] = Acceleration1Name;
+     DataLabel[count++] = Acceleration2Name;
+ }
  DataLabel[count++] = Vel1Name;
  if(MetaData.TopGridRank > 1)
    DataLabel[count++] = Vel2Name;
