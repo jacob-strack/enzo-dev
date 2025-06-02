@@ -117,7 +117,6 @@ int RebuildHierarchy(TopGridData *MetaData,
   double tt0, tt1, tt2, tt3;
  
   /* declarations */
-
   int dbx = 0;
  
   LCAPERF_START("RebuildHierarchy");
@@ -185,7 +184,6 @@ int RebuildHierarchy(TopGridData *MetaData,
     MaximumStaticSubgridLevel = -1;  // Force particle collection to level 0 on first call.
     MustCollectParticlesToLevelZero = FALSE;
   }
-
   /* Calculate number of cells on each level */
 
   long_int NumberOfCells[MAX_DEPTH_OF_HIERARCHY];
@@ -218,7 +216,6 @@ int RebuildHierarchy(TopGridData *MetaData,
 
     /* Collect all the grids with the same parent and pass them all to
        MoveAllParticles (marking which ones have already been passed). */
-
     for (j = 0; j < grids; j++)
       if (GridPointer[j] != NULL) {
 	grids2 = 0;
@@ -238,7 +235,6 @@ int RebuildHierarchy(TopGridData *MetaData,
 #endif // TRANSFER
 	
       } // end: if grid pointer valid
- 
   } // end: loop over levels
   tt1 = ReturnWallTime();
   RHperf[0] += tt1-tt0;
@@ -276,7 +272,6 @@ int RebuildHierarchy(TopGridData *MetaData,
       GridPointer[grids++] = Temp->GridData;
       Temp = Temp->NextGridThisLevel;
     }
-
     CommunicationTransferParticles(GridPointer, grids, MetaData->TopGridDims);
     CommunicationTransferStars(GridPointer, grids, MetaData->TopGridDims);
     CommunicationTransferActiveParticles(GridPointer, grids,
@@ -449,7 +444,6 @@ int RebuildHierarchy(TopGridData *MetaData,
       }
 
       /* Share the new grids among processors. */
-
       tt0 = ReturnWallTime();
       CommunicationShareGrids(GridHierarchyPointer, grids, MoveParticles); 
       tt1 = ReturnWallTime();

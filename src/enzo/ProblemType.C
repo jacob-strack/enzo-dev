@@ -137,6 +137,13 @@ int EnzoProblemType::InitializeUniformGrid(
   tg->FieldType[tg->NumberOfBaryonFields++] = TotalEnergy;
   if (DualEnergyFormalism)
     tg->FieldType[tg->NumberOfBaryonFields++] = InternalEnergy;
+  if (WritePotential)
+	  tg->FieldType[tg->NumberOfBaryonFields++] = GravPotential;
+  if (WriteAcceleration){
+	  tg->FieldType[tg->NumberOfBaryonFields++] = Acceleration0;
+	  tg->FieldType[tg->NumberOfBaryonFields++] = Acceleration1;
+	  tg->FieldType[tg->NumberOfBaryonFields++] = Acceleration2;
+	} 
   if ( UseMHD ) {
     tg->FieldType[B1Num = tg->NumberOfBaryonFields++] = Bfield1;
     tg->FieldType[B2Num = tg->NumberOfBaryonFields++] = Bfield2;

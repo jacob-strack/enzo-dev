@@ -102,7 +102,7 @@ int WriteAllData(char *basename, int filenumber,
 #endif
 		 FLOAT WriteTime = -1)
 {
- 
+  printf("Trying to write data \n"); 
  
   char id[MAX_CYCLE_TAG_SIZE], *cptr, name[MAX_LINE_LENGTH];
   char dumpdirname[MAX_LINE_LENGTH];

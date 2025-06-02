@@ -264,6 +264,8 @@ int InitializeNew(char *filename, HierarchyEntry &TopGrid,
  
   FILE *fptr, *BCfptr, *Outfptr;
   int dim, i;
+  int SetBaryons = TRUE;
+  if ( ParallelRootGridIO ) SetBaryons=FALSE;
  
   // Open parameter file
  
@@ -516,7 +518,7 @@ int InitializeNew(char *filename, HierarchyEntry &TopGrid,
   
   // 31) GalaxySimulation
   if (ProblemType == 31)
-    ret = GalaxySimulationInitialize(fptr, Outfptr, TopGrid, MetaData,Exterior, 0);//SetBaryons should be 0 here 
+    ret = GalaxySimulationInitialize(fptr, Outfptr, TopGrid, MetaData,Exterior, SetBaryons);//SetBaryons should be 0 here 
 
   // 35) Shearing Box Simulation
   if (ProblemType == 35) 
@@ -990,7 +992,7 @@ int InitializeNew(char *filename, HierarchyEntry &TopGrid,
       ENZO_FAIL("Error in DrivenFlowInitialize with SetBaryons");
 
 
-  if (ProblemType == 31)
+  if (ProblemType == 31 && ParallelRootGridIO)
    if(GalaxySimulationInitialize(fptr, Outfptr, TopGrid, MetaData,Exterior, 1) == FAIL)
        ENZO_FAIL("Error in GalaxySimulationInitialize with SetBaryons");
 

@@ -464,6 +464,7 @@ public:
 /* Copy potential field to baryon potential for output purposes. */
 
    int CopyPotentialToBaryonField();
+   int CopyAccelerationToBaryonField();
 
 /* Baryons: Update boundary according to the external boundary values
     (for step #16) */
@@ -2365,6 +2366,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 				     int level,
 				     FLOAT GalaxySimulationInitialBfield[MAX_DIMENSION],
 				     int GalaxySimulationInitialBfieldTopology,
+              FLOAT VCircRadius[], float VCircVelocity[],
 				     FLOAT GalaxySimulationCR = 0.0, 
                  int SetBaryons = 0
 				);

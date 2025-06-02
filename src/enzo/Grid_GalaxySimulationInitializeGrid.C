@@ -146,6 +146,7 @@ double halo_mod_DMmass_at_r(double r);
 void halo_init(struct CGMdata& CGM_data, grid* Grid, float Rstop=-1, int GasHalo_override=0);
 
 
+float InterpolateVcircTable(FLOAT radius, FLOAT * VCircRadius, float * VCircVelocity);
 int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
            FLOAT GalaxyMass,
            FLOAT GasMass,
@@ -183,6 +184,7 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
            int level,
            FLOAT GalaxySimulationInitialBfield[MAX_DIMENSION],
            int GalaxySimulationInitialBfieldTopology,
+            FLOAT  VCircRadius[], float  VCircVelocity[],
            FLOAT GalaxySimulationCR,
            int SetBaryons
           )
@@ -232,6 +234,13 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
   FieldType[NumberOfBaryonFields++] = TotalEnergy;
   if (DualEnergyFormalism)
     FieldType[NumberOfBaryonFields++] = InternalEnergy;
+  if (WritePotential)
+	  FieldType[NumberOfBaryonFields++] = GravPotential;
+  if (WriteAcceleration){
+	FieldType[NumberOfBaryonFields++] = Acceleration0;
+	FieldType[NumberOfBaryonFields++] = Acceleration1;
+	FieldType[NumberOfBaryonFields++] = Acceleration2;
+  }
   vel = NumberOfBaryonFields;
   FieldType[NumberOfBaryonFields++] = Velocity1;
   if (GridRank > 1) 
@@ -552,6 +561,9 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 							    rcyl*LengthUnits,
 							    zheight*LengthUnits)
 		    /VelocityUnits;
+        else{
+            DiskVelocityMag = InterpolateVcircTable(r_sph*LengthUnits, VCircRadius, VCircVelocity)/VelocityUnits;
+        }
         
 	    if (PointSourceGravity*DiskGravity != FALSE ) 
 	      ENZO_FAIL("Cannot activate both PointSource and Disk gravity options for Isolated Galaxy");
@@ -730,6 +742,8 @@ float gauss_mass(FLOAT r, FLOAT z, FLOAT xpos, FLOAT ypos, FLOAT zpos, FLOAT inv
     FLOAT xrot,yrot,zrot;
     int i,j,k;
     FLOAT rrot;
+    FLOAT rcoord, zcoord;
+    float  kludge2;
 
     for (i=0;i<5;i++) {
 
@@ -751,6 +765,17 @@ float gauss_mass(FLOAT r, FLOAT z, FLOAT xpos, FLOAT ypos, FLOAT zpos, FLOAT inv
                         yResult[j] += cellwidth/2.0*Weights[k]/cosh(rrot/ScaleHeightR)/cosh(fabs(zrot)/ScaleHeightz)
                                         *0.5*(1.0+cos(pi*(rrot-SmoothRadius*Mpc)/(SmoothLength*Mpc)));
                 } // end disk gravity if
+		else{
+                    rcoord = sqrt((POW(xpos+EvaluationPoints[i]*cellwidth/2.0, 2.0) +
+                                POW(ypos+EvaluationPoints[j]*cellwidth/2.0, 2.0) ) );
+                    zcoord = fabs(zpos+EvaluationPoints[k]*cellwidth/2.0);
+                    kludge2 = 
+                        cellwidth/2.0 * Weights[k] * 
+                        PEXP(-rcoord/ScaleHeightR) *
+                        PEXP(-fabs(zcoord)/ScaleHeightz);
+                    yResult[j] +=kludge2;
+
+		}
 
             }
             xResult[i] += cellwidth/2.0*Weights[j]*yResult[j];

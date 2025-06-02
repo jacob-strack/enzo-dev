@@ -445,6 +445,7 @@ OBJS_CONFIG_LIB = \
 	Grid_CopyParentToGravitatingFieldBoundary.o \
 	Grid_CopyPotentialField.o \
 	Grid_CopyPotentialToBaryonField.o \
+	Grid_CopyAccelerationToBaryonField.o \
 	Grid_CopyZonesFromGridCountOnly.o \
 	Grid_CopyZonesFromGrid.o \
 	Grid_CorrectForRefinedFluxes.o \

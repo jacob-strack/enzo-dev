@@ -36,6 +36,8 @@
 #include "Hierarchy.h"
 #include "LevelHierarchy.h"
 #include "TopGridData.h"
+#include "phys_constants.h"
+#define VCIRC_TABLE_LENGTH 10000
 void WriteListOfFloats(FILE *fptr, int N, float floats[]);
 void WriteListOfFloats(FILE *fptr, int N, FLOAT floats[]);
 void AddLevel(LevelHierarchyEntry *Array[], HierarchyEntry *Grid, int level);
@@ -45,11 +47,20 @@ int RebuildHierarchy(TopGridData *MetaData,
 int GetUnits(float *DensityUnits, float *LengthUnits,
        float *TemperatureUnits, float *TimeUnits,
        float *VelocityUnits, double *MassUnits, FLOAT Time);
-
+//int Enzo_Version;
 //function prototypes that are for only the isogal build 
 void MHDCTSetupFieldLabels();
 float GetMagneticUnits(float DensityUnits, float LengthUnits, float TimeUnits);		
 int ReadEquilibriumTable(char * name, FLOAT Time);
+
+int nlines(const char* fname);
+int InitializeParticles(grid *thisgrid_orig, HierarchyEntry &TopGrid, TopGridData &MetaData, FLOAT * Center);
+int ReadParticlesFromFile(PINT *Number, int *Type, FLOAT *Position[],
+			    float *Velocity[], float* Mass, const char* fname,
+			    Eint32 particle_type, int &c, FLOAT dx, FLOAT * Center);
+float InterpolateVcircTable(FLOAT radius, FLOAT * VCircRadius, float * VCircVelocity);
+void ReadInVcircData(FLOAT * VCircRadius, float * VCircVelocity);
+
 int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr, 
 			  HierarchyEntry &TopGrid, TopGridData &MetaData, ExternalBoundary &Exterior, int SetBaryons)
 {
@@ -123,6 +134,7 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
 
   int GalaxySimulationIterateRebuildHierarchy = TRUE; // IF you have a solution senstive AMR strategy, this should be true.
   int GalaxySimulationStaticHierarchyAfterInit = TRUE; // IF you have a solution senstive AMR strategy, this should be true.
+
   int   GalaxySimulationRefineAtStart,
     GalaxySimulationUseMetallicityField;
 		
@@ -212,6 +224,7 @@ dummy[0] = 0;
 		  &GalaxySimulationIterateRebuildHierarchy);
     ret += sscanf(line, "GalaxySimulationStaticHierarchyAfterInit = %"ISYM,
 		  &GalaxySimulationStaticHierarchyAfterInit);
+
     ret += sscanf(line, "GalaxySimulationUseMetallicityField = %"ISYM,
 		  &GalaxySimulationUseMetallicityField);
     ret += sscanf(line, "GalaxySimulationInitialTemperature = %"FSYM,
@@ -312,13 +325,15 @@ dummy[0] = 0;
       fprintf(stderr, "warning: the following parameter line was not interpreted:\n%s\n", line);
 
   } // end input from parameter file
-  printf("Through reading inputs \n"); 
+  FLOAT VCircRadius[VCIRC_TABLE_LENGTH];
+  float VCircVelocity[VCIRC_TABLE_LENGTH];
+  ReadInVcircData(VCircRadius, VCircVelocity);
+  
   /* fix wind values wrt units */
   float DensityUnits, LengthUnits, TemperatureUnits, TimeUnits, VelocityUnits;
   double MassUnits;
   if (GetUnits(&DensityUnits, &LengthUnits,&TemperatureUnits, &TimeUnits,
                &VelocityUnits, &MassUnits, MetaData.Time) == FAIL){
-    fprintf(stderr, "Error in GetUnits.\n");
     return FAIL;
   }
   if(Enzo_Version==2){
@@ -327,8 +342,9 @@ dummy[0] = 0;
 	    GalaxySimulationGalaxyMass = DiskGravityDarkMatterMass;
 	    GalaxySimulationDarkMatterConcentrationParameter = DiskGravityDarkMatterConcentration;//this line has a problem with the RHS being zero and making things blow up
 	  }
-	  if (GalaxySimulationEquilibrateChem)
+	  if (GalaxySimulationEquilibrateChem){
 	    ReadEquilibriumTable(GalaxySimulationEquilibriumFile, MetaData.Time);
+      }
 
 	  delete [] dummy;
 	  if( UseMHD ){
@@ -396,10 +412,15 @@ dummy[0] = 0;
 					GalaxySimulationInflowDensity,0,
 					GalaxySimulationInitialBfield,
 					GalaxySimulationInitialBfieldTopology,
+	VCircRadius, VCircVelocity,
 					GalaxySimulationCR,
           SetBaryons
 							       );
     CurrentGrid = CurrentGrid->NextGridThisLevel;
+  }
+
+  if ( DiskGravity + PointSourceGravity == FALSE ){
+      InitializeParticles(TopGrid.GridData, TopGrid, MetaData, GalaxySimulationDiskPosition);
   }
   
   /* Convert minimum initial overdensity for refinement to mass
@@ -439,63 +460,68 @@ if(SetBaryons){
        and re-initialize the level after it is created. */
 
     for (level = 0; level < MaximumRefinementLevel; level++) {
-	    if(GalaxySimulationIterateRebuildHierarchy || level==0)
-      if (RebuildHierarchy(&MetaData, LevelArray, level) == FAIL) {
-	fprintf(stderr, "Error in RebuildHierarchy.\n");
-	return FAIL;
-      }
-      if (LevelArray[level+1] == NULL)
-	break;
-      LevelHierarchyEntry *Temp = LevelArray[level+1];
-      while (Temp != NULL) {
-		if (Temp->GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
-					GalaxySimulationGalaxyMass, 
-					GalaxySimulationGasMass,
-					GalaxySimulationDiskPosition, 
-					GalaxySimulationDiskScaleHeightz,
-					GalaxySimulationDiskScaleHeightR,
-					GalaxySimulationTruncationRadius, 
-					GalaxySimulationDiskDensityCap,
-					GalaxySimulationDarkMatterConcentrationParameter,
-					GalaxySimulationDiskTemperature, 
-					GalaxySimulationInitialTemperature,
-					GalaxySimulationUniformDensity,
-					GalaxySimulationEquilibrateChem,
-					GalaxySimulationGasHalo,
-					GalaxySimulationGasHaloScaleRadius,
-					GalaxySimulationGasHaloDensity,
-					GalaxySimulationGasHaloDensity2,
-					GalaxySimulationGasHaloTemperature,
-					GalaxySimulationGasHaloAlpha,
-					GalaxySimulationGasHaloZeta,
-					GalaxySimulationGasHaloZeta2,
-					GalaxySimulationGasHaloCoreEntropy,
-					GalaxySimulationGasHaloRatio,
-					GalaxySimulationGasHaloMetallicity,
-					GalaxySimulationGasHaloRotation,
-					GalaxySimulationGasHaloRotationScaleVelocity,
-					GalaxySimulationGasHaloRotationScaleRadius,
-					GalaxySimulationGasHaloRotationIndex,
-					GalaxySimulationDiskMetallicityEnhancementFactor,
-					GalaxySimulationAngularMomentum,
-					GalaxySimulationUniformVelocity,
-					GalaxySimulationUseMetallicityField,
-					GalaxySimulationInflowTime,
-					GalaxySimulationInflowDensity,level,
-					GalaxySimulationInitialBfield,
-					GalaxySimulationInitialBfieldTopology,
-					GalaxySimulationCR, 
-          SetBaryons
-								   )
-		      == FAIL) {
-		    ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grid.");
-		}// end subgrid if
-	    else {
-		Temp->GridData->_GalaxySimulationInitialization = 1;
-	    }
-	    	Temp = Temp->NextGridThisLevel;
-    } // end: loop over levels
-}//end of switch statement
+        //For refinement strategies that depend on the initial conditions on each level being resolved,
+        //you'll need to iterate. For pre determined AMR structures, you do not.
+        if ( GalaxySimulationIterateRebuildHierarchy || level == 0 )
+            if (RebuildHierarchy(&MetaData, LevelArray, level) == FAIL) {
+                fprintf(stderr, "Error in RebuildHierarchy.\n");
+                return FAIL;
+            }
+
+        if (LevelArray[level+1] == NULL)
+            break;
+        if ( debug ) fprintf(stderr,"Build level %d\n",level+1);
+        LevelHierarchyEntry *Temp = LevelArray[level+1];
+        while (Temp != NULL) {
+            if (Temp->GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
+                        GalaxySimulationGalaxyMass, 
+                        GalaxySimulationGasMass,
+                        GalaxySimulationDiskPosition, 
+                        GalaxySimulationDiskScaleHeightz,
+                        GalaxySimulationDiskScaleHeightR,
+                        GalaxySimulationTruncationRadius, 
+                        GalaxySimulationDiskDensityCap,
+                        GalaxySimulationDarkMatterConcentrationParameter,
+                        GalaxySimulationDiskTemperature, 
+                        GalaxySimulationInitialTemperature,
+                        GalaxySimulationUniformDensity,
+                        GalaxySimulationEquilibrateChem,
+                        GalaxySimulationGasHalo,
+                        GalaxySimulationGasHaloScaleRadius,
+                        GalaxySimulationGasHaloDensity,
+                        GalaxySimulationGasHaloDensity2,
+                        GalaxySimulationGasHaloTemperature,
+                        GalaxySimulationGasHaloAlpha,
+                        GalaxySimulationGasHaloZeta,
+                        GalaxySimulationGasHaloZeta2,
+                        GalaxySimulationGasHaloCoreEntropy,
+                        GalaxySimulationGasHaloRatio,
+                        GalaxySimulationGasHaloMetallicity,
+                        GalaxySimulationGasHaloRotation,
+                        GalaxySimulationGasHaloRotationScaleVelocity,
+                        GalaxySimulationGasHaloRotationScaleRadius,
+                        GalaxySimulationGasHaloRotationIndex,
+                        GalaxySimulationDiskMetallicityEnhancementFactor,
+                        GalaxySimulationAngularMomentum,
+                        GalaxySimulationUniformVelocity,
+                        GalaxySimulationUseMetallicityField,
+                        GalaxySimulationInflowTime,
+                        GalaxySimulationInflowDensity,level,
+                        GalaxySimulationInitialBfield,
+                        GalaxySimulationInitialBfieldTopology,
+			VCircRadius, VCircVelocity,
+                        GalaxySimulationCR, 
+                        SetBaryons
+                            )
+                            == FAIL) {
+                                ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grid.");
+                            }// end subgrid if
+            else {
+                Temp->GridData->_GalaxySimulationInitialization = 1;
+            }
+            Temp = Temp->NextGridThisLevel;
+        } // end: loop over levels
+    }//end of switch statement
     /* Loop back from the bottom, restoring the consistency among levels. */
 
     MHD_ProjectE=FALSE;
@@ -514,8 +540,9 @@ if(SetBaryons){
     MHD_ProjectE=TRUE;
     MHD_ProjectB=FALSE;
 
-    if ( GalaxySimulationStaticHierarchyAfterInit )
-        MetaData.StaticHierarchy=TRUE;
+    if ( GalaxySimulationStaticHierarchyAfterInit && 0)
+        MetaData.StaticHierarchy=TRUE;//this breaks things for now
+
   } // end: if (GalaxySimulationRefineAtStart)
 } 
   /* If Galaxy is Subject to ICM Wind, Initialize the exterior */
@@ -588,7 +615,7 @@ if(SetBaryons){
  DataLabel[count++] = DensName;
  DataLabel[count++] = TEName;
  if (DualEnergyFormalism)
-   DataLabel[count++] = GEName;
+     DataLabel[count++] = GEName;
  if ( WritePotential )
      DataLabel[count++] = PotName;
  if(WriteAcceleration){
@@ -598,7 +625,7 @@ if(SetBaryons){
  }
  DataLabel[count++] = Vel1Name;
  if(MetaData.TopGridRank > 1)
-   DataLabel[count++] = Vel2Name;
+     DataLabel[count++] = Vel2Name;
  if(MetaData.TopGridRank > 2)
    DataLabel[count++] = Vel3Name;
   if( UseMHD){
@@ -692,6 +719,7 @@ for(int l = 0; l < count; l++)
  }
 }
 
+  printf("IterateRebuild %d \n", GalaxySimulationIterateRebuildHierarchy);
 #ifdef USE_MPI
 
  // BWO: this forces the synchronization of the various point source gravity
@@ -701,8 +729,182 @@ for(int l = 0; l < count; l++)
  MPI_Datatype DataType = (sizeof(float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
  MPI_Bcast(&PointSourceGravityConstant,1,DataType,ROOT_PROCESSOR, MPI_COMM_WORLD);
  MPI_Bcast(&PointSourceGravityCoreRadius,1,DataType,ROOT_PROCESSOR, MPI_COMM_WORLD);
-while(GalaxySimulationDebugHold){}
+ int dbfile = 0; 
+while(GalaxySimulationDebugHold && dbfile == 0){
+	FILE *file = fopen("GO", "r"); 
+	if(file != NULL){dbfile = 1;}
+}
 #endif
  return SUCCESS;
 
+}
+int InitializeParticles(grid *thisgrid, HierarchyEntry &TopGrid, TopGridData &MetaData, FLOAT * Center){
+
+    int GridRank, dim;
+    int *Dims = new int[3]; //hard coded jerk.
+    FLOAT Left[MAX_DIMENSION];
+    FLOAT Right[MAX_DIMENSION];
+    FLOAT CellWidth[MAX_DIMENSION];
+    thisgrid->ReturnGridInfo(&GridRank, Dims, Left, Right);
+    for ( dim=0;dim<GridRank;dim++){
+        CellWidth[dim] = (Right[dim]-Left[dim])/(Dims[dim]-2*NumberOfGhostZones);
+    }
+
+
+
+
+
+    int nBulge, nDisk, nHalo, nParticles;
+    nBulge = nlines("bulge.dat");
+    if(debug) fprintf(stderr, "InitializeParticles: Number of Bulge Particles %"ISYM"\n", nBulge);
+    nDisk = nlines("disk.dat");
+    if(debug) fprintf(stderr, "InitializeParticles: Number of Disk Particles %"ISYM"\n", nDisk);
+    nHalo = nlines("halo.dat");
+    if(debug) fprintf(stderr, "InitializeParticles: Number of Halo Particles %"ISYM"\n", nHalo);
+    nParticles = nBulge + nDisk + nHalo;
+    if(debug) fprintf(stderr, "InitializeParticles: Total Number of Particles %"ISYM"\n", nParticles);
+
+    // Initialize particle arrays
+    PINT *Number = new PINT[nParticles];
+    int *Type = new int[nParticles];
+    FLOAT *Position[MAX_DIMENSION];
+    float *Velocity[MAX_DIMENSION];
+    for (int i = 0; i < GridRank; i++)
+    {
+      Position[i] = new FLOAT[nParticles];
+      Velocity[i] = new float[nParticles];
+    }
+    float *Mass = new float[nParticles];
+    float *Attribute[MAX_NUMBER_OF_PARTICLE_ATTRIBUTES];
+    for (int i = 0; i < NumberOfParticleAttributes; i++)
+    {
+      Attribute[i] = new float[nParticles];
+      for (int j = 0; j < nParticles; j++)
+	Attribute[i][j] = FLOAT_UNDEFINED;
+    }
+
+    FLOAT dx = CellWidth[0];
+    // Read them in and assign them as we go
+    int count = 0;
+    ReadParticlesFromFile(
+      Number, Type, Position, Velocity, Mass,
+      "bulge.dat", PARTICLE_TYPE_STAR, count, dx,Center);
+    ReadParticlesFromFile(
+      Number, Type, Position, Velocity, Mass,
+      "disk.dat", PARTICLE_TYPE_STAR, count, dx,Center);
+    ReadParticlesFromFile(
+      Number, Type, Position, Velocity, Mass,
+      "halo.dat", PARTICLE_TYPE_DARK_MATTER, count, dx,Center);
+
+    thisgrid->SetNumberOfParticles(count);
+    thisgrid->SetParticlePointers(Mass, Number, Type, Position,
+				  Velocity, Attribute);
+    thisgrid->ExtraFunction("In Particle Creation");
+    MetaData.NumberOfParticles = count;
+
+    return SUCCESS;
+}
+int ReadParticlesFromFile(PINT *Number, int *Type, FLOAT *Position[],
+			    float *Velocity[], float* Mass, const char* fname,
+			    Eint32 particle_type, int &c, FLOAT dx, FLOAT * Center){
+    FILE *fptr;
+    char line[MAX_LINE_LENGTH];
+    int ret;
+    FLOAT x, y, z;
+    float vx, vy, vz;
+    double mass;
+
+    float DensityUnits=1, LengthUnits=1, VelocityUnits=1, TimeUnits=1,
+      TemperatureUnits=1;
+    double MassUnits=1;
+
+    if (GetUnits(&DensityUnits, &LengthUnits, &TemperatureUnits,
+		 &TimeUnits, &VelocityUnits, &MassUnits, 0) == FAIL) {
+      ENZO_FAIL("Error in GetUnits.");
+    }
+
+    fptr = fopen(fname, "r");
+
+    while(fgets(line, MAX_LINE_LENGTH, fptr) != NULL)
+    {
+      ret +=
+	sscanf(line,
+	       "%"PSYM" %"PSYM" %"PSYM" %"FSYM" %"FSYM" %"FSYM" %"FSYM,
+	       &x, &y, &z, &vx, &vy, &vz, &mass);
+
+      Position[0][c] = x * kpc_cm / LengthUnits + Center[0];
+      Position[1][c] = y * kpc_cm / LengthUnits + Center[1];
+      Position[2][c] = z * kpc_cm / LengthUnits + Center[2];
+
+      Velocity[0][c] = vx * km_cm / VelocityUnits;
+      Velocity[1][c] = vy * km_cm / VelocityUnits;
+      Velocity[2][c] = vz * km_cm / VelocityUnits;
+
+      // Particle masses are actually densities.
+      Mass[c] = mass * 1e9 * SolarMass / MassUnits / dx / dx / dx;
+      Type[c] = particle_type;
+      Number[c] = c++;
+    }
+
+    fclose(fptr);
+
+    return c;
+}
+
+int nlines(const char* fname) {
+
+  FILE* fptr = fopen(fname, "r");
+  int ch, n = 0;
+
+  do
+  {
+    ch = fgetc(fptr);
+    if(ch == '\n')
+      n++;
+  } while (ch != EOF);
+
+  fclose(fptr);
+  if (debug) fprintf(stderr,"Read %"ISYM" lines \n", n);
+  return n;
+}
+
+void ReadInVcircData(FLOAT * VCircRadius, float * VCircVelocity)
+{
+FILE *fptr;
+char line[MAX_LINE_LENGTH];
+int i=0, ret;
+float vcirc;
+FLOAT rad;
+
+fptr = fopen("vcirc.dat" , "r");
+
+while (fgets(line, MAX_LINE_LENGTH, fptr) != NULL)
+{
+  ret += sscanf(line, "%"PSYM" %"FSYM, &rad, &vcirc);
+  VCircRadius[i] = rad*kpc_cm; // 3.08567758e21 = kpc/cm
+  VCircVelocity[i] = vcirc*1e5; // 1e5 = (km/s)/(cm/s)
+  i += 1;
+}
+
+fclose(fptr);
+} // ReadInVcircData
+
+float InterpolateVcircTable(FLOAT radius, FLOAT * VCircRadius, float * VCircVelocity)
+{
+int i;
+
+for (i = 0; i < VCIRC_TABLE_LENGTH; i++)
+  if (radius < VCircRadius[i])
+break;
+
+if (i == 0)
+  return (VCircVelocity[i]) * (radius - VCircRadius[0]) / VCircRadius[0];
+else if (i == VCIRC_TABLE_LENGTH)
+  ENZO_FAIL("Fell off the circular velocity interpolation table");
+
+// we know the radius is between i and i-1
+return VCircVelocity[i-1] +
+  (VCircVelocity[i] - VCircVelocity[i-1]) *
+  (radius - VCircRadius[i-1])  /
+  (VCircRadius[i] - VCircRadius[i-1]);
 }
