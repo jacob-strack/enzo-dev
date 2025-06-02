@@ -854,6 +854,7 @@ int ReadParticlesFromFile(PINT *Number, int *Type, FLOAT *Position[],
 int nlines(const char* fname) {
 
   FILE* fptr = fopen(fname, "r");
+  if(fptr==NULL){fprintf(stderr, "nlines error: %s doesn't exist!\n", fname); fflush(stderr);}
   int ch, n = 0;
 
   do
@@ -877,6 +878,8 @@ float vcirc;
 FLOAT rad;
 
 fptr = fopen("vcirc.dat" , "r");
+
+if(fptr==NULL){fprintf(stderr, "vcirc error: vcirc.dat doesn't exist!\n"); fflush(stderr);}
 
 while (fgets(line, MAX_LINE_LENGTH, fptr) != NULL)
 {
