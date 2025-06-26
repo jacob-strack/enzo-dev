@@ -576,6 +576,8 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   ComovingCoordinates              = FALSE;        // No comoving coordinates
   StarParticleCreation             = FALSE;
   StarParticleFeedback             = FALSE;
+  AgoraICFeedback		   = TRUE;
+  AgoraICFeedbackInitialTime	   = 100.0; //Myr
   StarParticleRadiativeFeedback    = FALSE;
   BigStarFormation                 = FALSE;
   BigStarFormationDone             = FALSE;

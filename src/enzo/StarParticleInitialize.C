@@ -111,6 +111,7 @@ int StarParticleInitialize(HierarchyEntry *Grids[], TopGridData *MetaData,
 //  }
 
   for (cstar = AllStars; cstar; cstar = cstar->NextStar) {
+    printf("cstar loop \n");
     cstar->SetFeedbackFlag(TimeNow);
     cstar->CopyToGrid();
     cstar->MirrorToParticle();

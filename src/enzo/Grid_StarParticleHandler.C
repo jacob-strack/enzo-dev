@@ -1584,7 +1584,10 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
   if (STARFEED_METHOD(NORMAL_STAR)) {
 
     //---- THIS IS THE MODIFIED STAR FORMATION ALGORITHM
- 
+    	float Time_in_Myr = (Time * TimeUnits / Myr_s);
+	//For now, prevent feedback from star particles created with Agora ICs until specified time. It was blowing too much gas around.
+    	if((AgoraICFeedback == FALSE && Time_in_Myr > AgoraICFeedbackInitialTime) || AgoraICFeedback == TRUE){
+	printf("it's feedback time! %f massejectionfrac: %f \n", (Time * TimeUnits / Myr_s), StarMassEjectionFraction); 
       FORTRAN_NAME(star_feedback2)(
        GridDimension, GridDimension+1, GridDimension+2,
           BaryonField[DensNum], dmfield,
@@ -1605,7 +1608,7 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
           ParticleVelocity[2],
        ParticleMass, ParticleAttribute[1], ParticleAttribute[0],
        ParticleAttribute[2], ParticleType, &RadiationData.IntegratedStarFormation);
- 
+	}
   } // end: if NORMAL_STAR
  
   if (STARFEED_METHOD(MOM_STAR)) {

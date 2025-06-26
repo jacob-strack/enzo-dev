@@ -715,6 +715,8 @@ EXTERN int   ComovingCoordinates;
 
 EXTERN int   StarParticleCreation;
 EXTERN int   StarParticleFeedback;
+EXTERN int   AgoraICFeedback; //Controls whether star particles from Agora ICs feedback
+EXTERN float AgoraICFeedbackInitialTime; //When, in Myrs, feedback turns on when Agora IC Particles are present
 EXTERN int   StarParticleRadiativeFeedback;
 EXTERN int   NumberOfParticleAttributes;
 EXTERN int   AddParticleAttributes;

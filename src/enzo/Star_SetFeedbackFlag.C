@@ -47,7 +47,7 @@ void Star::SetFeedbackFlag(Eint32 flag)
 
 int Star::SetFeedbackFlag(FLOAT Time)
 {
-
+  printf("In SetFeedbackFlag \n");
   const float TypeIILowerMass = 11, TypeIIUpperMass = 40.1;
   const float PISNLowerMass = 140, PISNUpperMass = 260;
   const float StarClusterSNeStart = 4.0;   // Myr after cluster is born
@@ -134,6 +134,8 @@ int Star::SetFeedbackFlag(FLOAT Time)
 
    //this->type = abs_type;
  case PARTICLE_TYPE_STAR:
+   if(AgoraICFeedback == FALSE && BirthTime < 0)
+      this->FeedbackFlag = NO_FEEDBACK;
    printf("CORRECT PARTICLE TYPE \n");
    if(UseMagneticSupernovaFeedback)
      this->FeedbackFlag = SUPERNOVA_SEEDFIELD;
