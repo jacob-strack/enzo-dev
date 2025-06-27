@@ -1585,8 +1585,16 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 
     //---- THIS IS THE MODIFIED STAR FORMATION ALGORITHM
     	float Time_in_Myr = (Time * TimeUnits / Myr_s);
+	bool AgoraParticlesExist = false;
+	for(int i = 0; i < NumberOfParticles; i++){
+		if(ParticleAttribute[0][i] < 0.0 && ParticleType[i] == 2){
+			AgoraParticlesExist = true; 
+			printf("Agora Star Particles Found! \n");
+			break; 
+		}
+	}
 	//For now, prevent feedback from star particles created with Agora ICs until specified time. It was blowing too much gas around.
-    	if((AgoraICFeedback == FALSE && Time_in_Myr > AgoraICFeedbackInitialTime) || AgoraICFeedback == TRUE){
+    	if((AgoraICFeedback == FALSE && AgoraParticlesExist == false) || AgoraICFeedback == TRUE){
 	printf("it's feedback time! %f massejectionfrac: %f \n", (Time * TimeUnits / Myr_s), StarMassEjectionFraction); 
       FORTRAN_NAME(star_feedback2)(
        GridDimension, GridDimension+1, GridDimension+2,
