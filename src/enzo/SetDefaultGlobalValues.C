@@ -578,6 +578,8 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   StarParticleFeedback             = FALSE;
   AgoraICFeedback		   = TRUE;
   AgoraICFeedbackInitialTime	   = 100.0; //Myr
+  AgoraICFeedbackRamp		   = FALSE; 
+  AgoraICFeedbackRampFinalTime     = 150.0; //Myr
   StarParticleRadiativeFeedback    = FALSE;
   BigStarFormation                 = FALSE;
   BigStarFormationDone             = FALSE;

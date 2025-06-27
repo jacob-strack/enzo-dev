@@ -1593,6 +1593,15 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 			break; 
 		}
 	}
+	float StarEnergyToThermalFeedback_initial = StarEnergyToThermalFeedback; 
+	float StarMassEjectionFraction_initial = StarMassEjectionFraction; 
+	float StarMetalYield_initial = StarMetalYield; 
+	if(AgoraICFeedbackRamp == TRUE){
+		float ramp_frac = Time_in_Myr / AgoraICFeedbackRampFinalTime; 
+		StarEnergyToThermalFeedback *= ramp_frac; 
+		StarMassEjectionFraction *= ramp_frac;
+	        StarMetalYield *= ramp_frac; 	
+	}
 	//For now, prevent feedback from star particles created with Agora ICs until specified time. It was blowing too much gas around.
     	if((AgoraICFeedback == FALSE && AgoraParticlesExist == false) || AgoraICFeedback == TRUE){
 	printf("it's feedback time! %f massejectionfrac: %f \n", (Time * TimeUnits / Myr_s), StarMassEjectionFraction); 
@@ -1616,6 +1625,12 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
           ParticleVelocity[2],
        ParticleMass, ParticleAttribute[1], ParticleAttribute[0],
        ParticleAttribute[2], ParticleType, &RadiationData.IntegratedStarFormation);
+	}
+
+	if(AgoraICFeedbackRamp == TRUE){
+		StarEnergyToThermalFeedback = StarEnergyToThermalFeedback_initial; 
+		StarMassEjectionFraction = StarMassEjectionFraction_initial; 
+		StarMetalYield = StarMetalYield_initial; 
 	}
   } // end: if NORMAL_STAR
  
