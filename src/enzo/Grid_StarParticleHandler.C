@@ -853,7 +853,7 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
    if (STARMAKE_METHOD(HOPKINS_STAR)) {
      //---- MODIFIED CEN OSTRIKER ALGORITHM FOLLOWING HOPKINS ET AL 2013
      NumberOfNewParticlesSoFar = NumberOfNewParticles;
-
+     
      FORTRAN_NAME(star_maker6)(
        GridDimension, GridDimension+1, GridDimension+2,
        BaryonField[DensNum], dmfield, temperature, 
@@ -885,6 +885,7 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 
      for (i = NumberOfNewParticlesSoFar; i < NumberOfNewParticles; i++)
          tg->ParticleType[i] = NormalStarType;   
+     	 printf("Type Lifetime %f %f \n", tg->ParticleType[i], tg->ParticleAttribute[1][i]); 
    }
     if (STARMAKE_METHOD(MOM_STAR)) {
 
@@ -1586,13 +1587,13 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
     //---- THIS IS THE MODIFIED STAR FORMATION ALGORITHM
     	float Time_in_Myr = (Time * TimeUnits / Myr_s);
 	bool AgoraParticlesExist = false;
+	int NumberOfAgoraParticles = 0; 
 	for(int i = 0; i < NumberOfParticles; i++){
-		if(ParticleAttribute[0][i] < 0.0 && ParticleType[i] == 2){
-			AgoraParticlesExist = true; 
-			printf("Agora Star Particles Found! \n");
-			break; 
-		}
+		if(ParticleAttribute[0][i] < 0.0)
+			NumberOfAgoraParticles++; 	
 	}
+	int Num_NotAgora = NumberOfParticles - NumberOfAgoraParticles; 
+	/*
 	float StarEnergyToThermalFeedback_initial = StarEnergyToThermalFeedback; 
 	float StarMassEjectionFraction_initial = StarMassEjectionFraction; 
 	float StarMetalYield_initial = StarMetalYield; 
@@ -1601,10 +1602,64 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 		StarEnergyToThermalFeedback *= ramp_frac; 
 		StarMassEjectionFraction *= ramp_frac;
 	        StarMetalYield *= ramp_frac; 	
-	}
+	}*/
+
 	//For now, prevent feedback from star particles created with Agora ICs until specified time. It was blowing too much gas around.
-    	if((AgoraICFeedback == FALSE && AgoraParticlesExist == false) || AgoraICFeedback == TRUE){
-	printf("it's feedback time! %f massejectionfrac: %f \n", (Time * TimeUnits / Myr_s), StarMassEjectionFraction); 
+	printf("agora, total particle count %d %d %d\n", NumberOfParticles, Num_NotAgora, NumberOfAgoraParticles);
+    	if(AgoraICFeedback == FALSE && Num_NotAgora > 0){
+		FLOAT NotAgora_ParticlePosition[3][Num_NotAgora];
+		float NotAgora_ParticleVelocity[3][Num_NotAgora];
+		float NotAgora_ParticleAttribute[3][Num_NotAgora];
+		float NotAgora_ParticleMass[Num_NotAgora]; 
+		int NotAgora_ParticleType[Num_NotAgora]; 
+		int NotAgora_Index[Num_NotAgora];
+		int NotAgora_arr_index = 0;
+		for(int i = 0; i < NumberOfParticles; i++){
+			if(ParticleAttribute[0][i] >= 0.0)
+				NotAgora_Index[NotAgora_arr_index++] = i; 
+		}
+		for(int i = 0; i < Num_NotAgora; i++){
+			for(int j = 0; j < 3; j++){
+				NotAgora_ParticlePosition[j][i] = ParticlePosition[j][NotAgora_Index[i]];
+				NotAgora_ParticleVelocity[j][i] = ParticleVelocity[j][NotAgora_Index[i]];
+				NotAgora_ParticleAttribute[j][i] = ParticleAttribute[j][NotAgora_Index[i]];
+			}
+			NotAgora_ParticleMass[i] = ParticleMass[NotAgora_Index[i]]; 
+			NotAgora_ParticleType[i] = ParticleType[NotAgora_Index[i]];
+		}
+      FORTRAN_NAME(star_feedback2)(
+       GridDimension, GridDimension+1, GridDimension+2,
+          BaryonField[DensNum], dmfield,
+          BaryonField[TENum], BaryonField[GENum], BaryonField[Vel1Num],
+          BaryonField[Vel2Num], BaryonField[Vel3Num], MetalPointer,
+       &DualEnergyFormalism, &MetallicityField, &HydroMethod,
+       &dtFixed, BaryonField[NumberOfBaryonFields], &CellWidthTemp,
+          &Time, &zred,
+       &DensityUnits, &LengthUnits, &VelocityUnits, &TimeUnits,
+          &StarEnergyToThermalFeedback, &StarMassEjectionFraction,
+          &StarMetalYield, &StarFeedbackDistRadius, &StarFeedbackDistCellStep, 
+       &StarFeedbackDistTotalCells,
+       &Num_NotAgora,
+          CellLeftEdge[0], CellLeftEdge[1], CellLeftEdge[2], &GhostZones,
+       NotAgora_ParticlePosition[0], NotAgora_ParticlePosition[1],
+          NotAgora_ParticlePosition[2],
+       NotAgora_ParticleVelocity[0], NotAgora_ParticleVelocity[1],
+          NotAgora_ParticleVelocity[2],
+       NotAgora_ParticleMass, NotAgora_ParticleAttribute[1], NotAgora_ParticleAttribute[0],
+       NotAgora_ParticleAttribute[2], NotAgora_ParticleType, &RadiationData.IntegratedStarFormation);
+	
+      //If agora feedback is off, need to set particle arrays correctly
+	for(int i = 0; i < Num_NotAgora; i++){
+		for(int j = 0; j < 3; j++){
+			ParticlePosition[j][NotAgora_Index[i]] = NotAgora_ParticlePosition[j][i];
+			ParticleVelocity[j][NotAgora_Index[i]] = NotAgora_ParticleVelocity[j][i];
+			ParticleAttribute[j][NotAgora_Index[i]] = NotAgora_ParticleAttribute[j][i];
+		}
+		ParticleMass[NotAgora_Index[i]] = NotAgora_ParticleMass[i]; 
+		ParticleType[NotAgora_Index[i]] = NotAgora_ParticleType[i];
+	}
+	}
+	else{
       FORTRAN_NAME(star_feedback2)(
        GridDimension, GridDimension+1, GridDimension+2,
           BaryonField[DensNum], dmfield,
@@ -1626,12 +1681,13 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
        ParticleMass, ParticleAttribute[1], ParticleAttribute[0],
        ParticleAttribute[2], ParticleType, &RadiationData.IntegratedStarFormation);
 	}
-
+	/*
 	if(AgoraICFeedbackRamp == TRUE){
 		StarEnergyToThermalFeedback = StarEnergyToThermalFeedback_initial; 
 		StarMassEjectionFraction = StarMassEjectionFraction_initial; 
 		StarMetalYield = StarMetalYield_initial; 
-	}
+	}*/
+	
   } // end: if NORMAL_STAR
  
   if (STARFEED_METHOD(MOM_STAR)) {
