@@ -885,7 +885,6 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 
      for (i = NumberOfNewParticlesSoFar; i < NumberOfNewParticles; i++)
          tg->ParticleType[i] = NormalStarType;   
-     	 printf("Type Lifetime %f %f \n", tg->ParticleType[i], tg->ParticleAttribute[1][i]); 
    }
     if (STARMAKE_METHOD(MOM_STAR)) {
 
@@ -1555,6 +1554,29 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 
   /* ------------------------------------------------------------------- */
   /* 2) StarParticle feedback. */
+    
+    //feedback ramp up setup    
+    //Different options:
+    //1 - Linear
+    //2 - exp(t/t_sc) - 1 (scale time determined from FeedbackRampFinalTime
+    //3 - (t/t_sc)^n power law w/ user specified index (scale time again calculated from FeedbackRampFinalTime
+    float Time_in_Myr = (Time * TimeUnits / Myr_s);
+    float StarEnergyToThermalFeedback_initial = StarEnergyToThermalFeedback; 
+    float StarMassEjectionFraction_initial = StarMassEjectionFraction; 
+    float StarMetalYield_initial = StarMetalYield; 
+    if(FeedbackRamp > 0){
+    	float ramp_frac = Time_in_Myr / FeedbackRampFinalTime;
+        if(FeedbackRamp == 2){
+		float t_sc = FeedbackRampFinalTime / log(2); 
+		ramp_frac = exp(Time_in_Myr / t_sc) - 1;
+	}
+	if(FeedbackRamp == 3){
+		ramp_frac = pow(Time_in_Myr / FeedbackRampFinalTime,FeedbackRampPowerLawIndex);
+	}	
+	StarEnergyToThermalFeedback *= ramp_frac; 
+	StarMassEjectionFraction *= ramp_frac;
+	StarMetalYield *= ramp_frac; 	
+    }
  
 #ifdef STAR1
   //if (StarParticleFeedback == 1) {
@@ -1585,7 +1607,6 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
   if (STARFEED_METHOD(NORMAL_STAR)) {
 
     //---- THIS IS THE MODIFIED STAR FORMATION ALGORITHM
-    	float Time_in_Myr = (Time * TimeUnits / Myr_s);
 	bool AgoraParticlesExist = false;
 	int NumberOfAgoraParticles = 0; 
 	for(int i = 0; i < NumberOfParticles; i++){
@@ -1593,19 +1614,9 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 			NumberOfAgoraParticles++; 	
 	}
 	int Num_NotAgora = NumberOfParticles - NumberOfAgoraParticles; 
-	/*
-	float StarEnergyToThermalFeedback_initial = StarEnergyToThermalFeedback; 
-	float StarMassEjectionFraction_initial = StarMassEjectionFraction; 
-	float StarMetalYield_initial = StarMetalYield; 
-	if(AgoraICFeedbackRamp == TRUE){
-		float ramp_frac = Time_in_Myr / AgoraICFeedbackRampFinalTime; 
-		StarEnergyToThermalFeedback *= ramp_frac; 
-		StarMassEjectionFraction *= ramp_frac;
-	        StarMetalYield *= ramp_frac; 	
-	}*/
+	
 
 	//For now, prevent feedback from star particles created with Agora ICs until specified time. It was blowing too much gas around.
-	printf("agora, total particle count %d %d %d\n", NumberOfParticles, Num_NotAgora, NumberOfAgoraParticles);
     	if(AgoraICFeedback == FALSE && Num_NotAgora > 0){
 		FLOAT NotAgora_ParticlePosition[3][Num_NotAgora];
 		float NotAgora_ParticleVelocity[3][Num_NotAgora];
@@ -1681,12 +1692,6 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
        ParticleMass, ParticleAttribute[1], ParticleAttribute[0],
        ParticleAttribute[2], ParticleType, &RadiationData.IntegratedStarFormation);
 	}
-	/*
-	if(AgoraICFeedbackRamp == TRUE){
-		StarEnergyToThermalFeedback = StarEnergyToThermalFeedback_initial; 
-		StarMassEjectionFraction = StarMassEjectionFraction_initial; 
-		StarMetalYield = StarMetalYield_initial; 
-	}*/
 	
   } // end: if NORMAL_STAR
  
@@ -2171,6 +2176,13 @@ int grid::StarParticleHandler(HierarchyEntry* SubgridPointer, int level,
 	}
       }
     }
+  }
+
+  //feedback ramp up reset values to correctly calculate at the next timestep
+  if(FeedbackRamp > 0){
+	StarEnergyToThermalFeedback = StarEnergyToThermalFeedback_initial; 
+	StarMassEjectionFraction = StarMassEjectionFraction_initial; 
+	StarMetalYield = StarMetalYield_initial; 
   }
  
   /* Clean up. */

@@ -717,6 +717,9 @@ EXTERN int   StarParticleCreation;
 EXTERN int   StarParticleFeedback;
 EXTERN int   AgoraICFeedback; //Controls whether star particles from Agora ICs feedback
 EXTERN float AgoraICFeedbackInitialTime; //When, in Myrs, feedback turns on when Agora IC Particles are present
+EXTERN int   FeedbackRamp; //Linearly ramp up efficiency of feedback from star particles
+EXTERN float FeedbackRampFinalTime; //Final time for feedback fraction ramp up, t_0 assumed to be 0 Myr. 
+EXTERN float FeedbackRampPowerLawIndex; //power law index for feedback ramp method 3.
 EXTERN int   StarParticleRadiativeFeedback;
 EXTERN int   NumberOfParticleAttributes;
 EXTERN int   AddParticleAttributes;

@@ -1393,8 +1393,9 @@ int ReadParameterFile(FILE *fptr, TopGridData &MetaData, float *Initialdt)
     ret += sscanf(line,"MagneticSupernovaDuration = %"FSYM, &MagneticSupernovaDuration);
     ret += sscanf(line,"AgoraICFeedback = %"ISYM, &AgoraICFeedback);
     ret += sscanf(line,"AgoraICFeedbackInitialTime = %"FSYM, &AgoraICFeedbackInitialTime);
-    ret += sscanf(line,"AgoraICFeedbackRamp = %"ISYM, &AgoraICFeedbackRamp);
-    ret += sscanf(line,"AgoraICFeedbackRampFinalTime = %"FSYM, &AgoraICFeedbackRampFinalTime);
+    ret += sscanf(line,"FeedbackRamp = %"ISYM, &FeedbackRamp);
+    ret += sscanf(line,"FeedbackRampFinalTime = %"FSYM, &FeedbackRampFinalTime);
+    ret += sscanf(line,"FeedbackRampPowerLawIndex = %"FSYM, &FeedbackRampPowerLawIndex);
 
     /* If the dummy char space was used, then make another. */
 
