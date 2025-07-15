@@ -782,7 +782,6 @@ int InitializeParticles(grid *thisgrid, HierarchyEntry &TopGrid, TopGridData &Me
       for (int j = 0; j < nParticles; j++)
 	Attribute[i][j] = FLOAT_UNDEFINED;
     }
-
     FLOAT dx = CellWidth[0];
     // Read them in and assign them as we go
     int count = 0;
@@ -795,10 +794,11 @@ int InitializeParticles(grid *thisgrid, HierarchyEntry &TopGrid, TopGridData &Me
     ReadParticlesFromFile(
       Number, Type, Position, Velocity, Mass,
       "halo.dat", PARTICLE_TYPE_DARK_MATTER, count, dx,Center);
-
+    printf("ID: %d count %d \n", thisgrid->GetGridID(), count); 
     thisgrid->SetNumberOfParticles(count);
     thisgrid->SetParticlePointers(Mass, Number, Type, Position,
 				  Velocity, Attribute);
+    thisgrid->SetParticleAttributes(Attribute);
     thisgrid->ExtraFunction("In Particle Creation");
     MetaData.NumberOfParticles = count;
 

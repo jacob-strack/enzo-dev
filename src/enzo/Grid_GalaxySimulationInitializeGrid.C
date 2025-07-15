@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <random>
 #include <math.h>
 #include <assert.h>
 #include "preincludes.h" 
@@ -29,6 +30,7 @@
 #include "ExternalBoundary.h"
 #include "Grid.h"
 #include "CosmologyParameters.h"
+#include "phys_constants.h"
 
 #define Mpc (3.0856e24)         //Mpc [cm] 
 #define SolarMass (1.989e33)    //Solar Mass [g]
@@ -384,7 +386,6 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
   FLOAT temperature, disk_temp, init_temp, initial_metallicity;
   FLOAT r_sph, x, y = 0, z = 0;
   int n = 0, iter;
-
   for (k = 0; k < GridDimension[2]; k++)
     for (j = 0; j < GridDimension[1]; j++)
       for (i = 0; i < GridDimension[0]; i++, n++) {
@@ -646,6 +647,18 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 	      BaryonField[B1Num+dim][n] = GalaxySimulationInitialBfield[dim];
 	    }
 	    break;
+	  case 1: //white noise vector potential 
+		{	
+		//generate random values for vector potential
+		double mean = 0.0; 
+		double stdev = 1.0; 
+		std::default_random_engine gen; 
+		std::normal_distribution<double> distribution(mean,stdev);
+		//store vector potential values in ElectricField. Bc Grid_MHD_Curl does it, that's why. 
+		for(int ind = 0; ind < GridRank; ind++)
+			ElectricField[ind][n] = distribution(gen); 
+	    break;
+		}
           default:
 	    ENZO_FAIL("undefined value of GalaxySimulationInitialBfieldTopology");
 	  }
@@ -686,6 +699,9 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 	} // if(MultiSpecies)
 	
       } // end loop over grids
+  //take curl of vector potential to initialize magnetic field if topology method 2 is used. 
+  if(GalaxySimulationInitialBfieldTopology == 1)
+	  this->MHD_Curl(GridStartIndex, GridEndIndex,0); //Not a time step evolution
 
   return SUCCESS;
 
@@ -1782,5 +1798,66 @@ double halo_mod_DMmass_at_r(double r){
 /* -------------------- END OF Routines used for initializing the circumgalactic medium -------------------- */
 
 
+   void grid::SetParticleAttributes(float *Attribute[]){
+    if(ProcessorNumber != MyProcessorNumber)
+	    return; //return if not on right proc
+    //defining everything needed
+    int x, y, z, index[this->NumberOfParticles];
+    int DensNum, MetalNum, SNColourNum; 
+    float DensityUnits, LengthUnits, TemperatureUnits, TimeUnits, VelocityUnits, MassUnits;
+    //get the mass units to convert for star particle lifetime
+    GetUnits(&DensityUnits, &LengthUnits, &TemperatureUnits, &TimeUnits, &VelocityUnits, Time);
+    MassUnits = DensityUnits * pow(LengthUnits, 3); 
+    //allocate field for total density (density field + mass from initial dark matter particles)
+    //for Hopkins-like initial star maker particles w/o calling fortran routine
+    int size = GridDimension[0]*GridDimension[1]*GridDimension[2]; 
+    float *dens_tot = new float[size]; 
+    DensNum = FindField(Density, FieldType, NumberOfBaryonFields); 
+    MetalNum = FindField(Metallicity, FieldType, NumberOfBaryonFields); 
+    SNColourNum = FindField(SNColour, FieldType, NumberOfBaryonFields); 
+    //first the total density is just the same as in BaryonField
+    for(int i = 0; i < size; i++)
+	   dens_tot[i] = BaryonField[DensNum][i]; 
+    for(int i = 0; i < NumberOfParticles; i++){
+	   if(ParticleType[i] != PARTICLE_TYPE_DARK_MATTER)
+		   continue; //if it's not dark matter we don't care yet 
+	    //Get the correct index in total density field from particle's position 
+	    int ind; 
+	    x = ((ParticlePosition[0][i] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
+	    y = ((ParticlePosition[1][i] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones;
+	    z = ((ParticlePosition[2][i] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones; 
+	    ind = (z * GridDimension[1] + y) * GridDimension[0] + x; 
+	    //add mass of dark matter particle uniformly over cell
+	    dens_tot[ind] += (ParticleMass[i] * SolarMass / MassUnits) / (CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]); 
+	    ParticleAttribute[0][i] = -1.0; //Birthtime negative makes flagging agora particles easy
+	    ParticleAttribute[1][i] = 9000*Myr_s; //just some big lifetime. probably a better way to handle this
+	    //leave metallicity undefined bc duh 
+    } 
+    for(int ind = 0; ind < this->NumberOfParticles; ind++){
+	    if(ParticleType[ind] == PARTICLE_TYPE_DARK_MATTER)
+		    continue; //now we only care if it's an actual star particle
+	    //get index in grid where star particle is located 
+	    x = ((ParticlePosition[0][ind] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
+	    y = ((ParticlePosition[1][ind] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones;
+	    z = ((ParticlePosition[2][ind] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones; 
+	    index[ind] = (z * GridDimension[1] + y) * GridDimension[0] + x;
+	    float p_metal_density;
+	    //get metal density of cell
+	    if(SNColourNum == -1)
+	    	p_metal_density = BaryonField[MetalNum][index[ind]];
+	    else
+		p_metal_density = BaryonField[MetalNum][index[ind]] + BaryonField[SNColourNum][index[ind]];
+	    if(DensNum != -1){ 
+		//set birthtime, lifetime, and metallicity of star particle 
+	    	float p_density = BaryonField[DensNum][index[ind]];
+	    	float p_metal_frac = p_metal_density / p_density;  
+	    	ParticleAttribute[0][ind] = -1.0; //Birthtime negative makes flagging agora particles easy
+	    	ParticleAttribute[1][ind] = max(StarMakerMinimumDynamicalTime*yr_s, POW(3*PI / (32*GravitationalConstant*dens_tot[index[ind]]), 0.5)*TimeUnits);
+		printf("t comp %.5e %.5e \n", StarMakerMinimumDynamicalTime*yr_s, POW(3*PI/(32*GravitationalConstant*dens_tot[index[ind]]), 0.5)*TimeUnits);
+	    	ParticleAttribute[2][ind] = p_metal_frac;  
+	    }
+    }
+   delete[] dens_tot; //don't need this field for anything else, so delete and run
+   } 
 
 

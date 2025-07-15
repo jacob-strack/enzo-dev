@@ -1587,6 +1587,8 @@ iveParticles;};
     for (int i = 0; i < NumberOfParticleAttributes; i++)
       ParticleAttribute[i] = Attribute[i];
    };
+   
+   void SetParticleAttributes(float *Attribute[]);
 
 /* Particles: Set new star particle index. */
 
