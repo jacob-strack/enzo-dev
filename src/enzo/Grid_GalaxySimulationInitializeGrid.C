@@ -386,6 +386,10 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
   FLOAT temperature, disk_temp, init_temp, initial_metallicity;
   FLOAT r_sph, x, y = 0, z = 0;
   int n = 0, iter;
+  double mean = 0.0; 
+  double stdev = 1.0; 
+  std::default_random_engine gen; 
+  std::normal_distribution<double> distribution(mean,stdev);
   for (k = 0; k < GridDimension[2]; k++)
     for (j = 0; j < GridDimension[1]; j++)
       for (i = 0; i < GridDimension[0]; i++, n++) {
@@ -650,15 +654,12 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 	  case 1: //white noise vector potential 
 		{	
 		//generate random values for vector potential
-		double mean = 0.0; 
-		double stdev = 1.0; 
-		std::default_random_engine gen; 
-		std::normal_distribution<double> distribution(mean,stdev);
+		printf("test %f \n", distribution(gen));
 		//store vector potential values in ElectricField. Bc Grid_MHD_Curl does it, that's why. 
 		for(int ind = 0; ind < GridRank; ind++)
 			ElectricField[ind][n] = distribution(gen); 
-	    break;
-		}
+	  	}
+	      	break;
           default:
 	    ENZO_FAIL("undefined value of GalaxySimulationInitialBfieldTopology");
 	  }
@@ -700,8 +701,10 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 	
       } // end loop over grids
   //take curl of vector potential to initialize magnetic field if topology method 2 is used. 
-  if(GalaxySimulationInitialBfieldTopology == 1)
+  if(GalaxySimulationInitialBfieldTopology == 1){
 	  this->MHD_Curl(GridStartIndex, GridEndIndex,0); //Not a time step evolution
+	  this->CenterMagneticField();
+  }
 
   return SUCCESS;
 
