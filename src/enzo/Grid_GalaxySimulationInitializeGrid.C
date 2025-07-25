@@ -700,11 +700,6 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 	} // if(MultiSpecies)
 	
       } // end loop over grids
-  //take curl of vector potential to initialize magnetic field if topology method 2 is used. 
-  if(GalaxySimulationInitialBfieldTopology == 1){
-	  this->MHD_Curl(GridStartIndex, GridEndIndex,0); //Not a time step evolution
-	  this->CenterMagneticField();
-  }
 
   return SUCCESS;
 
@@ -1824,12 +1819,14 @@ double halo_mod_DMmass_at_r(double r){
     for(int i = 0; i < NumberOfParticles; i++){
 	   if(ParticleType[i] != PARTICLE_TYPE_DARK_MATTER)
 		   continue; //if it's not dark matter we don't care yet 
+	   if(ParticlePosition[0][i] < 0 || ParticlePosition[0][i] > 1 || ParticlePosition[1][i] < 0 || ParticlePosition[1][i] > 1 || ParticlePosition[2][i] < 0 || ParticlePosition[2][i] > 1)
+		   continue; //particle off grid
 	    //Get the correct index in total density field from particle's position 
 	    int ind; 
 	    x = ((ParticlePosition[0][i] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
 	    y = ((ParticlePosition[1][i] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones;
 	    z = ((ParticlePosition[2][i] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones; 
-	    ind = (z * GridDimension[1] + y) * GridDimension[0] + x; 
+	    ind = (z * GridDimension[1] + y) * GridDimension[0] + x;
 	    //add mass of dark matter particle uniformly over cell
 	    dens_tot[ind] += (ParticleMass[i] * SolarMass / MassUnits) / (CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]); 
 	    ParticleAttribute[0][i] = -1.0; //Birthtime negative makes flagging agora particles easy
@@ -1839,6 +1836,8 @@ double halo_mod_DMmass_at_r(double r){
     for(int ind = 0; ind < this->NumberOfParticles; ind++){
 	    if(ParticleType[ind] == PARTICLE_TYPE_DARK_MATTER)
 		    continue; //now we only care if it's an actual star particle
+	   if(ParticlePosition[0][ind] < 0 || ParticlePosition[0][ind] > 1 || ParticlePosition[1][ind] < 0 || ParticlePosition[1][ind] > 1 || ParticlePosition[2][ind] < 0 || ParticlePosition[2][ind] > 1)
+		   continue; //particle off grid
 	    //get index in grid where star particle is located 
 	    x = ((ParticlePosition[0][ind] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
 	    y = ((ParticlePosition[1][ind] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones;
@@ -1856,11 +1855,10 @@ double halo_mod_DMmass_at_r(double r){
 	    	float p_metal_frac = p_metal_density / p_density;  
 	    	ParticleAttribute[0][ind] = -1.0; //Birthtime negative makes flagging agora particles easy
 	    	ParticleAttribute[1][ind] = max(StarMakerMinimumDynamicalTime*yr_s, POW(3*PI / (32*GravitationalConstant*dens_tot[index[ind]]), 0.5)*TimeUnits);
-		printf("t comp %.5e %.5e \n", StarMakerMinimumDynamicalTime*yr_s, POW(3*PI/(32*GravitationalConstant*dens_tot[index[ind]]), 0.5)*TimeUnits);
 	    	ParticleAttribute[2][ind] = p_metal_frac;  
 	    }
     }
-   delete[] dens_tot; //don't need this field for anything else, so delete and run
+   delete[] dens_tot; //don't need this field for anything else (and if we did, it's going to be out of scope by this point)
    } 
 
 
