@@ -85,8 +85,6 @@ int grid::MHD_UpdateMagneticField(int level, LevelHierarchyEntry * NextLevel,
           }
       }
   }
-
-
   MHD_Curl( CurlStart,CurlEnd, 2);
   if ( ComovingCoordinates ){
      for(field=0;field<3;field++){

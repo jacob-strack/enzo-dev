@@ -3318,7 +3318,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
   int ComputeElectricField(float dT, float ** Fluxes);
   int MHD_Curl( int * Start, int * End, int Method);
   int CenterMagneticField(int * Start = NULL, int * End = NULL);
-
+  int ScaleMagneticField(float mean); 
   int ClearAvgElectricField();
  int MHD_UpdateMagneticField(int level, LevelHierarchyEntry * Level,
                              int TimeIsBeforeSetLevelTimestep);

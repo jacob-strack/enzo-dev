@@ -654,10 +654,10 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 	  case 1: //white noise vector potential 
 		{	
 		//generate random values for vector potential
-		printf("test %f \n", distribution(gen));
 		//store vector potential values in ElectricField. Bc Grid_MHD_Curl does it, that's why. 
-		for(int ind = 0; ind < GridRank; ind++)
-			ElectricField[ind][n] = distribution(gen); 
+		for(int ind = 0; ind < GridRank; ind++){
+			ElectricField[ind][n] = distribution(gen)*CellWidth[0][0]*1e-9; //the magnetic field has a cellwidth dependence from the curl, so undo it so the potential isn't level dependent 
+			}
 	  	}
 	      	break;
           default:
@@ -1860,5 +1860,4 @@ double halo_mod_DMmass_at_r(double r){
     }
    delete[] dens_tot; //don't need this field for anything else (and if we did, it's going to be out of scope by this point)
    } 
-
 

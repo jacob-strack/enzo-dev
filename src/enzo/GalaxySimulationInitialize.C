@@ -38,6 +38,7 @@
 #include "TopGridData.h"
 #include "phys_constants.h"
 #define VCIRC_TABLE_LENGTH 10000
+void InitializeMagneticField(LevelHierarchyEntry *LevelArray[], int TopologyMethod); 
 void WriteListOfFloats(FILE *fptr, int N, float floats[]);
 void WriteListOfFloats(FILE *fptr, int N, FLOAT floats[]);
 void AddLevel(LevelHierarchyEntry *Array[], HierarchyEntry *Grid, int level);
@@ -523,49 +524,7 @@ if(SetBaryons){
         } // end: loop over levels
     }//end of switch statement
     /* Loop back from the bottom, restoring the consistency among levels. */
-    if(GalaxySimulationInitialBfieldTopology > 0){
-	MHD_ProjectE=TRUE;
-	MHD_ProjectB=FALSE;
-	for(int mylevel = MaximumRefinementLevel; mylevel > 0; mylevel--){
-		LevelHierarchyEntry *Temp = LevelArray[mylevel]; 
-		while(Temp != NULL){
-			if(Temp->GridData->ProjectSolutionToParentGrid(*LevelArray[mylevel-1]->GridData) == FAIL){
-				fprintf(stderr, "Electric project failed. \n");
-				return FAIL;
-			}	
-			Temp = Temp->NextGridThisLevel;
-		}	
-	}
-	for(int mylevel = MaximumRefinementLevel - 1; mylevel >= 0; mylevel--){
-		LevelHierarchyEntry *Temp = LevelArray[mylevel]; 
-		while(Temp != NULL){
-			int CurlStart[3] = {0,0,0};
-			int CurlEnd[3] = {Temp->GridData->GetGridDimension(0) - 1, Temp->GridData->GetGridDimension(1)-1, Temp->GridData->GetGridDimension(2)-1};
-			Temp->GridData->MHD_Curl(CurlStart,CurlEnd,0);
-			Temp->GridData->CenterMagneticField();
-			Temp = Temp->NextGridThisLevel;
-		}
-	}
-	}
-
-    
-    else{
-	    MHD_ProjectE=FALSE;
-	    MHD_ProjectB=TRUE;
-	    for (level = MaximumRefinementLevel; level > 0; level--) {
-	      LevelHierarchyEntry *Temp = LevelArray[level];
-	      while (Temp != NULL) {
-		if (Temp->GridData->ProjectSolutionToParentGrid(
-					   *LevelArray[level-1]->GridData) == FAIL) {
-		  fprintf(stderr, "Error in grid->ProjectSolutionToParentGrid.\n");
-		  return FAIL;
-		}
-		Temp = Temp->NextGridThisLevel;
-	      }
-	    }
-    }
-    MHD_ProjectE=TRUE;
-    MHD_ProjectB=FALSE;
+    InitializeMagneticField(LevelArray, GalaxySimulationInitialBfieldTopology);
 
     if ( GalaxySimulationStaticHierarchyAfterInit && 0)
         MetaData.StaticHierarchy=TRUE;//this breaks things for now
