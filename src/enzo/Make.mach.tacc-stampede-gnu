@@ -65,12 +65,12 @@ MACHINE_NOTES = "MACHINE_NOTES for Stampede-gcc at UT-Austin/TACC: \
 # Install paths (local variables)
 #-----------------------------------------------------------------------
 
-LOCAL_MPI_INSTALL     =
+LOCAL_MPI_INSTALL     =/apps/spack/anvil/apps/openmpi
 LOCAL_HDF4_INSTALL    = 
 LOCAL_HYPRE_INSTALL   = 
 LOCAL_ACML_INSTALL    = 
-LOCAL_HDF5_INSTALL    =$(TACC_HDF5_DIR)
-LOCAL_GRACKLE_INSTALL =/home1/08627/tg879265/local
+LOCAL_HDF5_INSTALL    =/apps/spack/anvil/apps/hdf5
+LOCAL_GRACKLE_INSTALL =/home/x-jstrack1/grackle
 
 #-----------------------------------------------------------------------
 # Compiler settings
@@ -81,18 +81,18 @@ MACH_CPP       = cpp
 # With MPI
 
 MACH_CC_MPI    = mpicc
-MACH_CXX_MPI   = mpicxx -DMPICH_IGNORE_CXX_SEEK
-MACH_FC_MPI    = mpif90
-MACH_F90_MPI   = mpif90
-MACH_LD_MPI    = mpif90
-
+MACH_CXX_MPI   = mpic++ #mpicxx -DMPICH_IGNORE_CXX_SEEK
+MACH_FC_MPI    = gfortran #mpif90
+MACH_F90_MPI   = gfortran #mpif90
+MACH_LD_MPI    = mpic++
+MACH_LIBTOOL =/usr/bin/libtool
 # Without MPI
 
 MACH_CC_NOMPI  = gcc # C compiler when not using MPI
 MACH_CXX_NOMPI = g++ # C++ compiler when not using MPI
 MACH_FC_NOMPI  = gfortran # Fortran 77 compiler when not using MPI
 MACH_F90_NOMPI = gfortran # Fortran 90 compiler when not using MPI
-MACH_LD_NOMPI  = gfortran # Linker when not using MPI
+MACH_LD_NOMPI  = g++ # Linker when not using MPI
 
 #-----------------------------------------------------------------------
 # Machine-dependent defines
@@ -107,8 +107,8 @@ MACH_DEFINES   = -DLINUX -DH5_USE_16_API
 MACH_CPPFLAGS = -P -traditional 
 MACH_CFLAGS   = 
 MACH_CXXFLAGS =
-MACH_FFLAGS   = -fno-second-underscore -ffixed-line-length-132
-MACH_F90FLAGS = -fno-second-underscore
+MACH_FFLAGS   = -fno-second-underscore -ffixed-line-length-132 -fdefault-integer-8 -pg -w -fallow-argument-mismatch
+MACH_F90FLAGS = -fno-second-underscore -fdefault-integer-8 -pg -w -fallow-argument-mismatch
 MACH_LDFLAGS  = -lstdc++ -lc
 
 #-----------------------------------------------------------------------
@@ -148,7 +148,7 @@ LOCAL_LIBS_HDF4   = -L$(LOCAL_HDF4_INSTALL)/lib -lmfhdf -ldf -ljpeg
 LOCAL_LIBS_HYPRE  = -L$(LOCAL_HYPRE_INSTALL)/lib -lHYPRE
 LOCAL_LIBS_GRACKLE = -L$(LOCAL_GRACKLE_INSTALL)/lib -lgrackle
 
-LOCAL_LIBS_MACH   = -lm
+LOCAL_LIBS_MACH   = -lm -lgfortran
 MACH_LIBS         = $(LOCAL_LIBS_HDF5) $(LOCAL_LIBS_MACH)
 MACH_LIBS_MPI     = $(LOCAL_LIBS_MPI)
 MACH_LIBS_HYPRE   = $(LOCAL_LIBS_HYPRE)

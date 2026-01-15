@@ -273,7 +273,6 @@ int UpdateFromFinerGrids(int level, HierarchyEntry *Grids[], int NumberOfGrids,
     /* -------------- Face Projection.  Still with blocking receive. ----------------- */
 
   if( UseMHDCT) {
-    printf("MHD loop in UpdateFromFinerGrids.C \n");
     CommunicationDirection = COMMUNICATION_SEND;
 
     for (grid1 = 0; grid1 < NumberOfGrids; grid1++) {

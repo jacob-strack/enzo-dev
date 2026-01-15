@@ -543,6 +543,7 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   CloudyCoolingData.CloudyElectronFractionFactor = 9.153959e-3; // calculated using Cloudy 07.02 abundances
 
   use_grackle = FALSE;
+  use_krome = FALSE; 
 
   OutputCoolingTime = FALSE;
   OutputTemperature = FALSE;

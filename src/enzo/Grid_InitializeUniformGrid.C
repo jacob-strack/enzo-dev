@@ -40,6 +40,7 @@ int grid::InitializeUniformGrid(float UniformDensity,
   int CINum, CIINum, OINum, OIINum, SiINum, SiIINum, SiIIINum, CHINum, CH2INum, 
     CH3IINum, C2INum, COINum, HCOIINum, OHINum, H2OINum, O2INum;
 
+  int CMNum, OMNum, HCOINum, CO_TOTALINum, H2O_TOTALINum, HOCIINum, H3IINum, CHIINum, CH2IINum, COIINum, OHIINum, H2OIINum, H3OIINum, O2IINum; 
 
   int ExtraField[2];
 
@@ -97,6 +98,20 @@ int grid::InitializeUniformGrid(float UniformDensity,
       FieldType[DIINum  = NumberOfBaryonFields++] = DIIDensity;
       FieldType[HDINum  = NumberOfBaryonFields++] = HDIDensity;
     }
+    FieldType[CMNum = NumberOfBaryonFields++] = CMDensity;
+    FieldType[OMNum = NumberOfBaryonFields++] = OMDensity; 
+    FieldType[HCOINum = NumberOfBaryonFields++] = HCOIDensity; 
+    FieldType[CO_TOTALINum = NumberOfBaryonFields++] = CO_TOTALIDensity; 
+    FieldType[H2O_TOTALINum = NumberOfBaryonFields++] = H2O_TOTALIDensity; 
+    FieldType[HOCIINum = NumberOfBaryonFields++] = HOCIIDensity; 
+    FieldType[H3IINum = NumberOfBaryonFields++] = H3IIDensity; 
+    FieldType[CHIINum = NumberOfBaryonFields++] = CHIIDensity; 
+    FieldType[CH2IINum = NumberOfBaryonFields++] = CH2IIDensity; 
+    FieldType[COIINum = NumberOfBaryonFields++] = COIIDensity; 
+    FieldType[OHIINum = NumberOfBaryonFields++] = OHIIDensity; 
+    FieldType[H2OIINum = NumberOfBaryonFields++] = H2OIIDensity; 
+    FieldType[H3OIINum = NumberOfBaryonFields++] = H3OIIDensity; 
+    FieldType[O2IINum = NumberOfBaryonFields++] = O2IIDensity; 
   }
 
   //  Metal fields, including the standard 'metallicity' as well 

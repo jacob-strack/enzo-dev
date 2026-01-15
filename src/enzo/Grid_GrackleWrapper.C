@@ -40,7 +40,8 @@ int grid::GrackleWrapper()
 #ifdef USE_GRACKLE
   if (grackle_data->use_grackle == FALSE)
     return SUCCESS;
-
+  if(use_krome) 
+      return SUCCESS; 
   if (ProcessorNumber != MyProcessorNumber)
     return SUCCESS;
 

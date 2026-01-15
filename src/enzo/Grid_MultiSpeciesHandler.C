@@ -31,7 +31,7 @@ int grid::MultiSpeciesHandler()
   LCAPERF_START("grid_MultiSpeciesHandler");
 
 #ifdef USE_GRACKLE
-  if (grackle_data->use_grackle == TRUE) {
+  if (grackle_data->use_grackle == TRUE && !use_krome) {
     grackle_data->radiative_transfer_intermediate_step = FALSE;
     if (this->GrackleWrapper() == FAIL) {
       ENZO_FAIL("Error in GrackleWrapper.\n");
@@ -40,7 +40,7 @@ int grid::MultiSpeciesHandler()
   }
 #endif
 
-  if (MultiSpecies && RadiativeCooling ) {
+  if (MultiSpecies && RadiativeCooling && use_krome ) {
     int RTCoupledSolverIntermediateStep = FALSE;
     this->SolveRateAndCoolEquations(RTCoupledSolverIntermediateStep);
   } else {

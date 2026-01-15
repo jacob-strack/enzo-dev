@@ -180,7 +180,24 @@ const field_type
   ImPsi = 102,
   FDMDensity = 103,
 
-  FieldUndefined  = 104;
+  FieldUndefined  = 118,
+
+  //more chemistry 
+  CMDensity = 105, 
+  OMDensity = 106,
+  HCOIDensity = 107,
+  CO_TOTALIDensity = 108, 
+  H2O_TOTALIDensity = 109,
+  HOCIIDensity = 110,
+  H3IIDensity = 111,
+  CHIIDensity = 112,
+  CH2IIDensity = 113,
+  COIIDensity = 114,
+  OHIIDensity = 115,
+  H2OIIDensity = 116,
+  H3OIIDensity = 117,
+  O2IIDensity = 104;
+  
 
 /*
 enum field_type {Density, TotalEnergy, InternalEnergy, Pressure,

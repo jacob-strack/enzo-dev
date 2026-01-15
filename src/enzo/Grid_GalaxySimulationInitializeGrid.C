@@ -196,6 +196,7 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
   int dim, i, j, k, m, field, disk, size, MetalNum, MetalIaNum, vel;
   int DeNum, HINum, HIINum, HeINum, HeIINum, HeIIINum, HMNum, H2INum,
     H2IINum, DINum, DIINum, HDINum, B1Num, B2Num, B3Num, PhiNum;
+  int CMNum, OMNum, CINum, OINum, OHINum, COINum, CHINum, CH2INum, C2INum, HCOINum, H2OINum, O2INum, CO_TOTALINum, H2O_TOTALINum, CIINum, OIINum, HOCIINum, HCOIINum, H3IINum, CHIINum, CH2IINum, COIINum, CH3IINum, OHIINum, H2OIINum, H3OIINum, O2IINum;  
   float DiskDensity, DiskVelocityMag;
   int CRNum, DensNum;
   /* global-scope variables for disk potential functions (would be better if not global) */
@@ -284,6 +285,34 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
       FieldType[DIINum  = NumberOfBaryonFields++] = DIIDensity;
       FieldType[HDINum  = NumberOfBaryonFields++] = HDIDensity;
     }
+    
+    FieldType[CMNum = NumberOfBaryonFields++] = CMDensity;
+    FieldType[OMNum = NumberOfBaryonFields++] = OMDensity;
+    FieldType[CINum = NumberOfBaryonFields++] = CIDensity; 
+    FieldType[OINum = NumberOfBaryonFields++] = OIDensity; 
+    FieldType[OHINum = NumberOfBaryonFields++] = OHIDensity; 
+    FieldType[COINum = NumberOfBaryonFields++] = COIDensity; 
+    FieldType[CHINum = NumberOfBaryonFields++] = CHIDensity; 
+    FieldType[CH2INum = NumberOfBaryonFields++] = CH2IDensity; 
+    FieldType[C2INum = NumberOfBaryonFields++] = C2IDensity; 
+    FieldType[HCOINum = NumberOfBaryonFields++] = HCOIDensity; 
+    FieldType[H2OINum = NumberOfBaryonFields++] = H2OIDensity;
+    FieldType[O2INum = NumberOfBaryonFields++] = O2IDensity;
+    FieldType[CO_TOTALINum = NumberOfBaryonFields++] = CO_TOTALIDensity; 
+    FieldType[H2O_TOTALINum = NumberOfBaryonFields++] = H2O_TOTALIDensity;
+    FieldType[CIINum = NumberOfBaryonFields++] = CIIDensity; 
+    FieldType[OIINum = NumberOfBaryonFields++] = OIIDensity; 
+    FieldType[HOCIINum = NumberOfBaryonFields++] = HOCIIDensity;
+    FieldType[HCOIINum = NumberOfBaryonFields++] = HCOIIDensity;
+    FieldType[H3IINum = NumberOfBaryonFields++] = H3IIDensity; 
+    FieldType[CHIINum = NumberOfBaryonFields++] = CHIIDensity; 
+    FieldType[CH2IINum = NumberOfBaryonFields++] = CH2IIDensity; 
+    FieldType[COIINum = NumberOfBaryonFields++] = COIIDensity;
+    FieldType[CH3IINum = NumberOfBaryonFields++] = CH3IIDensity; 
+    FieldType[OHIINum = NumberOfBaryonFields++] = OHIIDensity; 
+    FieldType[H2OIINum = NumberOfBaryonFields++] = H2OIIDensity; 
+    FieldType[H3OIINum = NumberOfBaryonFields++] = H3OIIDensity; 
+    FieldType[O2IINum = NumberOfBaryonFields++] = O2IIDensity;
   }
 
   if (UseMetallicityField)
@@ -622,6 +651,22 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 	   a proper metallicity -- DWS (loop redundancy addressed by CEK) */
 	if (StarMakerTypeIaSNe)
 	  BaryonField[MetalIaNum][n] = 1.0e-10;
+    
+    //new chem densities; init to 0 they get populated with time evolution for now 
+    BaryonField[CMNum][n] = 0.0*density; 
+    BaryonField[OMNum][n] = 0.0*density; 
+    BaryonField[HCOINum][n] = 0.0; 
+    BaryonField[CO_TOTALINum][n] = 0.0; 
+    BaryonField[H2O_TOTALINum][n] = 0.0; 
+    BaryonField[HOCIINum][n] = 0.0; 
+    BaryonField[H3IINum][n] = 0.0; 
+    BaryonField[CHIINum][n] = 0.0; 
+    BaryonField[CH2IINum][n] = 0.0; 
+    BaryonField[COIINum][n] = 0.0; 
+    BaryonField[OHIINum][n] = 0.0; 
+    BaryonField[H2OIINum][n] = 0.0; 
+    BaryonField[H3OIINum][n] = 0.0; 
+    BaryonField[O2IINum][n] = 0.0; 
    
 	for (dim = 0; dim < GridRank; dim++)
 	  BaryonField[vel+dim][n] = Velocity[dim] + UniformVelocity[dim];

@@ -92,6 +92,8 @@
 
 #include "uuidP.h"
 #include "uuidd.h"
+#include <stdlib.h>
+#include <unistd.h>
 
 #ifdef HAVE_SRANDOM
 #define srand(x) 	srandom(x)

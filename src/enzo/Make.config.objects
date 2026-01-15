@@ -1249,3 +1249,15 @@ POBJS_UUID = \
         uuid/unpack.o \
         uuid/unparse.o \
         uuid/uuid_time.o
+
+OBJS_KROME = \
+       Grid_IdentifySpeciesFieldsKrome.o\
+       krome_enzo_patch/opkda2.o\
+       krome_enzo_patch/opkda1.o\
+       krome_enzo_patch/opkdmain.o\
+       krome_enzo_patch/krome_initab.o\
+       krome_enzo_patch/krome_user_commons.o\
+       krome_enzo_patch/krome_all.o\
+       krome_enzo_patch/evaluate_tgas.o\
+       krome_enzo_patch/krome_driver.o\
+

@@ -41,3 +41,5 @@ extern "C" {
 #include "ErrorExceptions.h"
 
 #endif
+#include <stdlib.h> 
+#include <unistd.h>

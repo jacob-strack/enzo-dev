@@ -86,6 +86,33 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   char *HDIName   = "HDI_Density";
   char *MetalName   = "Metal_Density";
   char *MetalIaName = "MetalSNIa_Density";
+  char *CMName = "CMDensity"; 
+  char *OMName = "OMDensity"; 
+  char *CIName = "CIDensity"; 
+  char *OIName = "OIDensity"; 
+  char *OHIName = "OHIDensity"; 
+  char *COIName = "COIDensity"; 
+  char *CHIName = "CHIDensity"; 
+  char *CH2IName = "CH2IDensity"; 
+  char *C2IName = "C2IDensity"; 
+  char *HCOIName = "HCOIDensity"; 
+  char *H2OIName = "H2O0IDensity"; 
+  char *O2IName = "O2IDensity"; 
+  char *CO_TOTALIName = "CO_TOTALIDensity"; 
+  char *H2O_TOTALIName = "H2O_TOTALIDensity"; 
+  char *CIIName = "CIIDensity"; 
+  char *OIIName = "OIIDensity"; 
+  char *HOCIIName = "HOCIIDensity";
+  char *HCOIIName = "HCOIIDensity"; 
+  char *H3IIName = "H3IIDensity"; 
+  char *CHIIName = "CHIIDensity"; 
+  char *CH2IIName = "CH2IIDensity"; 
+  char *COIIName = "COIIDensity"; 
+  char *CH3IIName = "CH3IIDensity"; 
+  char *OHIIName = "OHIIDensity"; 
+  char *H2OIIName = "H2OIIDensity"; 
+  char *H3OIIName = "H3OIIDensity"; 
+  char *O2IIName = "O2IIDensity"; 
   char *BxName      = "Bx";
   char *ByName      = "By";
   char *BzName      = "Bz";
@@ -319,7 +346,7 @@ dummy[0] = 0;
 	    ret += sscanf(line, "RiemannSolver = %"ISYM, &RiemannSolver);
 	    ret += sscanf(line, "ReconstructionMethod = %"ISYM, &ReconstructionMethod);
         ret += sscanf(line, "GalaxySimulationDebugHold = %"ISYM, &GalaxySimulationDebugHold);
-    
+        ret += sscanf(line, "use_krome = %"ISYM, &use_krome);  
     /* if the line is suspicious, issue a warning */
     if (ret == 0 && strstr(line, "=") && strstr(line, "GalaxySimulation") 
 	&& line[0] != '#' && !strstr(line,"RPSWind") && !strstr(line,"PreWind"))
@@ -643,6 +670,33 @@ if(Enzo_Version == 2){
      DataLabel[count++] = DIIName;
      DataLabel[count++] = HDIName;
    }
+   DataLabel[count++] = CMName;  
+   DataLabel[count++] = OMName; 
+   DataLabel[count++] = CIName; 
+   DataLabel[count++] = OIName; 
+   DataLabel[count++] = OHIName; 
+   DataLabel[count++] = COIName; 
+   DataLabel[count++] = CHIName; 
+   DataLabel[count++] = CH2IName; 
+   DataLabel[count++] = C2IName; 
+   DataLabel[count++] = HCOIName; 
+   DataLabel[count++] = H2OIName; 
+   DataLabel[count++] = O2IName; 
+   DataLabel[count++] = CO_TOTALIName; 
+   DataLabel[count++] = H2O_TOTALIName; 
+   DataLabel[count++] = CIIName; 
+   DataLabel[count++] = OIIName; 
+   DataLabel[count++] = HOCIIName; 
+   DataLabel[count++] = HCOIIName; 
+   DataLabel[count++] = H3IIName; 
+   DataLabel[count++] = CHIIName; 
+   DataLabel[count++] = CH2IIName; 
+   DataLabel[count++] = COIIName; 
+   DataLabel[count++] = CH3IIName; 
+   DataLabel[count++] = OHIIName; 
+   DataLabel[count++] = H2OIIName; 
+   DataLabel[count++] = H3OIIName; 
+   DataLabel[count++] = O2IIName; 
  }
 }
  if(GalaxySimulationUseMetallicityField)

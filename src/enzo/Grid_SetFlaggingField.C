@@ -327,9 +327,9 @@ int grid::SetFlaggingField(int &NumberOfFlaggedCells, int level)
     }
   }
   
-  if (NumberOfFlaggedCells == INT_UNDEFINED) {
-    ENZO_FAIL("No valid CellFlaggingMethod specified.");
-  }
+//  if (NumberOfFlaggedCells == INT_UNDEFINED) {
+ //   ENZO_FAIL("No valid CellFlaggingMethod specified.");
+//  }
   
 #ifdef MPI_INSTRUMENTATION
   counter[4]++;

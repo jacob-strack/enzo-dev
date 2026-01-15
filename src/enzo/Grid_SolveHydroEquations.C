@@ -92,7 +92,7 @@ int grid::SolveHydroEquations(int CycleNumber, int NumberOfSubgrids,
     // use different color fields for RadiativeTransferFLD problems
     //   first, the standard Enzo color field advection
     if (MultiSpecies > 0 && RadiativeTransferFLD != 2) {
-      NumberOfColours = 6 + 3*(MultiSpecies-1);
+      NumberOfColours = 6 + 3*(MultiSpecies-1) + 27;
 
       if ((ColourNum =
            FindField(ElectronDensity, FieldType, NumberOfBaryonFields)) < 0) {

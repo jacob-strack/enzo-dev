@@ -1081,6 +1081,7 @@
     	       $(OBJS_LCAPERF_LIB) \
 	       $(OBJS_HYDRO_RK) \
 	       $(OBJS_ECUDA_LIB) \
+               $(OBJS_KROME) \
 	       $(OBJS_PYTHON) \
                $(OBJS_UUID)
 

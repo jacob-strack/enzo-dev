@@ -361,6 +361,9 @@ EXTERN CoolDataType CoolData;
 EXTERN int RadiativeCoolingModel;
 EXTERN int use_grackle;
 
+//Use krome for chem updates 
+EXTERN int use_krome; 
+
 /* Cloudy cooling parameters and data. */
 
 EXTERN CloudyCoolingDataType CloudyCoolingData;
