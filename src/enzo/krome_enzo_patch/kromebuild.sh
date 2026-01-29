@@ -18,7 +18,7 @@ cp InitializeRateData.C ../
 #WARNING: THIS IS NOT A MAKEFILE!
 fc=gfortran
 
-std="-check all -traceback -fpe0  -ftz -ftrapuv -warn all -u"
+std="-check all -traceback -fpe0 -ftz -ftrapuv -warn all -u"
 hswitch="-O3"
 switch=$hswitch
 
