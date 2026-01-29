@@ -95,12 +95,17 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
     }
 
 
+
   /* Compute size of the current grid. */
 
   int i, dim, size = 1;
   for (dim = 0; dim < GridRank; dim++) {
     size *= GridDimension[dim];
   }
+  
+  //Undo the normalization of the electron density field in enzo (factor of m_p/m_e) 
+  for(int i = 0; i < size; i++) 
+    BaryonField[DeNum][i] /= 1836.15267;  
 
   /* Get easy to handle pointers for each variable. */
 
@@ -203,6 +208,12 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
     
     delete totalenergy;
   }
+
+  //redo the normalization of m_p/m_e that grackle uses by default 
+  //this is so the cooling time calculation in grackle can be used 
+
+  for(int i = 0; i < size; i++) 
+    BaryonField[DeNum][i] *= 1836.15267; 
 
   return SUCCESS;
 

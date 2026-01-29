@@ -1546,7 +1546,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
        condition easier to handle.*/
     double dr, rmax, vcirc2_max;
     double this_press, this_ent, this_radius;//, this_n;
-    double mu_ratio = 1.1/mu; // mu_e/mu
+    double mu_ratio = 1.17/mu; // mu_e/mu
     double T_floor = 4e4; // IGM
 
     // boundary condition & quantities for integration
@@ -1560,29 +1560,38 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
 		     Gamma/(Gamma-1.));
 
     // set the bin that we start at (otherwise it doesn't get set!)
-    index = int((this_radius - CGM_data.R_inner)/(-1.0*dr) + 1.0e-3);
+    index = int((this_radius - CGM_data.R_inner)/(-1.0*dr)  + 1.0e-3);
     CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma); // n_e ~ n_i
     CGM_data.T_rad[index] = POW( POW(this_press/mu_ratio, Gamma-1.) * this_ent, 1./Gamma) / kboltz;
     CGM_data.rad[index] = this_radius;
 
+    int start_index = index; 
     // integrate inward from R200    
     while(this_radius > CGM_data.R_inner){
-      
+      double p1 = log10(mu_ratio*(CGM_data.n_rad[index] / 2)*kboltz*CGM_data.T_rad[index]);   
       // calculate RK4 coefficients.
+      if(this_radius + dr < 0) //leave if new radius is negative 
+          break; 
       k1 = halo_dP_dr(this_radius,          this_press,             Grid);
       k2 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k1, Grid);
       k3 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k2, Grid);
       k4 = halo_dP_dr(this_radius + dr,     this_press + dr*k3,     Grid);
-      
       // update radius, pressure, entropy
       this_radius += dr;  // new radius
       this_press += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); // P @ new radius
+      if(isnan(this_press))
+          std::cout << "pressure nan k1 " << k1 << " k2 " << k2 << " k3 " << k3 << " k4 " << k4 << std::endl;
       this_ent = halo_S_of_r(this_radius, Grid); // entropy @ new radius
-
+      if(isnan(this_ent)) 
+          std::cout << "nan ent at " << index << " r " << this_radius << std::endl;
       // store density and temperature in the struct
       index = int((this_radius - CGM_data.R_inner)/(-1.0*dr) + 1.0e-3);
-      if (index >= 0){
+      if (index >= 0 && this_radius > 0){
+      if(this_radius < 0)
+          std::cout << "negative radius! " << this_radius << " index " << index << std::endl; 
 	CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma);
+    if(isnan(CGM_data.n_rad[index])) 
+        std::cout << "NAN in n_rad! S " << this_ent << " r " << this_radius << " this_press " << this_press << std::endl; 
 	CGM_data.T_rad[index] = POW( POW(this_press/mu_ratio, Gamma-1.) * this_ent, 1./Gamma) / kboltz;
 	CGM_data.rad[index] = this_radius;
       }
@@ -1592,7 +1601,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     dr = CGM_data.dr;
     this_radius = R200;
     this_ent = halo_S_of_r(this_radius, Grid); // in erg*cm^2
-
+    std::cout << "Reset radius " << this_radius << " Reset ent " << this_ent << std::endl; 
     rmax = 2.163*R200/GalaxySimulationDMConcentration;
     vcirc2_max = GravConst * halo_mod_DMmass_at_r(rmax)/rmax;
     this_press = mu_ratio*POW(0.25*mu*mh*vcirc2_max/POW(this_ent, 1./Gamma),
@@ -1618,10 +1627,20 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     // Set constant dlog(P)/dlog(r)
     double prev_press, dlP_dlr, this_dPdr, press_vir;
     prev_press = mu_ratio * CGM_data.n_rad[index-1]/2.0 * kboltz*CGM_data.T_rad[index-1];
-    press_vir = this_press;
+    //this_press = mu_ratio * CGM_data.n_rad[index-1]/2.0 * kboltz*CGM_data.T_rad[index-1];
+    press_vir = this_press; 
     
     dlP_dlr = (log10(this_press) - log10(prev_press))
             / (log10(this_radius) - log10(this_radius-dr));
+    if(CGM_data.n_rad[index - 1] == -1) 
+        std::cout << "EMPTY BIN BEING USED" << std::endl;
+    if(CGM_data.rad[index - 1] < 0)
+        std::cout << "NEGATIVE RADIUS BIN " << CGM_data.rad[index - 1] << std::endl; 
+    std::cout << "index - 1 " << index - 1 << " prev_press " << prev_press << "n_rad " << CGM_data.n_rad[index - 1] << " T " << CGM_data.T_rad[index - 1] << " r " << CGM_data.rad[index - 1] << std::endl; 
+    std::cout << "r " << this_radius << " dlP/dlr " << dlP_dlr << " delta(log(P)) " << (log10(this_press) - log10(prev_press)) << std::endl; 
+    std::cout << "log(r) " << log10(this_radius) << "log(r - dr) " << log10(this_radius - dr) << " delta(log(r)) " << log10(this_radius) - log10(this_radius - dr) << std::endl;
+    std::cout << "log(P) " << log10(this_press) << " log(P_prev) " << log10(prev_press) << " log(P_prev2) " << log10(mu_ratio * CGM_data.n_rad[index-2]/2.0 * kboltz * CGM_data.T_rad[index-2]) <<  std::endl; 
+    std::cout.flush();
     assert (dlP_dlr < 0.0);
     
     while(this_radius <= CGM_data.R_outer){
@@ -1633,7 +1652,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
       this_dens = -2.0 * this_dPdr/(1.22*mh*halo_mod_g_of_r(this_radius)); // n_e = n_i
       this_temp = POW(10, sigmoid(log10(this_radius), r0, k, y0, y_offset));
       this_press = POW(10, dlP_dlr*log10(this_radius/R200) + log10(press_vir));
-
+      
       // store everything in the struct
       index = int((this_radius - CGM_data.R_inner)/dr + 1.0e-3);    
       if (index < CGM_data.nbins) {
@@ -1734,9 +1753,42 @@ double halo_S_of_r(double r, grid* Grid){
 
     // to cgs
     Lambda = fabs(Lambda) * POW(mh,2) * POW(LengthUnits,2) / ( POW(TimeUnits,3) * DensityUnits);
+    
+    double n_e = DensityUnits * de / (1836.152 * 9.11e-28); 
 
+    double n_hi = DensityUnits * hi / mh; 
+    double n_hii = DensityUnits * hii / mh; 
+    double n_hm = DensityUnits * hm / mh; 
+ 
+    double m_he = 6.64e-24; 
+
+    double n_hei = DensityUnits * hei / m_he; 
+    double n_heii = DensityUnits * heii / m_he; 
+    double n_heiii = DensityUnits * heiii / m_he; 
+
+    double m_h2 = 2*mh; 
+
+    double n_h2i = DensityUnits * h2i / m_h2; 
+    double n_h2ii = DensityUnits * h2ii / m_h2; 
+
+    double m_d = 3.345e-24; 
+
+    double n_di = DensityUnits * di / m_d; 
+    double n_dii = DensityUnits * dii / m_d; 
+
+    double m_hd = 5.018e-24; 
+
+    double n_hd = DensityUnits * hdi / m_hd; 
+
+    double n_metal = DensityUnits * metal / (3*mh); 
+
+    double n_i = n_hii + n_heii + n_heiii + n_h2ii + n_dii + n_hm; 
+
+    double n = n_hi + n_hii + n_hm + n_hei + n_heii + n_heiii + n_h2i + n_h2ii + n_di + n_dii + n_hd + n_e; 
+    std::cout << "halo S of r r " << r << " n " << n << " n_i " << n_i << std::endl;  
     /* Calculate entropy S(r) in erg cm^2 */
-    double S_precip = POW(2*mu*mh, 1./3.) * POW(r*Lambda*GalaxySimulationGasHaloRatio/3.0, 2./3.);
+    //double S_precip = POW(2*mu*mh, 1./3.) * POW(r*Lambda*GalaxySimulationGasHaloRatio/3.0, 2./3.);
+    double S_precip = POW(2*mu*mh, 1./3.) * POW(20 * r * Lambda * n_i / (n * 3), 2./3.); 
     double S_nfw = 39. * vcirc2_max/1e10/4e4 * POW(r/r_vir, 1.1) / KEV_PER_ERG; // See Voit 19 Eqn 10 for assumptions
 
     // TODO blend with an entropy cap
@@ -1798,8 +1850,16 @@ double halo_dn_dr(double r, double n){
 // }
 
 double halo_dP_dr(double r, double P, grid* Grid) {
-  return -1.0 * halo_mod_g_of_r(r) * 1.22*mh * POW( P/(1.1/mu) / halo_S_of_r(r,Grid),
+  double ret =  -1.0 * halo_mod_g_of_r(r) * 1.1 * mh * POW( P/(1.1/mu) / halo_S_of_r(r,Grid),
 						    1./Gamma );
+    if(ret > 0)
+        ENZO_FAIL("positive dp/dr"); 
+    if(isnan(ret) && !isnan(P)){
+        std::cout << "halo s of r " << halo_S_of_r(r,Grid) << " r " << r << std::endl;
+        std::cout.flush();
+        ENZO_FAIL("nan in dp/dr");
+    }
+    return ret;
 }
 
 /* halo gravitational acceleration as a function of radius.
@@ -1905,4 +1965,5 @@ double halo_mod_DMmass_at_r(double r){
     }
    delete[] dens_tot; //don't need this field for anything else (and if we did, it's going to be out of scope by this point)
    } 
+
 

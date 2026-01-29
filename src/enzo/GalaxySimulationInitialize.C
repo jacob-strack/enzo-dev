@@ -160,7 +160,7 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   FLOAT GalaxySimulationGasHaloScaleRadius,
 	GalaxySimulationGasHaloDensity;
 
-  int GalaxySimulationIterateRebuildHierarchy = TRUE; // IF you have a solution senstive AMR strategy, this should be true.
+  int GalaxySimulationIterateRebuildHierarchy = FALSE; // IF you have a solution senstive AMR strategy, this should be true.
   int GalaxySimulationStaticHierarchyAfterInit = TRUE; // IF you have a solution senstive AMR strategy, this should be true.
 
   int   GalaxySimulationRefineAtStart,

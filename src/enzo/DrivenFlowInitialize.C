@@ -39,6 +39,47 @@ int DrivenFlowInitialize(FILE *fptr, FILE *Outfptr,
   char *Vel1Name = "x-velocity";
   char *Vel2Name = "y-velocity";
   char *Vel3Name = "z-velocity";
+  char *ElectronName = "Electron_Density";
+  char *HIName    = "HI_Density";
+  char *HIIName   = "HII_Density";
+  char *HeIName   = "HeI_Density";
+  char *HeIIName  = "HeII_Density";
+  char *HeIIIName = "HeIII_Density";
+  char *HMName    = "HM_Density";
+  char *H2IName   = "H2I_Density";
+  char *H2IIName  = "H2II_Density";
+  char *DIName    = "DI_Density";
+  char *DIIName   = "DII_Density";
+  char *HDIName   = "HDI_Density";
+  char *MetalName   = "Metal_Density";
+  char *MetalIaName = "MetalSNIa_Density";
+  char *CMName = "CMDensity"; 
+  char *OMName = "OMDensity"; 
+  char *CIName = "CIDensity"; 
+  char *OIName = "OIDensity"; 
+  char *OHIName = "OHIDensity"; 
+  char *COIName = "COIDensity"; 
+  char *CHIName = "CHIDensity"; 
+  char *CH2IName = "CH2IDensity"; 
+  char *C2IName = "C2IDensity"; 
+  char *HCOIName = "HCOIDensity"; 
+  char *H2OIName = "H2O0IDensity"; 
+  char *O2IName = "O2IDensity"; 
+  char *CO_TOTALIName = "CO_TOTALIDensity"; 
+  char *H2O_TOTALIName = "H2O_TOTALIDensity"; 
+  char *CIIName = "CIIDensity"; 
+  char *OIIName = "OIIDensity"; 
+  char *HOCIIName = "HOCIIDensity";
+  char *HCOIIName = "HCOIIDensity"; 
+  char *H3IIName = "H3IIDensity"; 
+  char *CHIIName = "CHIIDensity"; 
+  char *CH2IIName = "CH2IIDensity"; 
+  char *COIIName = "COIIDensity"; 
+  char *CH3IIName = "CH3IIDensity"; 
+  char *OHIIName = "OHIIDensity"; 
+  char *H2OIIName = "H2OIIDensity"; 
+  char *H3OIIName = "H3OIIDensity"; 
+  char *O2IIName = "O2IIDensity"; 
   char *BxName = "Bx";
   char *ByName = "By";
   char *BzName = "Bz";
@@ -102,9 +143,10 @@ int DrivenFlowInitialize(FILE *fptr, FILE *Outfptr,
     ret += sscanf(line, "DrivenFlowDensity = %"FSYM, &DrivenFlowDensity);
     ret += sscanf(line, "DrivenFlowPressure = %"FSYM, &DrivenFlowPressure);
     ret += sscanf(line, "DrivenFlowMagField = %"FSYM, &DrivenFlowMagField);
-
+    
+    ret += sscanf(line, "use_krome = %"ISYM, &use_krome);
     /* if the line is suspicious, issue a warning */
-
+    printf("\n use_krome %d \n", use_krome);
     if (ret == 0 && strstr(line, "=") && strstr(line, "DrivenFlow"))
       fprintf(stderr, "warning: the following parameter line was not interpreted:\n%s\n", line);
 
@@ -121,7 +163,11 @@ int DrivenFlowInitialize(FILE *fptr, FILE *Outfptr,
     
   } else {
     fprintf(stderr,"DrivenFlowInitialize: Multispecies != 0 untested at this point.\n");
-    return FALSE;
+    if (EquationOfState == 0)
+      SoundSpeed = sqrt(Gamma * DrivenFlowPressure / DrivenFlowDensity);
+    else
+      SoundSpeed = IsothermalSoundSpeed;
+    //return FALSE;
   }
 
   if (SelfGravity) {
@@ -201,6 +247,51 @@ int DrivenFlowInitialize(FILE *fptr, FILE *Outfptr,
   if( HydroMethod == MHD_RK ){
     DataLabel[count++] = PhiName;
   }
+ if (MultiSpecies) {
+   DataLabel[count++] = ElectronName;
+   DataLabel[count++] = HIName;
+   DataLabel[count++] = HIIName;
+   DataLabel[count++] = HeIName;
+   DataLabel[count++] = HeIIName;
+   DataLabel[count++] = HeIIIName;
+   if (MultiSpecies > 1) {
+     DataLabel[count++] = HMName;
+     DataLabel[count++] = H2IName;
+     DataLabel[count++] = H2IIName;
+   }
+   if (MultiSpecies > 2) {
+     DataLabel[count++] = DIName;
+     DataLabel[count++] = DIIName;
+     DataLabel[count++] = HDIName;
+   }
+   DataLabel[count++] = CMName;  
+   DataLabel[count++] = OMName; 
+   DataLabel[count++] = CIName; 
+   DataLabel[count++] = OIName; 
+   DataLabel[count++] = OHIName; 
+   DataLabel[count++] = COIName; 
+   DataLabel[count++] = CHIName; 
+   DataLabel[count++] = CH2IName; 
+   DataLabel[count++] = C2IName; 
+   DataLabel[count++] = HCOIName; 
+   DataLabel[count++] = H2OIName; 
+   DataLabel[count++] = O2IName; 
+   DataLabel[count++] = CO_TOTALIName; 
+   DataLabel[count++] = H2O_TOTALIName; 
+   DataLabel[count++] = CIIName; 
+   DataLabel[count++] = OIIName; 
+   DataLabel[count++] = HOCIIName; 
+   DataLabel[count++] = HCOIIName; 
+   DataLabel[count++] = H3IIName; 
+   DataLabel[count++] = CHIIName; 
+   DataLabel[count++] = CH2IIName; 
+   DataLabel[count++] = COIIName; 
+   DataLabel[count++] = CH3IIName; 
+   DataLabel[count++] = OHIIName; 
+   DataLabel[count++] = H2OIIName; 
+   DataLabel[count++] = H3OIIName; 
+   DataLabel[count++] = O2IIName; 
+ }
   MHDCTSetupFieldLabels();
 
     DataLabel[count++] = StochAccel1Name;
