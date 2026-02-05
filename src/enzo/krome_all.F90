@@ -5,7 +5,7 @@ module krome_commons
 
   ! *************************************************************
   !  This file has been generated with:
-  !  KROME 14.08.dev on 2026-01-12 13:41:08
+  !  KROME 14.08.dev on 2026-02-05 08:53:42
   !  Changeset cd85309
   !  see http://kromepackage.org
   !
@@ -18,20 +18,26 @@ module krome_commons
   !  KROME is provided "as it is", without any warranty.
   ! *************************************************************
   integer,parameter::idx_E=1
-  integer,parameter::idx_C=2
-  integer,parameter::idx_Cj=3
-  integer,parameter::idx_CR=4
-  integer,parameter::idx_g=5
-  integer,parameter::idx_Tgas=6
-  integer,parameter::idx_dummy=7
-  integer,parameter::nrea=3
-  integer,parameter::nmols=3
-  integer,parameter::nspec=7
-  integer,parameter::natoms=2
+  integer,parameter::idx_Hk=2
+  integer,parameter::idx_H=3
+  integer,parameter::idx_HE=4
+  integer,parameter::idx_H2=5
+  integer,parameter::idx_Hj=6
+  integer,parameter::idx_HEj=7
+  integer,parameter::idx_H2j=8
+  integer,parameter::idx_HEjj=9
+  integer,parameter::idx_CR=10
+  integer,parameter::idx_g=11
+  integer,parameter::idx_Tgas=12
+  integer,parameter::idx_dummy=13
+  integer,parameter::nrea=38
+  integer,parameter::nmols=9
+  integer,parameter::nspec=13
+  integer,parameter::natoms=3
   integer,parameter::ndust=0
   integer,parameter::ndustTypes=0
-  integer,parameter::nPhotoBins=200
-  integer,parameter::nPhotoRea=1
+  integer,parameter::nPhotoBins=0
+  integer,parameter::nPhotoRea=0
 
   !cooling index
   integer,parameter::idx_cool_h2 = 1
@@ -111,22 +117,6 @@ module krome_commons
   real*8::arr_flux(nrea)
 
   !commons for frequency bins
-  real*8::photoBinJ(nPhotoBins) !intensity per bin, eV/sr/cm2
-  real*8::photoBinJ_org(nPhotoBins) !intensity per bin stored, eV/sr/cm2
-  real*8::photoBinEleft(nPhotoBins) !left limit of the freq bin, eV
-  real*8::photoBinEright(nPhotoBins) !right limit of the freq bin, eV
-  real*8::photoBinEmid(nPhotoBins) !middle point of the freq bin, eV
-  real*8::photoBinEdelta(nPhotoBins) !size of the freq bin, eV
-  real*8::photoBinEidelta(nPhotoBins) !inverse of the size of the freq bin, 1/eV
-  real*8::photoBinJTab(nPhotoRea,nPhotoBins) !xsecs table, cm2
-  real*8::photoBinRates(nPhotoRea) !photo rates, 1/s
-  real*8::photoBinHeats(nPhotoRea) !photo heating, erg/s
-  real*8::photoBinEth(nPhotoRea) !energy treshold, eV
-  real*8::photoPartners(nPhotoRea) !index of the photoreactants
-  real*8::opacityDust(nPhotoBins) !interpolated opacity from tables
-  !$omp threadprivate(photoBinJ,photoBinJ_org,photoBinEleft,photoBinEright,photoBinEmid, &
-      !$omp    photoBinEdelta,photoBinEidelta,photoBinJTab,photoBinRates,photoBinHeats,photoBinEth, &
-      !$omp    photoPartners)
 
   ! Draine dust absorption data loaded from file, via load_kabs
   ! in krome_photo module
@@ -152,6 +142,8 @@ module krome_commons
   !$omp threadprivate(krome_omp_thread)
 
   !user-defined commons variables from the reaction file
+  real*8::user_crate
+  !$omp threadprivate(user_crate)
 
   !commons for anytab
 
@@ -838,12 +830,18 @@ contains
     real*8::get_mass(nspec)
 
     get_mass(1) = 9.10938188d-28	!E
-    get_mass(2) = 2.0076195109128d-23	!C
-    get_mass(3) = 2.007528417094d-23	!C+
-    get_mass(4) = 0d0	!CR
-    get_mass(5) = 0d0	!g
-    get_mass(6) = 0d0	!Tgas
-    get_mass(7) = 0d0	!dummy
+    get_mass(2) = 1.6744434563759998d-24	!H-
+    get_mass(3) = 1.673532518188d-24	!H
+    get_mass(4) = 6.692065036376d-24	!HE
+    get_mass(5) = 3.347065036376d-24	!H2
+    get_mass(6) = 1.67262158d-24	!H+
+    get_mass(7) = 6.691154098188d-24	!HE+
+    get_mass(8) = 3.346154098188d-24	!H2+
+    get_mass(9) = 6.690243159999999d-24	!HE++
+    get_mass(10) = 0d0	!CR
+    get_mass(11) = 0d0	!g
+    get_mass(12) = 0d0	!Tgas
+    get_mass(13) = 0d0	!dummy
 
   end function get_mass
 
@@ -855,12 +853,18 @@ contains
     real*8::get_imass_sqrt(nspec)
 
     get_imass_sqrt(1) = 33132602150543.92	!E
-    get_imass_sqrt(2) = 223182067345.7445	!C
-    get_imass_sqrt(3) = 223187130854.6853	!C+
-    get_imass_sqrt(4) = 0d0	!CR
-    get_imass_sqrt(5) = 0d0	!g
-    get_imass_sqrt(6) = 0d0	!Tgas
-    get_imass_sqrt(7) = 0d0	!dummy
+    get_imass_sqrt(2) = 772795806394.0071	!H-
+    get_imass_sqrt(3) = 773006102110.9268	!H
+    get_imass_sqrt(4) = 386562679981.0883	!HE
+    get_imass_sqrt(5) = 546597856701.2171	!H2
+    get_imass_sqrt(6) = 773216569600.4055	!H+
+    get_imass_sqrt(7) = 386588992536.287	!HE+
+    get_imass_sqrt(8) = 546672253002.7066	!H2+
+    get_imass_sqrt(9) = 386615310465.34766	!HE++
+    get_imass_sqrt(10) = 0d0	!CR
+    get_imass_sqrt(11) = 0d0	!g
+    get_imass_sqrt(12) = 0d0	!Tgas
+    get_imass_sqrt(13) = 0d0	!dummy
 
   end function get_imass_sqrt
 
@@ -872,12 +876,18 @@ contains
     real*8::get_imass(nspec)
 
     get_imass(1) = 1.0977693252662275d+27	!E
-    get_imass(2) = 4.981023518472045d+22	!C
-    get_imass(3) = 4.981249537914642d+22	!C+
-    get_imass(4) = 0d0	!CR
-    get_imass(5) = 0d0	!g
-    get_imass(6) = 0d0	!Tgas
-    get_imass(7) = 0d0	!dummy
+    get_imass(2) = 5.9721335838016375d+23	!H-
+    get_imass(3) = 5.9753843390072855d+23	!H
+    get_imass(4) = 1.4943070555416133d+23	!HE
+    get_imass(5) = 2.9876921695036427d+23	!H2
+    get_imass(6) = 5.978638635046188d+23	!H+
+    get_imass(7) = 1.494510491502214d+23	!HE+
+    get_imass(8) = 2.988505522030552d+23	!H2+
+    get_imass(9) = 1.4947139828621716d+23	!HE++
+    get_imass(10) = 0d0	!CR
+    get_imass(11) = 0d0	!g
+    get_imass(12) = 0d0	!Tgas
+    get_imass(13) = 0d0	!dummy
 
   end function get_imass
 
@@ -890,6 +900,9 @@ contains
 
     get_EbindBare(:) = 1d99
 
+    get_EbindBare(idx_H) = 500.0d0
+    get_EbindBare(idx_H2) = 300.0d0
+
   end function get_EbindBare
 
   !************************
@@ -901,6 +914,9 @@ contains
 
     get_EbindIce(:) = 1d99
 
+    get_EbindIce(idx_H) = 650.0d0
+    get_EbindIce(idx_H2) = 300.0d0
+
   end function get_EbindIce
 
   !************************
@@ -910,8 +926,14 @@ contains
     real*8::get_kevap70(nspec)
 
     get_kevap70(idx_E) = 0d0
-    get_kevap70(idx_C) = 0d0
-    get_kevap70(idx_Cj) = 0d0
+    get_kevap70(idx_Hk) = 0d0
+    get_kevap70(idx_H) = 790490323.1199661
+    get_kevap70(idx_HE) = 0d0
+    get_kevap70(idx_H2) = 13763786733.050402
+    get_kevap70(idx_Hj) = 0d0
+    get_kevap70(idx_HEj) = 0d0
+    get_kevap70(idx_H2j) = 0d0
+    get_kevap70(idx_HEjj) = 0d0
     get_kevap70(idx_CR) = 0d0
     get_kevap70(idx_g) = 0d0
     get_kevap70(idx_Tgas) = 0d0
@@ -939,12 +961,18 @@ contains
     character*16::get_names(nspec)
 
     get_names(1) = "E"
-    get_names(2) = "C"
-    get_names(3) = "C+"
-    get_names(4) = "CR"
-    get_names(5) = "g"
-    get_names(6) = "Tgas"
-    get_names(7) = "dummy"
+    get_names(2) = "H-"
+    get_names(3) = "H"
+    get_names(4) = "HE"
+    get_names(5) = "H2"
+    get_names(6) = "H+"
+    get_names(7) = "HE+"
+    get_names(8) = "H2+"
+    get_names(9) = "HE++"
+    get_names(10) = "CR"
+    get_names(11) = "g"
+    get_names(12) = "Tgas"
+    get_names(13) = "dummy"
 
   end function get_names
 
@@ -1020,7 +1048,11 @@ contains
     use krome_commons
     real*8::n(:),get_Hnuclei,nH
 
-    nH = 0.d0
+    nH = n(idx_Hk) + &
+        n(idx_H) + &
+        n(idx_H2)*2d0 + &
+        n(idx_Hj) + &
+        n(idx_H2j)*2d0
     get_Hnuclei = nH
 
   end function get_Hnuclei
@@ -1032,12 +1064,18 @@ contains
     integer::get_zatoms(nspec)
 
     get_zatoms(1) = 0	!E
-    get_zatoms(2) = 6	!C
-    get_zatoms(3) = 6	!C+
-    get_zatoms(4) = 0	!CR
-    get_zatoms(5) = 0	!g
-    get_zatoms(6) = 0	!Tgas
-    get_zatoms(7) = 0	!dummy
+    get_zatoms(2) = 1	!H-
+    get_zatoms(3) = 1	!H
+    get_zatoms(4) = 2	!HE
+    get_zatoms(5) = 2	!H2
+    get_zatoms(6) = 1	!H+
+    get_zatoms(7) = 2	!HE+
+    get_zatoms(8) = 2	!H2+
+    get_zatoms(9) = 2	!HE++
+    get_zatoms(10) = 0	!CR
+    get_zatoms(11) = 0	!g
+    get_zatoms(12) = 0	!Tgas
+    get_zatoms(13) = 0	!dummy
 
   end function get_zatoms
 
@@ -1137,7 +1175,11 @@ contains
     implicit none
     real*8::get_electrons,n(nspec)
 
-    get_electrons =  + n(idx_Cj)
+    get_electrons =  - n(idx_Hk) &
+        + n(idx_Hj) &
+        + n(idx_HEj) &
+        + n(idx_H2j) &
+        + 2d0*n(idx_HEjj)
     get_electrons = max(get_electrons,0d0)
 
   end function get_electrons
@@ -1150,34 +1192,20 @@ contains
     integer::get_charges(nspec)
 
     get_charges(1) = -1.d0 	!E
-    get_charges(2) = 0.d0 	!C
-    get_charges(3) = 1.d0 	!C+
-    get_charges(4) = 0.d0 	!CR
-    get_charges(5) = 0.d0 	!g
-    get_charges(6) = 0.d0 	!Tgas
-    get_charges(7) = 0.d0 	!dummy
+    get_charges(2) = -1.d0 	!H-
+    get_charges(3) = 0.d0 	!H
+    get_charges(4) = 0.d0 	!HE
+    get_charges(5) = 0.d0 	!H2
+    get_charges(6) = 1.d0 	!H+
+    get_charges(7) = 1.d0 	!HE+
+    get_charges(8) = 1.d0 	!H2+
+    get_charges(9) = 2.d0 	!HE++
+    get_charges(10) = 0.d0 	!CR
+    get_charges(11) = 0.d0 	!g
+    get_charges(12) = 0.d0 	!Tgas
+    get_charges(13) = 0.d0 	!dummy
 
   end function get_charges
-
-  !*****************************
-  ! get metallicity using C as reference
-  function get_metallicityC(n)
-    use krome_commons
-    implicit none
-    real*8::n(:),get_metallicityC,zC,nH
-
-    nH = get_Hnuclei(n(:))
-
-    zC = n(idx_C) &
-        + n(idx_Cj)
-
-    zC = max(zC, 0d0)
-
-    get_metallicityC = log10(zC/nH+1d-40) - (-3.5700000000000003)
-
-    phys_metallicity = get_metallicityC
-
-  end function get_metallicityC
 
 end module krome_getphys
 !This module contains the functions and subroutines
@@ -1443,7 +1471,7 @@ contains
 
   ! *************************************************************
   !  This file has been generated with:
-  !  KROME 14.08.dev on 2026-01-12 13:41:08
+  !  KROME 14.08.dev on 2026-02-05 08:53:42
   !  Changeset cd85309
   !  see http://kromepackage.org
   !
@@ -1873,50 +1901,13 @@ contains
     !sigma_d = 4d-21 !Gnedin 2009
 
     NHtot = 0d0
+    NHtot  = NHtot + num2col(n(idx_H),n(:))
+    NHtot  = NHtot + num2col(n(idx_Hj),n(:))
+    NHtot  = NHtot + 2d0 * num2col(n(idx_H2),n(:))
 
     shield_dust = exp(-sigma_d*NHtot)
 
   end function shield_dust
-
-  !*******************
-  !apply a shielding to Habing flux
-  subroutine calcHabingThick(n,Tgas)
-    use krome_commons
-    implicit none
-    real*8::getHabingThick,n(:),Tgas
-
-    GHabing = GHabing_thin * shield_dust(n(:),Tgas,0.665d0)
-
-  end subroutine calcHabingThick
-
-  !*********************
-  !return the ratio between the current flux an Draine's
-  function get_ratioFluxDraine()
-    implicit none
-    real*8::get_ratioFluxDraine
-
-    !7.95d-8 eV/cm2/sr is the integrated Draine flux
-    get_ratioFluxDraine = get_integratedFlux()/7.95d-8
-
-  end function get_ratioFluxDraine
-
-  !**********************
-  !return the curred integrated flux (eV/cm2/sr)
-  ! as I(E)/E*dE
-  function get_integratedFlux()
-    use krome_commons
-    implicit none
-    integer::j
-    real*8::get_integratedFlux,dE
-
-    get_integratedFlux = 0d0
-    do j=1,nPhotoBins
-      dE = photoBinEdelta(j)
-      get_integratedFlux = get_integratedFlux &
-          + photoBinJ(j)*dE/photoBinEmid(j)
-    end do
-
-  end function get_integratedFlux
 
   !**********************
   !planck function in eV/s/cm2/Hz/sr
@@ -2011,7 +2002,7 @@ contains
 
   ! *************************************************************
   !  This file has been generated with:
-  !  KROME 14.08.dev on 2026-01-12 13:41:08
+  !  KROME 14.08.dev on 2026-02-05 08:53:42
   !  Changeset cd85309
   !  see http://kromepackage.org
   !
@@ -2036,9 +2027,44 @@ contains
     use krome_fit
     implicit none
     real*8::coe(nrea),k(nrea),Tgas,n(nspec),kmax
-    real*8::T32
+    real*8::Te
+    real*8::lnTe
+    real*8::invT
+    real*8::invTe
     real*8::small,nmax
     integer::i
+    real*8::T !preproc from coevar
+    real*8::a1 !preproc from coevar
+    real*8::a2 !preproc from coevar
+    real*8::a3 !preproc from coevar
+    real*8::a4 !preproc from coevar
+    real*8::a5 !preproc from coevar
+    real*8::a6 !preproc from coevar
+    real*8::a7 !preproc from coevar
+    real*8::a8 !preproc from coevar
+    real*8::a9 !preproc from coevar
+    real*8::a10 !preproc from coevar
+    real*8::a11 !preproc from coevar
+    real*8::a12 !preproc from coevar
+    real*8::asav0 !preproc from coevar
+    real*8::asav1 !preproc from coevar
+    real*8::asav2 !preproc from coevar
+    real*8::asav3 !preproc from coevar
+    real*8::asav4 !preproc from coevar
+    real*8::asav5 !preproc from coevar
+    real*8::asav6 !preproc from coevar
+    real*8::asav7 !preproc from coevar
+    real*8::bsav0 !preproc from coevar
+    real*8::bsav1 !preproc from coevar
+    real*8::bsav2 !preproc from coevar
+    real*8::bsav3 !preproc from coevar
+    real*8::bsav4 !preproc from coevar
+    real*8::bsav5 !preproc from coevar
+    real*8::bsav6 !preproc from coevar
+    real*8::bsav7 !preproc from coevar
+    real*8::sumsav !preproc from coevar
+    real*8::sumsbv !preproc from coevar
+    real*8::myflux_eV !preproc from coevar
     !Tgas is in K
     Tgas = max(n(idx_Tgas), phys_Tcmb)
     Tgas = min(Tgas,1d9)
@@ -2048,20 +2074,259 @@ contains
     nmax = max(maxval(n(1:nmols)),1d0)
     small = 1d-40/(nmax*nmax*nmax)
 
-    T32 = Tgas*0.0033333333333333335 !Tgas/(300 K) (#)
+    Te = Tgas*8.617343d-5 !Tgas in eV (eV)
+    lnTe = log(Te) !ln of Te (#)
+    invT = 1.d0/Tgas !inverse of T (1/K)
+    invTe = 1.d0/Te !inverse of T (1/eV)
+
+    T = Tgas
+    a1 = 1.3500e-09
+    a2 = 9.8493e-02
+    a3 = 3.2852e-01
+    a4 = 5.5610e-01
+    a5 = 2.7710e-07
+    a6 = 2.1826e+00
+    a7 = 6.1910e-03
+    a8 = 1.0461e+00
+    a9 = 8.9712e-11
+    a10 = 3.0424e+00
+    a11 = 3.2576e-14
+    a12 = 3.7741e+00
+    asav0 = -1.9153214d2
+    asav1 = 4.0129114d2
+    asav2 = -3.7446991d2
+    asav3 = 1.9078410d2
+    asav4 = -5.7263467d1
+    asav5 = 1.0133210d1
+    asav6 = -9.8012853d-1
+    asav7 = 4.0023414d-2
+    bsav0 = -8.8755774d3
+    bsav1 = 1.0081246d4
+    bsav2 = -4.8606622d3
+    bsav3 = 1.2889659d3
+    bsav4 = -2.0319575d2
+    bsav5 = 1.9057493d1
+    bsav6 = -9.8530668d-1
+    bsav7 = 2.1675387d-2
+    sumsav = asav0+asav1*log10(Tgas)+asav2*(log10(Tgas))**2+asav3*(log10(Tgas))**3+asav4*(log10(Tgas))**4+asav5*(log10(Tgas))**5+asav6*(log10(Tgas))**6+asav7*(log10(Tgas))**7
+    sumsbv = bsav0+bsav1*log10(Tgas)+bsav2*(log10(Tgas))**2+bsav3*(log10(Tgas))**3+bsav4*(log10(Tgas))**4+bsav5*(log10(Tgas))**5+bsav6*(log10(Tgas))**6+bsav7*(log10(Tgas))**7
+    myflux_eV = 2.01235E-010
 
     k(:) = small !inizialize coefficients
 
-    !C -> C+ + E
-    k(1) = small + (photoBinRates(1))
+    !H + E -> H+ + E + E
+    k(1) = small + (exp(-32.71396786d0+13.5365560d0&
+        *lnTe-5.73932875d0*(lnTe**2)+1.56315498d0&
+        *(lnTe**3)-0.28770560d0*(lnTe**4)+3.48255977d-2&
+        *(lnTe**5)-2.63197617d-3*(lnTe**6)+1.11954395d-4&
+        *(lnTe**7)-2.03914985d-6*(lnTe**8)))
 
-    !C+ + E -> C
-    k(2) = small + ( 0.44d-11*T32**(-0.61))
-
-    !C + E -> C+ + E + E
-    if(Tgas.GE.1.160452d+04 .and. Tgas.LT.2.320904d+08) then
-      k(3) = small + ( colion_v96(Tgas, 11.3d0, 0d0, 0.685d-07, 0.1930d0, 0.25d0))
+    !H+ + E -> H
+    if(Tgas.LE.5.5d3) then
+      k(2) = small + (3.92d-13&
+          *invTe**0.6353d0)
     end if
+
+    !H+ + E -> H
+    if(Tgas.GT.5.5d3) then
+      k(3) = small + (exp(-28.61303380689232d0-0.7241125657826851d0&
+          *lnTe-0.02026044731984691d0*lnTe**2-0.002380861877349834d0&
+          *lnTe**3-0.0003212605213188796d0&
+          *lnTe**4-0.00001421502914054107d0&
+          *lnTe**5+4.989108920299513d-6*lnTe**6+5.755614137575758d-7&
+          *lnTe**7-1.856767039775261d-8*lnTe**8-3.071135243196595d-9&
+          *lnTe**9))
+    end if
+
+    !HE + E -> HE+ + E + E
+    k(4) = small + (exp(-44.09864886d0+23.91596563d0&
+        *lnTe-10.7532302d0*(lnTe**2)+3.05803875d0&
+        *(lnTe**3)-0.56851189d0*(lnTe**4)+6.79539123d-2&
+        *(lnTe**5)-5.00905610d-3*(lnTe**6)+2.06723616d-4&
+        *(lnTe**7)-3.64916141d-6*(lnTe**8)))
+
+    !HE+ + E -> HE
+    if(Tgas.LE.9.284d3) then
+      k(5) = small + (3.92d-13&
+          *invTe**0.6353d0)
+    end if
+
+    !HE+ + E -> HE
+    if(Tgas.GT.9.284d3) then
+      k(6) = small + (1.54d-9&
+          *(1.d0+0.3d0&
+          /exp(8.099328789667d0&
+          *invTe))&
+          /(exp(40.49664394833662d0*invTe)&
+          *Te**1.5d0)+3.92d-13&
+          /Te**0.6353d0)
+    end if
+
+    !HE+ + E -> HE++ + E + E
+    k(7) = small + (exp(-68.71040990212001d0+43.93347632635d0&
+        *lnTe-18.48066993568d0*lnTe**2+4.701626486759002d0&
+        *lnTe**3-0.7692466334492d0*lnTe**4+0.08113042097303d0&
+        *lnTe**5-0.005324020628287001d0*lnTe**6+0.0001975705312221d0&
+        *lnTe**7-3.165581065665d-6*lnTe**8))
+
+    !HE++ + E -> HE+
+    k(8) = small + (1.891d-10/(sqrt(Tgas&
+        /9.37)&
+        *(1.+sqrt(Tgas/9.37))**0.2476&
+        *(1.+sqrt(Tgas&
+        /2.774d6))**1.7524))
+
+    !H + E -> H-
+    k(9) = small + (1.4d-18*Tgas**0.928&
+        *exp(-Tgas&
+        /16200.))
+
+    !H- + H -> H2 + E
+    k(10) = small + (a1*(Tgas**a2+a3&
+        *Tgas**a4+a5*Tgas**a6)&
+        /(1.+a7*Tgas**a8+a9*Tgas**a10+a11&
+        *Tgas**a12))
+
+    !H + H+ -> H2+
+    if(Tgas.LT.3d1) then
+      k(11) = small + (2.10e-20&
+          *(Tgas&
+          /30.)**(-0.15))
+    end if
+
+    !H + H+ -> H2+
+    if(Tgas.GE.3d1) then
+      k(12) = small + (10**(-18.20-3.194&
+          *log10(Tgas)+1.786*(log10(Tgas))**2-0.2072&
+          *(log10(Tgas))**3))
+    end if
+
+    !H2+ + H -> H2 + H+
+    k(13) = small + (6.0d-10)
+
+    !H2 + H+ -> H2+ + H
+    if(Tgas.GE.1.d2 .and. Tgas.LT.1.d5) then
+      k(14) = small + (10**sumsav)
+    end if
+
+    !H2 + H+ -> H2+ + H
+    if(Tgas.GE.1.d5 .and. Tgas.LE.1.d8) then
+      k(15) = small + (10**sumsbv)
+    end if
+
+    !H2 + E -> H + H-
+    k(16) = small + (3.55d1*Tgas**(-2.28)&
+        *exp(-46707.&
+        /Tgas))
+
+    !H2 + E -> H + H + E
+    k(17) = small + (4.38d-10&
+        *exp(-102000.&
+        /Tgas)*Tgas**(0.35))
+
+    !H2 + H -> H + H + H
+    k(18) = small + (6.67e-12*sqrt(Tgas)&
+        *exp(-(1+63593&
+        /Tgas)))
+
+    !H- + E -> H + E + E
+    k(19) = small + (exp(-18.01849334273d0+2.360852208681d0&
+        *lnTe-0.2827443061704d0*lnTe**2+0.01623316639567d0&
+        *lnTe**3-0.03365012031362999d0*lnTe**4+0.01178329782711d0&
+        *lnTe**5-0.001656194699504d0*lnTe**6+0.0001068275202678d0&
+        *lnTe**7-2.631285809207d-6*lnTe**8))
+
+    !H- + H -> H + H + E
+    if(Tgas.LE.1.16d3) then
+      k(20) = small + (2.56d-9&
+          *Te**1.78186d0)
+    end if
+
+    !H- + H -> H + H + E
+    if(Tgas.GT.1.16d3) then
+      k(21) = small + (exp(-20.37260896533324d0+1.139449335841631d0&
+          *lnTe-0.1421013521554148d0*lnTe**2+0.00846445538663d0&
+          *lnTe**3-0.0014327641212992d0*lnTe**4+0.0002012250284791d0&
+          *lnTe**5+0.0000866396324309d0*lnTe**6-0.00002585009680264d0&
+          *lnTe**7+2.4555011970392d-6*lnTe**8-8.06838246118d-8&
+          *lnTe**9))
+    end if
+
+    !H- + H+ -> H + H
+    if(Tgas.GE.1d1 .and. Tgas.LE.1d7) then
+      k(22) = small + ((2.96d-6&
+          /sqrt(Tgas)-1.73d-9+2.50d-10&
+          *sqrt(Tgas)-7.77d-13))
+    end if
+
+    !H- + H+ -> H2+ + E
+    k(23) = small + (1.d-8*Tgas**(-0.4d0))
+
+    !H2+ + E -> H + H
+    if(Tgas.LE.6.17d2) then
+      k(24) = small + (1.d-8)
+    end if
+
+    !H2+ + E -> H + H
+    if(Tgas.GT.6.17d2) then
+      k(25) = small + (1.32d-6&
+          *Tgas**(-0.76d0))
+    end if
+
+    !H2+ + H- -> H + H2
+    k(26) = small + (5.d-7*sqrt(1.d2*invT))
+
+    !H2 + H2 -> H + H + H2
+    k(27) = small + (5.996d-30&
+        *Tgas**(4.1881)*(1d0+6.761d-6*Tgas)**(-5.6881)*exp(-54657.4&
+        *invT))
+
+    !HE+ + H -> HE + H+
+    k(28) = small + (1.20d-15&
+        *(Tgas&
+        /3d2)**0.25d0)
+
+    !HE + H+ -> HE+ + H
+    if(Tgas.LE.1d4) then
+      k(29) = small + (1.26d-9&
+          *Tgas**(-0.75d0)*exp(-1.275d5*invT))
+    end if
+
+    !HE + H+ -> HE+ + H
+    if(Tgas.GT.1d4) then
+      k(30) = small + (4.d-37&
+          *Tgas**(4.74d0))
+    end if
+
+    !H2 + HE+ -> HE + H + H+
+    k(31) = small + (3.7d-14&
+        *exp(-35.d0&
+        /Tgas))
+
+    !H2 + HE -> H + H + HE
+    k(32) = small + (10**(-27.029 + 3.801&
+        *log10(Tgas)-29487d0&
+        /Tgas))
+
+    !H2 + HE+ -> H2+ + HE
+    k(33) = small + (7.2d-15)
+
+    !H + H -> H + H+ + E
+    k(34) = small + (1.2d-17*Tgas**(1.2d0)&
+        *exp(-157800*invT))
+
+    !H + HE -> HE + H+ + E
+    k(35) = small + (1.75d-17&
+        *Tgas**(1.3d0)*exp(-157800*invT))
+
+    !H2 -> H + H
+    k(36) = small + (H2_solomonLW(myflux_eV))
+
+    !H+ + E -> H
+    k(37) = small + (H_recombination_on_dust(n,Tgas))
+
+    !HE+ + E -> HE
+    k(38) = small + (He_recombination_on_dust(n,Tgas))
 
     coe(:) = k(:) !set coefficients to return variable
 
@@ -2291,7 +2556,11 @@ contains
     B(:) = ref(:)
 
     !charge conservation
-    x(idx_E) = m(idx_E)*(+ 1d0*x(idx_Cj) / m(idx_Cj))
+    x(idx_E) = m(idx_E)*(- 1d0*x(idx_Hk) / m(idx_Hk) &
+        + 1d0*x(idx_Hj) / m(idx_Hj) &
+        + 1d0*x(idx_HEj) / m(idx_HEj) &
+        + 1d0*x(idx_H2j) / m(idx_H2j) &
+        + 2d0*x(idx_HEjj) / m(idx_HEjj))
     !check if charge conservation goes wrong
     if(x(idx_E)<0d0) then
       print *,"ERROR in conserveLin, electrons < 0"
@@ -2699,8 +2968,8 @@ contains
     use krome_fit
     real*8::revHS,Tgas,Tgas2,Tgas3,Tgas4,invT,lnT,H,S
     real*8::Tnist,Tnist2,Tnist3,Tnist4,invTnist,invTnist2,lnTnist
-    real*8::p1_nasa(7,7), p2_nasa(7,7), Tlim_nasa(7,3), p(7)
-    real*8::p1_nist(7,7), p2_nist(7,7), Tlim_nist(7,3)
+    real*8::p1_nasa(13,7), p2_nasa(13,7), Tlim_nasa(13,3), p(7)
+    real*8::p1_nist(13,7), p2_nist(13,7), Tlim_nist(13,3)
     integer::idx
 
     p(:) = 0.d0
@@ -2725,38 +2994,123 @@ contains
     invTnist2 = invTnist * invTnist
     lnTnist = log(Tnist)
 
-    p1_nasa(idx_C,:)  = (/2.5542395d0,&
-        -0.00032153772d0,&
-        7.3379223d-07,&
-        -7.3223487d-10,&
-        2.6652144d-13,&
-        85442.681d0,&
-        4.5313085d0/)
-    p1_nasa(idx_Cj,:)  = (/2.61332254d0,&
-        -0.000540148065d0,&
-        1.03037233d-06,&
-        -8.90092552d-10,&
-        2.88500586d-13,&
-        216862.274d0,&
-        3.8345479d0/)
-    p2_nasa(idx_C,:)  = (/2.605583d0,&
-        -0.00019593434d0,&
-        1.0673722d-07,&
-        -1.642394d-11,&
-        8.187058d-16,&
-        85411.742d0,&
-        4.1923868d0/)
-    p2_nasa(idx_Cj,:)  = (/2.50827618d0,&
-        -1.04354146d-05,&
-        5.16160809d-09,&
-        -1.14187475d-12,&
-        9.43539946d-17,&
-        216879.645d0,&
-        4.3188599d0/)
-    Tlim_nasa(idx_C,:)  = (/200.0d0,&
+    p1_nasa(idx_Hk,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        15976.167d0,&
+        -1.1390139d0/)
+    p1_nasa(idx_H,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        25473.66d0,&
+        -0.44668285d0/)
+    p1_nasa(idx_HE,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        -745.375d0,&
+        0.928723974d0/)
+    p1_nasa(idx_H2,:)  = (/2.34433112d0,&
+        0.00798052075d0,&
+        -1.9478151d-05,&
+        2.01572094d-08,&
+        -7.37611761d-12,&
+        -917.935173d0,&
+        0.683010238d0/)
+    p1_nasa(idx_Hj,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        184021.488d0,&
+        -1.14064664d0/)
+    p1_nasa(idx_HEj,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        285323.374d0,&
+        1.62166556d0/)
+    p1_nasa(idx_H2j,:)  = (/3.77256072d0,&
+        -0.0019574659d0,&
+        4.54812047d-06,&
+        -2.82152141d-09,&
+        5.33969209d-13,&
+        178694.654d0,&
+        -3.96609192d0/)
+    p2_nasa(idx_Hk,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        15976.167d0,&
+        -1.1390139d0/)
+    p2_nasa(idx_H,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        25473.66d0,&
+        -0.44668285d0/)
+    p2_nasa(idx_HE,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        -745.375d0,&
+        0.928723974d0/)
+    p2_nasa(idx_H2,:)  = (/2.93286575d0,&
+        0.000826608026d0,&
+        -1.46402364d-07,&
+        1.54100414d-11,&
+        -6.888048d-16,&
+        -813.065581d0,&
+        -1.02432865d0/)
+    p2_nasa(idx_Hj,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        184021.488d0,&
+        -1.14064664d0/)
+    p2_nasa(idx_HEj,:)  = (/2.5d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        0.0d0,&
+        285323.374d0,&
+        1.62166556d0/)
+    p2_nasa(idx_H2j,:)  = (/3.44204765d0,&
+        0.000599083239d0,&
+        6.69133685d-08,&
+        -3.43574373d-11,&
+        1.97626599d-15,&
+        178650.236d0,&
+        -2.79499055d0/)
+    Tlim_nasa(idx_Hk,:)  = (/298.15d0,&
         1000.0d0,&
         6000.0d0/)
-    Tlim_nasa(idx_Cj,:)  = (/298.15d0,&
+    Tlim_nasa(idx_H,:)  = (/200.0d0,&
+        1000.0d0,&
+        6000.0d0/)
+    Tlim_nasa(idx_HE,:)  = (/200.0d0,&
+        1000.0d0,&
+        6000.0d0/)
+    Tlim_nasa(idx_H2,:)  = (/200.0d0,&
+        1000.0d0,&
+        6000.0d0/)
+    Tlim_nasa(idx_Hj,:)  = (/298.15d0,&
+        1000.0d0,&
+        6000.0d0/)
+    Tlim_nasa(idx_HEj,:)  = (/298.15d0,&
+        1000.0d0,&
+        6000.0d0/)
+    Tlim_nasa(idx_H2j,:)  = (/298.15d0,&
         1000.0d0,&
         6000.0d0/)
 
@@ -2980,13 +3334,20 @@ contains
     ! and product index
     use krome_commons
 
-    arr_r1(1:3) = (/2,3,2/)
-    arr_r2(1:3) = (/7,1&
-        ,1/)
-    arr_p1(1:3) = (/3,2,3/)
-    arr_p2(1:3) = (/1,7&
-        ,1/)
-    arr_p3(1:3) = (/7,7,1/)
+    arr_r1(1:38) = (/3,6,6,4,7,7,7,9,3,2,3,3,8,5,5,5,5,5,2,2,2,2&
+        ,2,8,8,8,5,7,4,4,5,5,5,3,3,5,6,7/)
+    arr_r2(1:38) = (/1,1,1&
+        ,1,1,1,1,1,1,3,6,6,3,6,6,1,1,3,1,3,3,6,6,1,1,2,5,3,6,6,7,4,7&
+        ,3,4,13,1,1/)
+    arr_p1(1:38) = (/6,3,3,7,4,4,9,7,2,5,8,8,5,8&
+        ,8,3,3,3,3,3,3,3,8,3,3,3,3,4,7,7,4,3,8,3,4,3,3&
+        ,4/)
+    arr_p2(1:38) = (/1,13,13,1,13,13,1,13,13,1,13,13,6,3&
+        ,3,2,3,3,1,3,3,3,1,3,3,5,3,6,3,3,3,3,4,6,6,3,13&
+        ,13/)
+    arr_p3(1:38) = (/1,13,13,1,13,13,1,13,13,13,13,13,13&
+        ,13,13,13,1,3,1,1,1,13,13,13,13,13,5,13,13,13,6,4,13,1,1,13&
+        ,13,13/)
 
   end subroutine load_arrays
 
@@ -3092,952 +3453,32 @@ end module krome_dust
 module krome_photo
 contains
 
-  !*******************************
-  !load a frequency-dependent opacity table stored in fname file,
-  ! column 1 is energy or wavelenght in un units of unitEnergy
-  ! (default eV), column 2 is opacity in cm2/g.
-  ! opacity is interpolated over the current photo-binning.
-  subroutine load_opacity_table(fname, unitEnergy)
-    use krome_commons
-    use krome_constants
-    implicit none
-    integer,parameter::ntmp=int(1e5)
-    character(len=*)::fname
-    character(len=*),optional::unitEnergy
-    character*10::eunit
-    integer::ios,icount,iR,iL,i,j,fileUnit
-    real*8::wl,opac,fL,fR,kk,dE
-    real*8::wls(ntmp),opacs(ntmp)
-    real*8,allocatable::energy(:),kappa(:)
-
-    !read energy unit optional argument
-    eunit = "eV" !default is eV
-    if(present(unitEnergy)) then
-      eunit = trim(unitEnergy)
-    end if
-
-    !read form file
-    open(newunit=fileUnit,file=trim(fname),status="old",iostat=ios)
-    !error if problems reading file
-    if(ios/=0) then
-      print *,"ERROR: problem while loading "//trim(fname)
-      stop
-    end if
-    icount = 0
-    !loop on file lines
-    do
-      !read wavelength and opacity
-      read(fileUnit,*,iostat=ios) wl,opac
-      if(ios/=0) exit
-      icount = icount + 1
-      wls(icount) = wl
-      opacs(icount) = opac
-    end do
-    close(fileUnit)
-
-    !allocate arrays
-    allocate(energy(icount), kappa(icount))
-    !copy temp arrays into allocated arrays, converting units
-    if(trim(eunit)=="eV") then
-      !eV->eV (default)
-      kappa(:) = opacs(1:icount)
-      energy(:) = wls(1:icount)
-    elseif(trim(eunit)=="micron") then
-      !micron->eV
-      kappa(:) = opacs(1:icount)
-      energy(:) = planck_eV*clight/(wls(1:icount)*1d-4)
-    else
-      print *,"ERROR: in load opacity table energy unit unknow",trim(eunit)
-      stop
-    end if
-
-    !reverse array if necessary
-    if(energy(2)<energy(1)) then
-      energy(:) = energy(size(energy):1:-1)
-      kappa(:) = kappa(size(kappa):1:-1)
-    end if
-
-    !check if photobins are intialized
-    if(maxval(photoBinEleft)==0d0) then
-      print *,"ERROR: empty photobins when interpolating dust Qabs"
-      print *," from file "//trim(fname)
-      print *,"You probably need to define a photobins metric before"
-      print *," the call to krome_load_opacity_table"
-      stop
-    end if
-
-    !check lower limit
-    if(photoBinEleft(1)<energy(1)) then
-      print *,"ERROR: dust table "//trim(fname)//" energy lower bound (eV)"
-      print *,photoBinEleft(1), "<", energy(1)
-      stop
-    end if
-
-    !check upper limit
-    if(photoBinEright(nPhotoBins)>energy(size(energy))) then
-      print *,"ERROR: dust table "//trim(fname)//" energy upper bound (eV)"
-      print *,photoBinEright(nPhotoBins), ">", energy(size(energy))
-      stop
-    end if
-
-    !interpolate on current energy distribution
-    do j=1,nPhotoBins
-      do i=2,size(energy)
-        !find left bound position
-        if(photoBinEleft(j)>energy(i-1) &
-            .and. photoBinEleft(j)<energy(i)) then
-        dE = energy(i)-energy(i-1)
-        fL = (photoBinEleft(j)-energy(i-1))/dE &
-            * (kappa(i)-kappa(i-1)) + kappa(i-1)
-        iL = i
-      end if
-
-      !find right bound position
-      if(photoBinEright(j)>energy(i-1) &
-          .and. photoBinEright(j)<energy(i)) then
-      dE = energy(i)-energy(i-1)
-      fR = (photoBinEright(j)-energy(i-1))/dE &
-          * (kappa(i)-kappa(i-1)) + kappa(i-1)
-      iR = i
-    end if
-  end do
-
-  !sum opacity for the given photo bin
-  kk = 0d0
-  !if there are other opacity points in between left and right limits
-  if(iR-iL>0) then
-    kk = kk + (energy(iL)-photoBinEleft(j))*(fL+kappa(iL))/2d0
-    kk = kk + (photoBinEright(j)-energy(iR-1))*(fR+kappa(iR-1))/2d0
-    !sum points in between
-    do i=iL,iR-2
-      kk = kk + (energy(i+1)-energy(i))*(kappa(i+1)+kappa(i))/2d0
-    end do
-  elseif(iR==iL) then
-    !no opacity points in between
-    kk = kk + (fL+fR)*(photoBinEright(j)-photoBinEleft(j))/2d0
-  else
-    print *,"ERROR: dust opacity interpolation error, iR-iL<0!"
-    print *,"iR,iL:",iR,iL
-    stop
-  end if
-
-  !copy to common and scale to bin size
-  dE = photoBinEright(j)-photoBinEleft(j)
-  opacityDust(j) = kk/dE
-
-end do
-
-!dump interpolated opacity
-open(newunit=fileUnit,file="opacityDust.interp",status="replace")
-do j=1,nPhotoBins
-  write(fileUnit,*) photoBinEmid(j),opacityDust(j)
-end do
-close(fileUnit)
-
-!dump original opacity file (as loaded by krome)
-open(newunit=fileUnit,file="opacityDust.org",status="replace")
-do i=1,size(energy)
-  write(fileUnit,*) energy(i),kappa(i)
-end do
-close(fileUnit)
-
-end subroutine load_opacity_table
-
-!*************************
-!get the intensity of the photon flux at
-! a given energy in eV.
-! returned value is in eV/cm2/s/Hz
-function get_photoIntensity(energy)
-use krome_commons
-implicit none
-real*8::get_photoIntensity,energy
-integer::i
-
-!check if requested energy is lower than the lowest limit
-if(energy<photoBinEleft(1)) then
-  get_photoIntensity = 0d0 !photoBinJ(1)
-  return
-end if
-
-!check if requested energy is greater that the the largest limit
-if(energy>photoBinEright(nPhotoBins)) then
-  get_photoIntensity = 0d0 !photoBinJ(nPhotoBins)
-  return
-end if
-
-!look for the interval
-do i=1,nPhotoBins
-  if(photoBinEleft(i).le.energy .and. photoBinEright(i).ge.energy) then
-    get_photoIntensity = photoBinJ(i)
-    return
-  end if
-end do
-
-!error if nothing found
-print *,"ERROR: no interval found in get_photoIntensity"
-print *,"energy:",energy,"eV"
-stop !halt program
-
-end function get_photoIntensity
-
-!*********************
-!initialize/tabulate the bin-based xsecs
-subroutine init_photoBins(Tgas)
-use krome_constants
-use krome_commons
-use krome_dust
-use krome_getphys
-implicit none
-integer::i,j
-real*8::Tgas,imass(nspec),kt2
-real*8::energy_eV,kk,energyL,energyR,dshift(nmols)
-
-!rise error if photobins are not defined
-if(photoBinEmid(nPhotoBins)==0d0) then
-  print *,"ERROR: when using photo bins you must define"
-  print *," the energy interval in bins!"
-  stop
-end if
-
-!get inverse of mass
-imass(:) = get_imass()
-
-!precompute adimensional line broadening
-dshift(:) = 0d0
-
-!tabulate the xsecs into a bin-based array
-do j=1,nPhotoBins
-  energyL = photoBinEleft(j)
-  energyR = photoBinEright(j)
-  energy_eV = photoBinEmid(j) !energy of the bin in eV
-
-  !C -> C+ + E
-  kk = 0d0
-  if(energy_eV>1.126d+01.and.energy_eV<2.910d+02) kk =  sigma_v96(energy_ev, 2.144d+00, 5.027d+02, 6.216d+01, 5.101d+00, 9.157d-02, 1.133d+00, 1.607d+00)
-  !$omp parallel
-  photoBinJTab(1,j) = kk
-  !$omp end parallel
-
-end do
-
-!save interpolated xsecs to file
-
-!energy tresholds (eV)
-!$omp parallel
-photoBinEth(1) = 1.126d+01 !C -> C+ + E
-!$omp end parallel
-
-!interpolate dust qabs
-
-!map with X->B/C transition to bin corrspondence
-
-end subroutine init_photoBins
-
-!**********************
-!save xsecs with index idx to file
-subroutine save_xsec(fname,idx)
-use krome_commons
-implicit none
-character(len=*)::fname
-integer::idx,j
-real*8::energyLeft,energyRight
-
-open(22,file=trim(fname),status="replace")
-do j=1,nPhotoBins
-  energyLeft = photoBinELeft(j) !left bin energy, eV
-  energyRight = photoBinERight(j) !right bin energy, eV
-  write(22,*) energyLeft, energyRight, photoBinJTab(idx,j)
-end do
-close(22)
-
-end subroutine save_xsec
-
-!**********************
-!compute integrals to derive phtorates (thin)
-subroutine calc_photoBins()
-use krome_commons
-implicit none
-real*8::n(nspec)
-
-n(:) = 0d0
-call calc_photoBins_thick(n)
-
-end subroutine calc_photoBins
-
-!**********************
-!compute integrals to derive phtorates (thick)
-subroutine calc_photoBins_thick(n)
-use krome_commons
-use krome_constants
-use krome_subs
-use krome_getphys
-implicit none
-integer::i,j
-real*8::dE,kk,Jval,E,Eth,n(:),ncol(nmols),tau
-
-!init rates and heating
-photoBinRates(:) = 0d0 !1/s/Hz
-photoBinHeats(:) = 0d0 !eV/s/Hz
-GHabing_thin = 0d0 !habing flux
-!loop on energy bins
-do j=1,nPhotoBins
-  dE = photoBinEdelta(j) !energy interval, eV
-  E = photoBinEmid(j) !energy of the bin in eV
-  Jval = photoBinJ(j) !radiation intensity eV/s/cm2/sr/Hz
-  if(E>=6d0.and.E<=13.6)then
-    GHabing_thin = GHabing_thin + Jval * dE
-  endif
-  tau = 0d0
-  !loop on reactions
-  do i=1,nPhotoRea
-    Eth = photoBinEth(i) !reaction energy treshold, eV
-    if(E>Eth) then
-      !approx bin integral
-      kk = photoBinJTab(i,j)*Jval/E*dE
-      photoBinRates(i) = photoBinRates(i) + kk
-    end if
-  end do
-end do
-
-!Final Habing flux
-GHabing_thin = GHabing_thin * 4d0 * pi / (1.6d-3) * iplanck_eV * eV_to_erg
-
-!converts to 1/s
-photoBinRates(:) = 4d0*pi*photoBinRates(:) * iplanck_eV
-
-end subroutine calc_photoBins_thick
-
-!********************
-!Verner+96 cross section fit (cm2)
-function sigma_v96(energy_eV,E0,sigma_0,ya,P,yw,y0,y1)
-implicit none
-real*8::sigma_v96,energy_eV,sigma_0,Fy,yw,x,y,E0
-real*8::y0,y1,ya,P
-x = energy_eV/E0 - y0
-y = sqrt(x**2 + y1**2)
-Fy = ((x - 1.d0)**2 + yw**2) *  y**(0.5*P-5.5) &
-    * (1.d0+sqrt(y/ya))**(-P)
-sigma_v96 = 1d-18 * sigma_0 * Fy !cm2
-end function sigma_v96
-
-!********************
-!Verner+96 cross section fit (cm2)
-!Average by numerical integration
-function sigma_v96_int(E_low,E_high,E0,sigma_0,ya,P,yw,y0,y1)
-real*8::sigma_v96_int,E_low,E_high,sigma_0,integral,yw,x,y,E0
-real*8::y0,y1,ya,P
-real*8::binWidth,dE,E
-integer::i
-integer,parameter::N=100
-integral = 0d0
-binWidth = E_high-E_low
-dE = binWidth/real(N,kind=8)
-do i=1,N
-  E = E_low + (i-0.5)*dE
-  integral = integral + sigma_v96(E,E0,sigma_0,ya,P,yw,y0,y1)*dE
-end do
-sigma_v96_int = integral / binWidth !cm2
-end function sigma_v96_int
-
-!********************
-function heat_v96(energy_eV,Eth,E0,sigma_0,ya,P,yw,y0,y1)
-!Heating with Verner+96 cross section fit (cm2*eV)
-use krome_constants
-real*8::heat_v96,energy_eV,sigma_0,Fy,yw,x,y,E0,Eth
-real*8::y0,y1,ya,P
-x = energy_eV/E0 - y0
-y = sqrt(x**2 + y1**2)
-Fy = ((x - 1.d0)**2 + yw**2) *  y**(0.5*P-5.5) &
-    * (1.d0+sqrt(y/ya))**(-P)
-heat_v96 = 1d-18 * sigma_0 * Fy * (energy_eV - Eth) !cm2*eV
-end function heat_v96
-
-!************************
-!load the xsecs from file and get limits
-subroutine load_xsec(fname,xsec_val,xsec_Emin,xsec_n,xsec_idE)
-implicit none
-real*8,allocatable::xsec_val(:)
-real*8::xsec_Emin,xsec_dE,xsec_val_tmp(int(1e6)),rout(2)
-real*8::xsec_E_tmp(size(xsec_val_tmp)),xsec_idE,diff
-integer::xsec_n,ios
-character(*)::fname
-
-!if file already loaded skip subroutine
-if(allocated(xsec_val)) return
-
-xsec_n = 0 !number of lines found
-!open file
-open(33,file=fname,status="old",iostat=ios)
-!check if file exists
-if(ios.ne.0) then
-  print *,"ERROR: problems loading "//fname
-  stop
-end if
-
-!read file line-by-line
-do
-  read(33,*,iostat=ios) rout(:) !read line
-  if(ios<0) exit !eof
-  if(ios/=0) cycle !skip blanks
-  xsec_n = xsec_n + 1 !increase line number
-  xsec_val_tmp(xsec_n) = rout(2) !read xsec value cm2
-  xsec_E_tmp(xsec_n) = rout(1) !read energy value eV
-  !compute the dE for the first interval
-  if(xsec_n==2) xsec_dE = xsec_E_tmp(2)-xsec_E_tmp(1)
-  !check if all the intervals have the same spacing
-  if(xsec_n>2) then
-    diff = xsec_E_tmp(xsec_n)-xsec_E_tmp(xsec_n-1)
-    if(abs(diff/xsec_dE-1d0)>1d-6) then
-      print *,"ERROR: spacing problem in file "//fname
-      print *," energy points should be equally spaced!"
-      print *,"Point number: ",xsec_n
-      print *,"Found ",diff
-      print *,"Should be",xsec_dE
-      stop
-    end if
-  end if
-end do
-close(33)
-
-!store the minimum energy
-xsec_Emin = xsec_E_tmp(1)
-!allocate the array with the values
-allocate(xsec_val(xsec_n))
-!copy the values from the temp array to the allocated one
-xsec_val(:) = xsec_val_tmp(1:xsec_n)
-!store the inverse of the delta energy
-xsec_idE = 1d0 / xsec_dE
-
-end subroutine load_xsec
-
-!**********************
-!return averaged xsec in the energy range [xL,xR]
-! units: eV, cm2; broadening shift is adimensional
-function xsec_interp(xL,xR,xsec_val,xsec_Emin,xsec_idE,dshift) result(xsecA)
-use krome_user_commons
-implicit none
-real*8::xsecA,dE,dshift,dE_shift,eL,eR,dxi
-real*8::energy,xsec_val(:),xsec_Emin,xsec_idE,xL,xR
-integer::idx
-
-!xsec energy step (regular grid)
-dE = 1d0/xsec_idE
-!store inverse of bin size
-dxi = 1d0/(xR-xL)
-xsecA = 0d0 !init integrated xsec
-!loop on xsec vals
-do idx=1,size(xsec_val)
-  eL = (idx-1)*dE+xsec_Emin !left interval
-  eR = eL + dE !right interval
-  energy = (eL+eR)/2d0 !mid point
-
-  !compute line broadening
-  eL = eL - 0.5d0*dshift*energy
-  eR = eR + 0.5d0*dshift*energy
-
-  !if xsec energy in the interval compute area
-  if(xR<eL.and.xL<eL) then
-    xsecA = xsecA + 0d0
-  elseif(xR>eL.and.xL>eL) then
-    xsecA = xsecA + 0d0
-  else
-    !renormalize xsec area considering partial overlap
-    xsecA = xsecA +xsec_val(idx) * (min(eR,xR)-max(eL,xL)) &
-        * dxi
-  end if
-end do
-
-end function xsec_interp
-
-!**********************
-!linear interpolation for the photo xsec
-function xsec_interp_mid(energy,xsec_val,xsec_Emin,xsec_n,xsec_idE)
-implicit none
-real*8::xsec_interp_mid,E0
-real*8::energy,xsec_val(:),xsec_Emin,xsec_idE
-integer::xsec_n,idx
-
-xsec_interp_mid = 0d0
-!retrive index
-idx = (energy-xsec_Emin) * xsec_idE + 1
-
-!lower bound
-E0 = xsec_Emin + (idx-1)/xsec_idE
-
-!out of the limits is zero
-if(idx<1.or.idx>xsec_n-1) return
-
-!linear interpolation
-xsec_interp_mid = (energy-E0) * xsec_idE &
-    * (xsec_val(idx+1)-xsec_val(idx)) + xsec_val(idx)
-
-!avoid negative xsec values when outside the limits
-xsec_interp_mid = max(xsec_interp_mid,0d0)
-
-end function xsec_interp_mid
-
-!************************
-!load photodissociation data from default file
-subroutine kpd_H2_loadData()
-use krome_commons
-implicit none
-integer::unit,ios,ii,jj
-real*8::xE,dE,pre
-character(len=20)::fname
-
-!open file to read
-fname = "H2pdB.dat"
-open(newunit=unit,file=trim(fname),status="old",iostat=ios)
-!check for errors
-if(ios/=0) then
-  print *,"ERROR: problem loading file "//trim(fname)
-  stop
-end if
-
-!init data default
-H2pdData_EX(:) = 0d0
-H2pdData_dE(:,:) = 0d0
-H2pdData_pre(:,:) = 0d0
-
-!loop on file to read
-do
-  read(unit,*,iostat=ios) ii,jj,xE,dE,pre
-  !skip comments
-  if(ios==59.or.ios==5010) cycle
-  !exit when eof
-  if(ios/=0) exit
-  !store data
-  H2pdData_EX(ii+1) = xE !ground level energy, eV
-  H2pdData_dE(ii+1,jj+1) = dE !Ej-Ei energy, eV
-  H2pdData_pre(ii+1,jj+1) = pre !precomp (see file header)
-end do
-
-!check if enough data have been loaded (file size is expected)
-if((ii+1/=H2pdData_nvibX).or.(jj+1/=H2pdData_nvibB)) then
-  !print error message
-  print *,"ERROR: missing data when loading "//fname
-  print *,"found:",ii+1,jj+1
-  print *,"expected:",H2pdData_nvibX,H2pdData_nvibB
-  stop
-end if
-
-close(unit)
-
-end subroutine kpd_H2_loadData
-
-!************************
-subroutine kpd_bin_map()
-use krome_commons
-implicit none
-integer::i,j,k
-logical::found
-
-!loop on excited states (B)
-do i=1,H2pdData_nvibB
-  !loop on ground states (X)
-  do j=1,H2pdData_nvibX
-    !if prefactor is zero no need to check map
-    ! default is set to 1 (be aware of it!)
-    if(H2pdData_pre(j,i)==0d0) then
-      H2pdData_binMap(j,i) = 1
-      cycle
-    end if
-
-    found = .false.
-    !loop on bins
-    do k=1,nPhotoBins
-      !find energy bin corresponding on the given dE
-      if((photoBinEleft(k).le.H2pdData_dE(j,i)) &
-          .and. (photoBinEright(k).ge.H2pdData_dE(j,i))) then
-      H2pdData_binMap(j,i) = k
-      found = .true.
-    end if
-  end do
-  !error if outside bounds
-  if(.not.found) then
-    print *,"ERROR: problem when creating H2"
-    print *," photodissociation map!"
-    print *," min/max (eV):", minval(photoBinEleft), &
-        maxval(photoBinEright)
-    print *," transition:",j,i
-    print *," corresponding energy (eV):",H2pdData_dE(j,i)
-    print *," transitions min/max (eV):", &
-        minval(H2pdData_dE, mask=((H2pdData_dE>0d0) .and. &
-        (H2pdData_pre>0d0))), &
-        maxval(H2pdData_dE, mask=(H2pdData_pre>0d0))
-    stop
-  end if
-end do
-end do
-
-end subroutine kpd_bin_map
-
-!************************
-!compute vibrational partition function at given Tgas
-! for all the loaded energies (for H2 Solomon)
-function partitionH2_vib(Tgas) result(z)
-use krome_constants
-use krome_commons
-implicit none
-real*8::Tgas,z(H2pdData_nvibX),b
-integer::j
-
-!prepare partition function from ground (X) levels energies
-b = iboltzmann_eV/Tgas
-z(:) = exp(-H2pdData_EX(:)*b)
-
-!normalize
-z(:) = z(:)/sum(z)
-
-end function partitionH2_vib
-
-!************************
-!compute H2 photodissociation rate (Solomon)
-! state to state, using preloded data, 1/s
-function kpd_H2(Tgas) result(kpd)
-use krome_commons
-implicit none
-integer::i,j
-real*8::Tgas,kpd,dE,z(H2pdData_nvibX)
-
-!get partition for ground state X
-z(:) = partitionH2_vib(Tgas)
-
-!compute the rate, using preloaded data
-kpd = 0d0
-!loop on excited states (B)
-do i=1,H2pdData_nvibB
-!compute rate for ith state
-kpd = kpd + sum(H2pdData_pre(:,i) &
-    * photoBinJ(H2pdData_binMap(:,i)) * z(:))
-end do
-
-end function kpd_H2
-
-!************************
-!photodissociation H2 xsec from atomic data (for opacity)
-function kpd_H2_xsec(Tgas) result(xsec)
-use krome_constants
-use krome_commons
-implicit none
-real*8::xsec(nPhotoBins),z(H2pdData_nvibX)
-real*8::Tgas
-integer::i
-
-!get partition for ground state X
-z(:) = partitionH2_vib(Tgas)
-
-xsec(:) = 0d0
-!loop on excited states (B)
-do i=1,H2pdData_nvibB
-xsec(H2pdData_binMap(:,i)) = &
-    xsec(H2pdData_binMap(:,i)) &
-    + H2pdData_pre(:,i)*z(:)
-end do
-
-!cm2
-xsec(:) = xsec(:)*planck_eV
-
-end function kpd_H2_xsec
-
-!************************
-!H2 direct photodissociation in the Lyman-Werner bands
-! cross-section in cm^2 fit by Abel et al. 1997 of
-! data by Allison&Dalgarno 1969
-function H2_sigmaLW(energy_eV)
-use krome_commons
-implicit none
-real*8::H2_sigmaLW,energy_eV
-real*8::sL0,sW0,sL1,sW1,fact
-
-!initialization
-sL0 = 0d0
-sL1 = 0d0
-sW0 = 0d0
-sW1 = 0d0
-
-if(energy_eV>14.675.and.energy_eV<16.820)then
-sL0 = 1d-18*1d1**(15.1289-1.05139*energy_eV)
-elseif(energy_eV>16.820.and.energy_eV<17.6d0)then
-sL0 = 1d-18*1d1**(-31.41d0+1.8042d-2*energy_eV**3-4.2339d-5*energy_eV**5)
-endif
-
-if(energy_eV>14.675d0.and.energy_eV<17.7d0)then
-sW0 = 1d-18*1d1**(13.5311d0-0.9182618*energy_eV)
-endif
-
-if(energy_eV>14.159d0.and.energy_eV<15.302d0)then
-sL1 = 1d-18*1d1**(12.0218406d0-0.819429*energy_eV)
-elseif(energy_eV>15.302d0.and.energy_eV<17.2d0)then
-sL1 = 1d-18*1d1**(16.04644d0-1.082438*energy_eV)
-endif
-
-if(energy_eV>14.159d0.and.energy_eV<17.2d0)then
-sW1 = 1d-18*1d1**(12.87367-0.85088597*energy_eV)
-endif
-
-fact = 1d0/(phys_orthoParaRatio+1d0)
-
-H2_sigmaLW = fact*(sL0+sW0)+(1d0-fact)*(sL1+sW1)
-
-end function H2_sigmaLW
-
-! *****************************
-! load kabs from file
-subroutine find_Av_load_kabs2(file_name)
-use krome_commons
-use krome_constants
-implicit none
-integer,parameter::imax=10000
-character(len=*),intent(in),optional::file_name
-character(len=200)::fname
-integer::ios, unit, icount, i, j
-real*8::tmp_energy(imax), tmp_data(imax), f1, f2, kavg, ksum
-real*8,allocatable::Jdraine(:)
-
-! check if energy bins are set
-if(maxval(photoBinEleft)==0d0) then
-print *, "ERROR: to load kabs for Av G0 finder you"
-print *, " have to initialize some energy bins!"
-stop
-end if
-
-! check if optional argument is present
-fname = "kabs_draine_Rv31.dat"
-if(present(file_name)) then
-fname = trim(file_name)
-end if
-
-! open file to read
-open(newunit=unit, file=fname, status="old", iostat=ios)
-! check if file is there
-if(ios/=0) then
-print *, "ERROR: Kabs file not found!"
-print *, trim(fname)
-stop
-end if
-
-! loop on file lines
-icount = 1
-do
-read(unit, *, iostat=ios) tmp_energy(icount), &
-    tmp_data(icount)
-if(ios/=0) exit
-icount = icount + 1
-end do
-close(unit)
-
-! convert microns to eV
-tmp_energy(1:icount-1) = planck_eV * clight &
-    / (tmp_energy(1:icount-1) * 1d-4)
-
-! get corresponding draine flux
-allocate(Jdraine(icount-1))
-Jdraine(:) = get_draine(tmp_energy(1:icount-1))
-
-! loop on photobins to get average kabs
-do j=1,nPhotoBins
-kavg = 0d0
-ksum = 0d0
-do i=1,icount-2
-  ! integrate only in the bin range
-  if(tmp_energy(i)>=photoBinEleft(j) &
-      .and. tmp_energy(i+1)<=photoBinEright(j)) then
-  ! numerator integral Jdraine(E)kabs(E)/E
-  f1 = tmp_data(i)*Jdraine(i)/tmp_energy(i)
-  f2 = tmp_data(i+1)*Jdraine(i+1)/tmp_energy(i+1)
-  kavg = kavg + (f1+f2) / 2d0 &
-      * (tmp_energy(i+1)-tmp_energy(i))
-
-  ! denominator integral Jdraine(E)/E
-  f1 = Jdraine(i)/tmp_energy(i)
-  f2 = Jdraine(i+1)/tmp_energy(i+1)
-  ksum = ksum + (f1+f2) / 2d0 &
-      * (tmp_energy(i+1)-tmp_energy(i))
-end if
-!!$           if(tmp_energy(i)<photoBinEmid(j) &
-    !!$                .and. tmp_energy(i+1)>photoBinEmid(j)) then
-!!$              kavg = (photoBinEmid(j) - tmp_energy(i)) &
-    !!$                   / (tmp_energy(i+1) - tmp_energy(i)) &
-    !!$                   * (tmp_data(i+1) - tmp_data(i)) + tmp_data(i)
-!!$              print *,photoBinEmid(j), kavg
-!!$           end if
-end do
-! ratio of the integral is average absorption in the bin
-find_Av_draine_kabs(j) = kavg / (ksum+1d-40)
-end do
-
-end subroutine find_Av_load_kabs2
-
-! *****************************
-! load kabs from file
-subroutine find_Av_load_kabs(file_name)
-use krome_commons
-use krome_constants
-implicit none
-character(len=*),intent(in),optional::file_name
-character(len=200)::fname
-real*8::opacityDust_org(nPhotoBins)
-
-! check if energy bins are set
-if(maxval(photoBinEleft)==0d0) then
-print *, "ERROR: to load kabs for Av G0 finder you"
-print *, " have to initialize some energy bins!"
-stop
-end if
-
-! check if optional argument is present
-fname = "kabs_draine_Rv31.dat"
-if(present(file_name)) then
-fname = trim(file_name)
-end if
-
-opacityDust_org = opacityDust
-
-call load_opacity_table(fname, "micron")
-
-! ratio of the integral is average absorption in the bin
-find_Av_draine_kabs = opacityDust
-
-opacityDust = opacityDust_org
-
-end subroutine find_Av_load_kabs
-
-! *********************************
-! given the current photo bin intensity distribution
-! estimates G0 and Av using the bins in the Draine range
-subroutine estimate_G0_Av(G0, Av, n, d2g)
-use krome_constants
-use krome_commons
-use krome_getphys
-use krome_subs
-implicit none
-real*8,intent(out)::G0, Av
-real*8,intent(in)::d2g, n(nspec)
-real*8::lnG0, mu, ntot
-real*8::ydata(nPhotoBins)
-integer::i
-logical, save ::first_call=.true.
-real*8,  save ::XH,Jdraine(nPhotoBins),xdata(nPhotoBins)
-integer, save ::lb,ub,ndraine
-!$omp threadprivate(first_call,XH,Jdraine,xdata,lb,ub,ndraine)
-
-if (first_call) then
-! get non-attenuated draine flux
-Jdraine(:) = get_draine(photoBinEmid(:))
-
-! only consider bins that have non-attenuated draine radiation
-lb=0
-do i=1,nPhotoBins
-if (Jdraine(i)>0 .and. lb==0) lb=i
-if (Jdraine(i)>0) ub=i
-end do
-ndraine = ub - lb + 1
-
-! mean molecular weight and gas density
-mu = get_mu(n(:))
-ntot = sum(n(1:nspec))
-
-! find mass fraction of H-nuclei as xH = mp * n_H / rho
-xH = (p_mass * get_Hnuclei(n(:))) / (p_mass * mu * ntot)
-
-! now we can calculate the xdata, which are constant:
-
-! loop on photo bins
-do i=lb,ub
-! compute x in y = Av*x + ln(G0)
-xdata(i-lb+1) = -find_Av_draine_kabs(i) * 1.8d21 * p_mass * d2g / xH
-end do
-
-! make sure we only do this once
-! NOTICE: we assume hydrogen mass fraction is constant
-! NOTICE: but this is implicitly the case anyway
-! NOTICE: because below we translate between
-! NOTICE: column density and Av
-first_call = .false.
-end if
-
-! loop on photo bins
-do i=lb,ub
-! compute y in y = Av*x + ln(G0)
-ydata(i - lb + 1) = log(photoBinJ(i) + 1d-200) - log(Jdraine(i))
-end do
-
-! needs at least one bin
-if(ndraine<=1) then
-print *,"ERROR: you want to estimate G0 and Av with less than 2 bins in the"
-print *," Draine range, 5-13.6 eV! Nbins(Draine)=",ndraine
-stop
-end if
-
-! call least squares to compute Av and ln(G0)
-call llsq(ndraine, xdata(1:ndraine), ydata(1:ndraine), &
-    Av, lnG0)
-
-! Apply prior
-if(lnG0 < -7d0 .or. lnG0 > 7d0) then
-if(lnG0 < -7d0) lnG0 = -7d0
-if(lnG0 > 7d0) lnG0 = 7d0
-Av = sum(( ydata(1:ndraine)-lnG0)*xdata(1:ndraine))/sum(xdata(1:ndraine)**2)
-end if
-
-if(Av < 0d0) then
-Av = 0d0
-lnG0 = sum( ydata(1:ndraine))/ndraine
-endif
-
-! return G0
-G0 = exp(lnG0)
-
-end subroutine estimate_G0_Av
-
-! ************************
-function get_draine(energy_list) result(Jdraine)
-use krome_commons
-use krome_constants
-implicit none
-integer::i
-real*8,intent(in)::energy_list(:)
-real*8::x, Jdraine(size(energy_list))
-
-do i=1,size(energy_list)
-x = energy_list(i) !eV
-!eV/cm2/sr
-if(x<13.6d0.and.x>5d0) then
-Jdraine(i) = (1.658d6*x - 2.152d5*x**2 + 6.919d3*x**3) &
-    * x *planck_eV
-else
-Jdraine(i) = 0d0
-end if
-end do
-end function get_draine
-
 end module krome_photo
 
 !############### MODULE ##############
 module krome_tabs
 contains
 
-!***********************+
-function coe_tab(n)
-!interface to tabs
-use krome_subs
-use krome_getphys
-use krome_phfuncs
-use krome_grfuncs
-use krome_constants
-use krome_commons
-use krome_user_commons
-implicit none
-integer::idx,j
-real*8::Tgas, coe_tab(nrea),n(nspec),small
+  !***********************+
+  function coe_tab(n)
+    !interface to tabs
+    use krome_subs
+    use krome_getphys
+    use krome_phfuncs
+    use krome_grfuncs
+    use krome_constants
+    use krome_commons
+    use krome_user_commons
+    implicit none
+    integer::idx,j
+    real*8::Tgas, coe_tab(nrea),n(nspec),small
 
-Tgas = max(n(idx_Tgas),phys_Tcmb)
-small = 0d0
+    Tgas = max(n(idx_Tgas),phys_Tcmb)
+    small = 0d0
 
-coe_tab(:) = coe(n(:))
+    coe_tab(:) = coe(n(:))
 
-end function coe_tab
+  end function coe_tab
 
 end module krome_tabs
 
@@ -4048,203 +3489,203 @@ end module KROME_coolingGH
 
 !############### MODULE ##############
 module KROME_cooling
-! *************************************************************
-!  This file has been generated with:
-!  KROME 14.08.dev on 2026-01-12 13:41:08
-!  Changeset cd85309
-!  see http://kromepackage.org
-!
-!  Written and developed by Tommaso Grassi and Stefano Bovino
-!
-!  Contributors:
-!  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
-!  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
-!  E.Tognelli
-!  KROME is provided "as it is", without any warranty.
-! *************************************************************
-integer,parameter::coolTab_n=int(1e2)
-integer,parameter::nZrate=0
-real*8::coolTab(nZrate,coolTab_n),coolTab_logTlow, coolTab_logTup
-real*8::coolTab_T(coolTab_n),inv_coolTab_T(coolTab_n-1),inv_coolTab_idx
+  ! *************************************************************
+  !  This file has been generated with:
+  !  KROME 14.08.dev on 2026-02-05 08:53:42
+  !  Changeset cd85309
+  !  see http://kromepackage.org
+  !
+  !  Written and developed by Tommaso Grassi and Stefano Bovino
+  !
+  !  Contributors:
+  !  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
+  !  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
+  !  E.Tognelli
+  !  KROME is provided "as it is", without any warranty.
+  ! *************************************************************
+  integer,parameter::coolTab_n=int(1e2)
+  integer,parameter::nZrate=0
+  real*8::coolTab(nZrate,coolTab_n),coolTab_logTlow, coolTab_logTup
+  real*8::coolTab_T(coolTab_n),inv_coolTab_T(coolTab_n-1),inv_coolTab_idx
 contains
 
-!*******************
-function cooling(n,inTgas)
-use krome_commons
-implicit none
-real*8::n(:),inTgas,cooling,Tgas
+  !*******************
+  function cooling(n,inTgas)
+    use krome_commons
+    implicit none
+    real*8::n(:),inTgas,cooling,Tgas
 
-Tgas = inTgas
-cooling = sum(get_cooling_array(n(:),Tgas))
+    Tgas = inTgas
+    cooling = sum(get_cooling_array(n(:),Tgas))
 
-end function cooling
+  end function cooling
 
-!*******************************
-function get_cooling_array(n, Tgas)
-use krome_commons
-implicit none
-real*8::n(:), Tgas
-real*8::get_cooling_array(ncools),cools(ncools)
-real*8::f1,f2,smooth
+  !*******************************
+  function get_cooling_array(n, Tgas)
+    use krome_commons
+    implicit none
+    real*8::n(:), Tgas
+    real*8::get_cooling_array(ncools),cools(ncools)
+    real*8::f1,f2,smooth
 
-f1 = 1d0
-f2 = 1d0
+    f1 = 1d0
+    f2 = 1d0
 
-!returns cooling in erg/cm3/s
-cools(:) = 0d0
+    !returns cooling in erg/cm3/s
+    cools(:) = 0d0
 
-cools(idx_cool_custom) = cooling_custom(n(:),Tgas)
+    cools(idx_cool_custom) = cooling_custom(n(:),Tgas)
 
-get_cooling_array(:) = cools(:)
+    get_cooling_array(:) = cools(:)
 
-end function get_cooling_array
+  end function get_cooling_array
 
-!*****************************
-function cooling_custom(n,Tgas)
-use krome_commons
-use krome_subs
-use krome_constants
-implicit none
-real*8::n(:),Tgas,cooling_custom
+  !*****************************
+  function cooling_custom(n,Tgas)
+    use krome_commons
+    use krome_subs
+    use krome_constants
+    implicit none
+    real*8::n(:),Tgas,cooling_custom
 
-cooling_custom = 0d0
+    cooling_custom = 0d0
 
-end function cooling_custom
+  end function cooling_custom
 
-!**********************************
-function kpla(n,Tgas)
-!Planck opacity mean fit (Lenzuni+1996)
-!only denisity dependent (note that the
-! fit provided by Lenzuni is wrong)
-! valid for T<3e3 K
-!use krome_subs
-use krome_commons
-use krome_getphys
-implicit none
-real*8::kpla,rhogas,Tgas,n(:),y
-real*8::a0,a1,m(nspec)
+  !**********************************
+  function kpla(n,Tgas)
+    !Planck opacity mean fit (Lenzuni+1996)
+    !only denisity dependent (note that the
+    ! fit provided by Lenzuni is wrong)
+    ! valid for T<3e3 K
+    !use krome_subs
+    use krome_commons
+    use krome_getphys
+    implicit none
+    real*8::kpla,rhogas,Tgas,n(:),y
+    real*8::a0,a1,m(nspec)
 
-m(:) = get_mass()
-rhogas = sum(n(1:nmols)*m(1:nmols)) !g/cm3
+    m(:) = get_mass()
+    rhogas = sum(n(1:nmols)*m(1:nmols)) !g/cm3
 
-kpla = 0.d0
-!opacity is zero under 1e-12 g/cm3
-if(rhogas<1d-12) return
+    kpla = 0.d0
+    !opacity is zero under 1e-12 g/cm3
+    if(rhogas<1d-12) return
 
-!fit coefficients
-a0 = 1.000042d0
-a1 = 2.14989d0
+    !fit coefficients
+    a0 = 1.000042d0
+    a1 = 2.14989d0
 
-!log density cannot exceed 0.5 g/cm3
-y = log10(min(rhogas,0.5d0))
+    !log density cannot exceed 0.5 g/cm3
+    y = log10(min(rhogas,0.5d0))
 
-kpla = 1d1**(a0*y + a1) !fit density only
+    kpla = 1d1**(a0*y + a1) !fit density only
 
-end function kpla
+  end function kpla
 
-!*****************************
-function coolingChem(n,Tgas)
-implicit none
-real*8::coolingChem,n(:),Tgas
+  !*****************************
+  function coolingChem(n,Tgas)
+    implicit none
+    real*8::coolingChem,n(:),Tgas
 
-!note that this function is a dummy.
-! For chemical cooling you should see
-! heatingChem function in krome_heating.f90
+    !note that this function is a dummy.
+    ! For chemical cooling you should see
+    ! heatingChem function in krome_heating.f90
 
-coolingChem = 0.d0
+    coolingChem = 0.d0
 
-end function coolingChem
+  end function coolingChem
 
-!***********************
-subroutine mylin2(a,b)
-!solve Ax=B analytically for a 2-levels system
-implicit none
-integer,parameter::n=2
-real*8::a(n,n),b(n),c(n),iab
+  !***********************
+  subroutine mylin2(a,b)
+    !solve Ax=B analytically for a 2-levels system
+    implicit none
+    integer,parameter::n=2
+    real*8::a(n,n),b(n),c(n),iab
 
-!uncomment this: safer but slower function
-!if(a(2,2)==a(2,1)) then
-!   print *,"ERROR: a22=a21 in mylin2"
-!   stop
-!end if
-iab = b(1)/(a(2,2)-a(2,1))
-c(1) = a(2,2) * iab
-c(2) = -a(2,1) * iab
-b(:) = c(:)
+    !uncomment this: safer but slower function
+    !if(a(2,2)==a(2,1)) then
+    !   print *,"ERROR: a22=a21 in mylin2"
+    !   stop
+    !end if
+    iab = b(1)/(a(2,2)-a(2,1))
+    c(1) = a(2,2) * iab
+    c(2) = -a(2,1) * iab
+    b(:) = c(:)
 
-end subroutine mylin2
+  end subroutine mylin2
 
-!************************
-subroutine mylin3(a,b)
-!solve Ax=B analytically for a 3-levels system
-implicit none
-integer,parameter::n=3
-real*8::iab,a(n,n),b(n),c(n)
+  !************************
+  subroutine mylin3(a,b)
+    !solve Ax=B analytically for a 3-levels system
+    implicit none
+    integer,parameter::n=3
+    real*8::iab,a(n,n),b(n),c(n)
 
-!uncomment this: safer but slower function
-!if(a(2,2)==a(2,3)) then
-!   print *,"ERROR: a22=a23 in mylin3"
-!   stop
-!end if
+    !uncomment this: safer but slower function
+    !if(a(2,2)==a(2,3)) then
+    !   print *,"ERROR: a22=a23 in mylin3"
+    !   stop
+    !end if
 
-!uncomment this: safer but slower
-!if(a(2,1)*a(3,2)+a(2,2)*a(3,3)+a(2,3)*a(3,1) == &
-    !     a(2,1)*a(3,3)+a(2,2)*a(3,1)+a(2,3)*a(3,2)) then
-!   print *,"ERROR: division by zero in mylin3"
-!   stop
-!end if
+    !uncomment this: safer but slower
+    !if(a(2,1)*a(3,2)+a(2,2)*a(3,3)+a(2,3)*a(3,1) == &
+        !     a(2,1)*a(3,3)+a(2,2)*a(3,1)+a(2,3)*a(3,2)) then
+    !   print *,"ERROR: division by zero in mylin3"
+    !   stop
+    !end if
 
-iab = b(1) / (a(2,1)*(a(3,3)-a(3,2)) + a(2,2)*(a(3,1)-a(3,3)) &
-    + a(2,3)*(a(3,2)-a(3,1)))
-c(1) = (a(2,3)*a(3,2)-a(2,2)*a(3,3)) * iab
-c(2) = -(a(2,3)*a(3,1)-a(2,1)*a(3,3)) * iab
-c(3) = (a(3,1)*a(2,2)-a(2,1)*a(3,2)) * iab
-b(:) = c(:)
+    iab = b(1) / (a(2,1)*(a(3,3)-a(3,2)) + a(2,2)*(a(3,1)-a(3,3)) &
+        + a(2,3)*(a(3,2)-a(3,1)))
+    c(1) = (a(2,3)*a(3,2)-a(2,2)*a(3,3)) * iab
+    c(2) = -(a(2,3)*a(3,1)-a(2,1)*a(3,3)) * iab
+    c(3) = (a(3,1)*a(2,2)-a(2,1)*a(3,2)) * iab
+    b(:) = c(:)
 
-end subroutine mylin3
+  end subroutine mylin3
 
-!************************************
-subroutine plot_cool(n)
-!routine to plot cooling at runtime
-real*8::n(:),Tgas,Tmin,Tmax
-real*8::cool_atomic,cool_H2,cool_HD,cool_tot, cool_totGP,cool_H2GP
-real*8::cool_dH,cool_Z
-integer::i,imax
-imax = 1000
-Tmin = log10(1d1)
-Tmax = log10(1d8)
-print *,"plotting cooling..."
-open(33,file="KROME_cooling_plot.dat",status="replace")
-do i=1,imax
-Tgas = 1d1**(i*(Tmax-Tmin)/imax+Tmin)
-cool_H2 = 0.d0
-cool_H2GP = 0.d0
-cool_HD = 0.d0
-cool_atomic = 0.d0
-cool_Z = 0.d0
-cool_dH = 0.d0
-cool_tot = cool_H2 + cool_atomic + cool_HD + cool_Z + cool_dH
-cool_totGP = cool_H2GP + cool_atomic + cool_HD + cool_Z + cool_dH
-write(33,'(99E12.3e3)') Tgas, cool_tot, cool_totGP, cool_H2, &
-    cool_atomic, cool_HD, cool_H2GP, cool_Z, cool_dH
-end do
-close(33)
-print *,"done!"
+  !************************************
+  subroutine plot_cool(n)
+    !routine to plot cooling at runtime
+    real*8::n(:),Tgas,Tmin,Tmax
+    real*8::cool_atomic,cool_H2,cool_HD,cool_tot, cool_totGP,cool_H2GP
+    real*8::cool_dH,cool_Z
+    integer::i,imax
+    imax = 1000
+    Tmin = log10(1d1)
+    Tmax = log10(1d8)
+    print *,"plotting cooling..."
+    open(33,file="KROME_cooling_plot.dat",status="replace")
+    do i=1,imax
+      Tgas = 1d1**(i*(Tmax-Tmin)/imax+Tmin)
+      cool_H2 = 0.d0
+      cool_H2GP = 0.d0
+      cool_HD = 0.d0
+      cool_atomic = 0.d0
+      cool_Z = 0.d0
+      cool_dH = 0.d0
+      cool_tot = cool_H2 + cool_atomic + cool_HD + cool_Z + cool_dH
+      cool_totGP = cool_H2GP + cool_atomic + cool_HD + cool_Z + cool_dH
+      write(33,'(99E12.3e3)') Tgas, cool_tot, cool_totGP, cool_H2, &
+          cool_atomic, cool_HD, cool_H2GP, cool_Z, cool_dH
+    end do
+    close(33)
+    print *,"done!"
 
-end subroutine plot_cool
+  end subroutine plot_cool
 
-!***********************************
-!routine to dump cooling in unit nfile
-subroutine dump_cool(n,Tgas,nfile)
-use krome_commons
-implicit none
-real*8::Tgas,n(:),cools(ncools)
-integer::nfile
+  !***********************************
+  !routine to dump cooling in unit nfile
+  subroutine dump_cool(n,Tgas,nfile)
+    use krome_commons
+    implicit none
+    real*8::Tgas,n(:),cools(ncools)
+    integer::nfile
 
-cools(:) = get_cooling_array(n(:),Tgas)
-write(nfile,'(99E14.5e3)') Tgas, sum(cools), cools(:)
+    cools(:) = get_cooling_array(n(:),Tgas)
+    write(nfile,'(99E14.5e3)') Tgas, sum(cools), cools(:)
 
-end subroutine dump_cool
+  end subroutine dump_cool
 
 end module KROME_cooling
 
@@ -4252,62 +3693,112 @@ end module KROME_cooling
 module KROME_heating
 contains
 
-! *************************************************************
-!  This file has been generated with:
-!  KROME 14.08.dev on 2026-01-12 13:41:08
-!  Changeset cd85309
-!  see http://kromepackage.org
-!
-!  Written and developed by Tommaso Grassi and Stefano Bovino
-!
-!  Contributors:
-!  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
-!  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
-!  E.Tognelli
-!  KROME is provided "as it is", without any warranty.
-! *************************************************************
+  ! *************************************************************
+  !  This file has been generated with:
+  !  KROME 14.08.dev on 2026-02-05 08:53:42
+  !  Changeset cd85309
+  !  see http://kromepackage.org
+  !
+  !  Written and developed by Tommaso Grassi and Stefano Bovino
+  !
+  !  Contributors:
+  !  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
+  !  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
+  !  E.Tognelli
+  !  KROME is provided "as it is", without any warranty.
+  ! *************************************************************
 
-!************************
-function heating(n,inTgas,k,nH2dust)
-implicit none
-real*8::n(:), Tgas, inTgas, k(:), nH2dust
-real*8::heating
+  !************************
+  function heating(n,inTgas,k,nH2dust)
+    implicit none
+    real*8::n(:), Tgas, inTgas, k(:), nH2dust
+    real*8::heating
 
-Tgas = inTgas
-heating = sum(get_heating_array(n(:),Tgas,k(:), nH2dust))
+    Tgas = inTgas
+    heating = sum(get_heating_array(n(:),Tgas,k(:), nH2dust))
 
-end function heating
+  end function heating
 
-!*******************************
-function get_heating_array(n, Tgas, k, nH2dust)
-use krome_commons
-implicit none
-real*8::n(:), Tgas, k(:), nH2dust
-real*8::get_heating_array(nheats),heats(nheats)
-real*8::smooth,f1,f2
-!returns heating in erg/cm3/s
+  !*******************************
+  function get_heating_array(n, Tgas, k, nH2dust)
+    use krome_commons
+    implicit none
+    real*8::n(:), Tgas, k(:), nH2dust
+    real*8::get_heating_array(nheats),heats(nheats)
+    real*8::smooth,f1,f2
+    !returns heating in erg/cm3/s
 
-heats(:) = 0.d0
+    heats(:) = 0.d0
 
-f2 = 1.
+    f2 = 1.
 
-heats(idx_heat_custom) = heat_custom(n(:),Tgas)
+    heats(idx_heat_chem) = heatingChem(n(:), Tgas, k(:), nH2dust)
 
-get_heating_array(:) = heats(:)
+    heats(idx_heat_custom) = heat_custom(n(:),Tgas)
 
-end function get_heating_array
+    get_heating_array(:) = heats(:)
 
-!*************************
-function heat_custom(n,Tgas)
-use krome_commons
-use krome_subs
-use krome_constants
-implicit none
-real*8::n(:),Tgas,heat_custom
+  end function get_heating_array
 
-heat_custom = 0d0
+  !*************************
+  function heat_custom(n,Tgas)
+    use krome_commons
+    use krome_subs
+    use krome_constants
+    implicit none
+    real*8::n(:),Tgas,heat_custom
 
-end function heat_custom
+    heat_custom = 0d0
+
+  end function heat_custom
+
+  !H2 FORMATION HEATING and other exo/endothermic
+  ! processes (including H2 on dust) in erg/cm3/s
+  !krome builds the heating/cooling term according
+  ! to the chemical network employed
+  !*******************************
+  function heatingChem(n, Tgas, k, nH2dust)
+    use krome_constants
+    use krome_commons
+    use krome_dust
+    use krome_subs
+    use krome_getphys
+    implicit none
+    real*8::heatingChem, n(:), Tgas,k(:),nH2dust
+    real*8::h2heatfac,HChem,yH,yH2
+    real*8::ncr,ncrn,ncrd1,ncrd2,dd,n2H,small,nmax
+    dd = get_Hnuclei(n(:))
+
+    !replace small according to the desired enviroment
+    ! and remove nmax if needed
+    nmax = maxval(n(1:nmols))
+    small = 1d-40/(nmax*nmax*nmax)
+
+    heatingChem = 0.d0
+
+    ncrn  = 1.0d6*(Tgas**(-0.5d0))
+    ncrd1 = 1.6d0*exp(-(4.0d2/Tgas)**2)
+    ncrd2 = 1.4d0*exp(-1.2d4/(Tgas+1.2d3))
+
+    yH = n(idx_H)/dd   !dimensionless
+    yH2= n(idx_H2)/dd  !dimensionless
+
+    ncr = ncrn/(ncrd1*yH+ncrd2*yH2)      !1/cm3
+    h2heatfac = 1.0d0/(1.0d0+ncr/dd)     !dimensionless
+
+    HChem = 0.d0 !inits chemical heating
+    n2H = n(idx_H) * n(idx_H)
+
+    !H2 + E -> H + H + E (cooling)
+    HChem = HChem + k(17) * (-4.48d0*n(idx_H2)*n(idx_E))
+    !H2 + H -> H + H + H (cooling)
+    HChem = HChem + k(18) * (-4.48d0*n(idx_H2)*n(idx_H))
+    !H2 + H2 -> H + H + H2 (cooling)
+    HChem = HChem + k(27) * (-4.48d0*n(idx_H2)*n(idx_H2))
+
+    heatingChem = HChem * eV_to_erg  !erg/cm3/s
+
+  end function heatingChem
 
 end module KROME_heating
 
@@ -4315,2460 +3806,2605 @@ end module KROME_heating
 module krome_ode
 contains
 
-! *************************************************************
-!  This file has been generated with:
-!  KROME 14.08.dev on 2026-01-12 13:41:08
-!  Changeset cd85309
-!  see http://kromepackage.org
-!
-!  Written and developed by Tommaso Grassi and Stefano Bovino
-!
-!  Contributors:
-!  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
-!  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
-!  E.Tognelli
-!  KROME is provided "as it is", without any warranty.
-! *************************************************************
+  ! *************************************************************
+  !  This file has been generated with:
+  !  KROME 14.08.dev on 2026-02-05 08:53:42
+  !  Changeset cd85309
+  !  see http://kromepackage.org
+  !
+  !  Written and developed by Tommaso Grassi and Stefano Bovino
+  !
+  !  Contributors:
+  !  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
+  !  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
+  !  E.Tognelli
+  !  KROME is provided "as it is", without any warranty.
+  ! *************************************************************
 
-subroutine fex(neq,tt,nin,dn)
-use krome_commons
-use krome_constants
-use krome_subs
-use krome_cooling
-use krome_heating
-use krome_tabs
-use krome_photo
-use krome_gadiab
-use krome_getphys
-use krome_phfuncs
-use krome_fit
-implicit none
-integer::neq,idust
-real*8::tt,dn(neq),n(neq),k(nrea),krome_gamma
-real*8::gamma,Tgas,vgas,ntot,nH2dust,nd,nin(neq)
-real*8::rr
-integer::i,r1,r2,p1,p2,p3
+  subroutine fex(neq,tt,nin,dn)
+    use krome_commons
+    use krome_constants
+    use krome_subs
+    use krome_cooling
+    use krome_heating
+    use krome_tabs
+    use krome_photo
+    use krome_gadiab
+    use krome_getphys
+    use krome_phfuncs
+    use krome_fit
+    implicit none
+    integer::neq,idust
+    real*8::tt,dn(neq),n(neq),k(nrea),krome_gamma
+    real*8::gamma,Tgas,vgas,ntot,nH2dust,nd,nin(neq)
+    real*8::rr
+    integer::i,r1,r2,p1,p2,p3
 
-n(:) = nin(:)
+    n(:) = nin(:)
 
-nH2dust = 0.d0
-n(idx_CR) = 1.d0
-n(idx_g)  = 1.d0
-n(idx_dummy) = 1.d0
+    nH2dust = 0.d0
+    n(idx_CR) = 1.d0
+    n(idx_g)  = 1.d0
+    n(idx_dummy) = 1.d0
 
-dn(:) = 0.d0 !initialize differentials
-n(idx_Tgas) = max(n(idx_tgas),2.73d0)
-n(idx_Tgas) = min(n(idx_tgas),1d9)
-Tgas = n(idx_Tgas) !get temperature
+    dn(:) = 0.d0 !initialize differentials
+    n(idx_Tgas) = max(n(idx_tgas),2.73d0)
+    n(idx_Tgas) = min(n(idx_tgas),1d9)
+    Tgas = n(idx_Tgas) !get temperature
 
-k(:) = coe_tab(n(:)) !compute coefficients
+    k(:) = coe_tab(n(:)) !compute coefficients
 
-!E
-!E
-dn(idx_E) = &
-    +k(1)*n(idx_C) &
-    -k(2)*n(idx_Cj)*n(idx_E) &
-    -k(3)*n(idx_C)*n(idx_E) &
-    +2.d0*k(3)*n(idx_C)*n(idx_E)
+    !E
+    !E
+    dn(idx_E) = &
+        -k(1)*n(idx_H)*n(idx_E) &
+        +2.d0*k(1)*n(idx_H)*n(idx_E) &
+        -k(2)*n(idx_Hj)*n(idx_E) &
+        -k(3)*n(idx_Hj)*n(idx_E) &
+        -k(4)*n(idx_HE)*n(idx_E) &
+        +2.d0*k(4)*n(idx_HE)*n(idx_E) &
+        -k(5)*n(idx_HEj)*n(idx_E) &
+        -k(6)*n(idx_HEj)*n(idx_E) &
+        -k(7)*n(idx_HEj)*n(idx_E) &
+        +2.d0*k(7)*n(idx_HEj)*n(idx_E) &
+        -k(8)*n(idx_HEjj)*n(idx_E) &
+        -k(9)*n(idx_H)*n(idx_E) &
+        +k(10)*n(idx_Hk)*n(idx_H) &
+        -k(16)*n(idx_H2)*n(idx_E) &
+        -k(17)*n(idx_H2)*n(idx_E) &
+        +k(17)*n(idx_H2)*n(idx_E) &
+        -k(19)*n(idx_Hk)*n(idx_E) &
+        +2.d0*k(19)*n(idx_Hk)*n(idx_E) &
+        +k(20)*n(idx_Hk)*n(idx_H) &
+        +k(21)*n(idx_Hk)*n(idx_H) &
+        +k(23)*n(idx_Hk)*n(idx_Hj) &
+        -k(24)*n(idx_H2j)*n(idx_E) &
+        -k(25)*n(idx_H2j)*n(idx_E) &
+        +k(34)*n(idx_H)*n(idx_H) &
+        +k(35)*n(idx_H)*n(idx_HE) &
+        -k(37)*n(idx_Hj)*n(idx_E) &
+        -k(38)*n(idx_HEj)*n(idx_E)
 
-!C
-!C
-dn(idx_C) = &
-    -k(1)*n(idx_C) &
-    +k(2)*n(idx_Cj)*n(idx_E) &
-    -k(3)*n(idx_C)*n(idx_E)
+    !H-
+    !H-
+    dn(idx_Hk) = &
+        +k(9)*n(idx_H)*n(idx_E) &
+        -k(10)*n(idx_Hk)*n(idx_H) &
+        +k(16)*n(idx_H2)*n(idx_E) &
+        -k(19)*n(idx_Hk)*n(idx_E) &
+        -k(20)*n(idx_Hk)*n(idx_H) &
+        -k(21)*n(idx_Hk)*n(idx_H) &
+        -k(22)*n(idx_Hk)*n(idx_Hj) &
+        -k(23)*n(idx_Hk)*n(idx_Hj) &
+        -k(26)*n(idx_H2j)*n(idx_Hk)
 
-!C+
-!C+
-dn(idx_Cj) = &
-    +k(1)*n(idx_C) &
-    -k(2)*n(idx_Cj)*n(idx_E) &
-    +k(3)*n(idx_C)*n(idx_E)
+    !H
+    !H
+    dn(idx_H) = &
+        -k(1)*n(idx_H)*n(idx_E) &
+        +k(2)*n(idx_Hj)*n(idx_E) &
+        +k(3)*n(idx_Hj)*n(idx_E) &
+        -k(9)*n(idx_H)*n(idx_E) &
+        -k(10)*n(idx_Hk)*n(idx_H) &
+        -k(11)*n(idx_H)*n(idx_Hj) &
+        -k(12)*n(idx_H)*n(idx_Hj) &
+        -k(13)*n(idx_H2j)*n(idx_H) &
+        +k(14)*n(idx_H2)*n(idx_Hj) &
+        +k(15)*n(idx_H2)*n(idx_Hj) &
+        +k(16)*n(idx_H2)*n(idx_E) &
+        +2.d0*k(17)*n(idx_H2)*n(idx_E) &
+        -k(18)*n(idx_H2)*n(idx_H) &
+        +3.d0*k(18)*n(idx_H2)*n(idx_H) &
+        +k(19)*n(idx_Hk)*n(idx_E) &
+        -k(20)*n(idx_Hk)*n(idx_H) &
+        +2.d0*k(20)*n(idx_Hk)*n(idx_H) &
+        -k(21)*n(idx_Hk)*n(idx_H) &
+        +2.d0*k(21)*n(idx_Hk)*n(idx_H) &
+        +2.d0*k(22)*n(idx_Hk)*n(idx_Hj) &
+        +2.d0*k(24)*n(idx_H2j)*n(idx_E) &
+        +2.d0*k(25)*n(idx_H2j)*n(idx_E) &
+        +k(26)*n(idx_H2j)*n(idx_Hk) &
+        +2.d0*k(27)*n(idx_H2)*n(idx_H2) &
+        -k(28)*n(idx_HEj)*n(idx_H) &
+        +k(29)*n(idx_HE)*n(idx_Hj) &
+        +k(30)*n(idx_HE)*n(idx_Hj) &
+        +k(31)*n(idx_H2)*n(idx_HEj) &
+        +2.d0*k(32)*n(idx_H2)*n(idx_HE) &
+        -2.d0*k(34)*n(idx_H)*n(idx_H) &
+        +k(34)*n(idx_H)*n(idx_H) &
+        -k(35)*n(idx_H)*n(idx_HE) &
+        +2.d0*k(36)*n(idx_H2) &
+        +k(37)*n(idx_Hj)*n(idx_E)
 
-!CR
+    !HE
+    !HE
+    dn(idx_HE) = &
+        -k(4)*n(idx_HE)*n(idx_E) &
+        +k(5)*n(idx_HEj)*n(idx_E) &
+        +k(6)*n(idx_HEj)*n(idx_E) &
+        +k(28)*n(idx_HEj)*n(idx_H) &
+        -k(29)*n(idx_HE)*n(idx_Hj) &
+        -k(30)*n(idx_HE)*n(idx_Hj) &
+        +k(31)*n(idx_H2)*n(idx_HEj) &
+        -k(32)*n(idx_H2)*n(idx_HE) &
+        +k(32)*n(idx_H2)*n(idx_HE) &
+        +k(33)*n(idx_H2)*n(idx_HEj) &
+        -k(35)*n(idx_H)*n(idx_HE) &
+        +k(35)*n(idx_H)*n(idx_HE) &
+        +k(38)*n(idx_HEj)*n(idx_E)
 
-!CR
-dn(idx_CR) = 0.d0
+    !H2
+    !H2
+    dn(idx_H2) = &
+        +k(10)*n(idx_Hk)*n(idx_H) &
+        +k(13)*n(idx_H2j)*n(idx_H) &
+        -k(14)*n(idx_H2)*n(idx_Hj) &
+        -k(15)*n(idx_H2)*n(idx_Hj) &
+        -k(16)*n(idx_H2)*n(idx_E) &
+        -k(17)*n(idx_H2)*n(idx_E) &
+        -k(18)*n(idx_H2)*n(idx_H) &
+        +k(26)*n(idx_H2j)*n(idx_Hk) &
+        -2.d0*k(27)*n(idx_H2)*n(idx_H2) &
+        +k(27)*n(idx_H2)*n(idx_H2) &
+        -k(31)*n(idx_H2)*n(idx_HEj) &
+        -k(32)*n(idx_H2)*n(idx_HE) &
+        -k(33)*n(idx_H2)*n(idx_HEj) &
+        -k(36)*n(idx_H2)
 
-!g
+    !H+
+    !H+
+    dn(idx_Hj) = &
+        +k(1)*n(idx_H)*n(idx_E) &
+        -k(2)*n(idx_Hj)*n(idx_E) &
+        -k(3)*n(idx_Hj)*n(idx_E) &
+        -k(11)*n(idx_H)*n(idx_Hj) &
+        -k(12)*n(idx_H)*n(idx_Hj) &
+        +k(13)*n(idx_H2j)*n(idx_H) &
+        -k(14)*n(idx_H2)*n(idx_Hj) &
+        -k(15)*n(idx_H2)*n(idx_Hj) &
+        -k(22)*n(idx_Hk)*n(idx_Hj) &
+        -k(23)*n(idx_Hk)*n(idx_Hj) &
+        +k(28)*n(idx_HEj)*n(idx_H) &
+        -k(29)*n(idx_HE)*n(idx_Hj) &
+        -k(30)*n(idx_HE)*n(idx_Hj) &
+        +k(31)*n(idx_H2)*n(idx_HEj) &
+        +k(34)*n(idx_H)*n(idx_H) &
+        +k(35)*n(idx_H)*n(idx_HE) &
+        -k(37)*n(idx_Hj)*n(idx_E)
 
-!g
-dn(idx_g) = 0.d0
+    !HE+
+    !HE+
+    dn(idx_HEj) = &
+        +k(4)*n(idx_HE)*n(idx_E) &
+        -k(5)*n(idx_HEj)*n(idx_E) &
+        -k(6)*n(idx_HEj)*n(idx_E) &
+        -k(7)*n(idx_HEj)*n(idx_E) &
+        +k(8)*n(idx_HEjj)*n(idx_E) &
+        -k(28)*n(idx_HEj)*n(idx_H) &
+        +k(29)*n(idx_HE)*n(idx_Hj) &
+        +k(30)*n(idx_HE)*n(idx_Hj) &
+        -k(31)*n(idx_H2)*n(idx_HEj) &
+        -k(33)*n(idx_H2)*n(idx_HEj) &
+        -k(38)*n(idx_HEj)*n(idx_E)
 
-!Tgas
+    !H2+
+    !H2+
+    dn(idx_H2j) = &
+        +k(11)*n(idx_H)*n(idx_Hj) &
+        +k(12)*n(idx_H)*n(idx_Hj) &
+        -k(13)*n(idx_H2j)*n(idx_H) &
+        +k(14)*n(idx_H2)*n(idx_Hj) &
+        +k(15)*n(idx_H2)*n(idx_Hj) &
+        +k(23)*n(idx_Hk)*n(idx_Hj) &
+        -k(24)*n(idx_H2j)*n(idx_E) &
+        -k(25)*n(idx_H2j)*n(idx_E) &
+        -k(26)*n(idx_H2j)*n(idx_Hk) &
+        +k(33)*n(idx_H2)*n(idx_HEj)
 
-!Tgas
-dn(idx_Tgas) = 0.d0
+    !HE++
+    !HE++
+    dn(idx_HEjj) = &
+        +k(7)*n(idx_HEj)*n(idx_E) &
+        -k(8)*n(idx_HEjj)*n(idx_E)
 
-!dummy
+    !CR
 
-!dummy
-dn(idx_dummy) = 0.d0
+    !CR
+    dn(idx_CR) = 0.d0
 
-last_coe(:) = k(:)
+    !g
 
-end subroutine fex
+    !g
+    dn(idx_g) = 0.d0
 
-!***************************
-subroutine jes(neq, tt, n, j, ian, jan, pdj)
-use krome_commons
-use krome_subs
-use krome_tabs
-use krome_cooling
-use krome_heating
-use krome_constants
-use krome_gadiab
-use krome_getphys
-implicit none
-integer::neq, j, ian, jan, r1, r2, p1, p2, p3, i
-real*8::tt, n(neq), pdj(neq), dr1, dr2, kk,k(nrea),Tgas
-real*8::nn(neq),dn0,dn1,dnn,nH2dust,dn(neq),krome_gamma
+    !Tgas
 
-nH2dust = 0.d0
-Tgas = n(idx_Tgas)
+    !Tgas
+    dn(idx_Tgas) = 0.d0
 
-k(:) = last_coe(:) !get rate coefficients
+    !dummy
 
-if(j==1) then
-elseif(j==1) then
-pdj(1) =  &
-    -k(2)*n(idx_Cj)  &
-    -k(3)*n(idx_C)  &
-    +2.d0*k(3)*n(idx_C)
-pdj(2) =  &
-    +k(2)*n(idx_Cj)  &
-    -k(3)*n(idx_C)
-pdj(3) =  &
-    -k(2)*n(idx_Cj)  &
-    +k(3)*n(idx_C)
-elseif(j==2) then
-pdj(1) =  &
-    +k(1)  &
-    -k(3)*n(idx_E)  &
-    +2.d0*k(3)*n(idx_E)
-pdj(2) =  &
-    -k(1)  &
-    -k(3)*n(idx_E)
-pdj(3) =  &
-    +k(1)  &
-    +k(3)*n(idx_E)
-elseif(j==3) then
-pdj(1) =  &
-    -k(2)*n(idx_E)
-pdj(2) =  &
-    +k(2)*n(idx_E)
-pdj(3) =  &
-    -k(2)*n(idx_E)
-elseif(j==4) then
-elseif(j==5) then
-elseif(j==6) then
+    !dummy
+    dn(idx_dummy) = 0.d0
 
-elseif(j==7) then
-end if
+    krome_gamma = gamma_index(n(:))
 
-return
-end subroutine jes
+    dn(idx_Tgas) = (heating(n(:), Tgas, k(:), nH2dust) &
+        - cooling(n(:), Tgas)  ) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
 
-!*************************
-subroutine jex(neq,t,n,ml,mu,pd,npd)
-use krome_commons
-use krome_tabs
-use krome_cooling
-use krome_heating
-use krome_constants
-use krome_subs
-use krome_gadiab
-implicit none
-real*8::n(neq),pd(neq,neq),t,k(nrea),dn0,dn1,dnn,Tgas
-real*8::krome_gamma,nn(neq),nH2dust
-integer::neq,ml,mu,npd
+    last_coe(:) = k(:)
 
-Tgas = n(idx_Tgas)
-npd = neq
-k(:) = coe_tab(n(:))
-pd(:,:) = 0d0
-krome_gamma = gamma_index(n(:))
+  end subroutine fex
 
-!d[E_dot]/d[E]
-pd(1,1) =  &
-    -k(2)*n(idx_Cj)  &
-    -k(3)*n(idx_C)  &
-    +2.d0*k(3)*n(idx_C)
+  !***************************
+  subroutine jes(neq, tt, n, j, ian, jan, pdj)
+    use krome_commons
+    use krome_subs
+    use krome_tabs
+    use krome_cooling
+    use krome_heating
+    use krome_constants
+    use krome_gadiab
+    use krome_getphys
+    implicit none
+    integer::neq, j, ian, jan, r1, r2, p1, p2, p3, i
+    real*8::tt, n(neq), pdj(neq), dr1, dr2, kk,k(nrea),Tgas
+    real*8::nn(neq),dn0,dn1,dnn,nH2dust,dn(neq),krome_gamma
 
-!d[C_dot]/d[E]
-pd(2,1) =  &
-    +k(2)*n(idx_Cj)  &
-    -k(3)*n(idx_C)
+    nH2dust = 0.d0
+    Tgas = n(idx_Tgas)
 
-!d[C+_dot]/d[E]
-pd(3,1) =  &
-    -k(2)*n(idx_Cj)  &
-    +k(3)*n(idx_C)
+    krome_gamma = gamma_index(n(:))
 
-!d[E_dot]/d[C]
-pd(1,2) =  &
-    +k(1)  &
-    -k(3)*n(idx_E)  &
-    +2.d0*k(3)*n(idx_E)
+    k(:) = last_coe(:) !get rate coefficients
 
-!d[C_dot]/d[C]
-pd(2,2) =  &
-    -k(1)  &
-    -k(3)*n(idx_E)
+    if(j==1) then
+    elseif(j==1) then
+      pdj(1) =  &
+          -k(1)*n(idx_H)  &
+          +2.d0*k(1)*n(idx_H)  &
+          -k(2)*n(idx_Hj)  &
+          -k(3)*n(idx_Hj)  &
+          -k(4)*n(idx_HE)  &
+          +2.d0*k(4)*n(idx_HE)  &
+          -k(5)*n(idx_HEj)  &
+          -k(6)*n(idx_HEj)  &
+          -k(7)*n(idx_HEj)  &
+          +2.d0*k(7)*n(idx_HEj)  &
+          -k(8)*n(idx_HEjj)  &
+          -k(9)*n(idx_H)  &
+          -k(16)*n(idx_H2)  &
+          -k(17)*n(idx_H2)  &
+          +k(17)*n(idx_H2)  &
+          -k(19)*n(idx_Hk)  &
+          +2.d0*k(19)*n(idx_Hk)  &
+          -k(24)*n(idx_H2j)  &
+          -k(25)*n(idx_H2j)  &
+          -k(37)*n(idx_Hj)  &
+          -k(38)*n(idx_HEj)
+      pdj(2) =  &
+          +k(9)*n(idx_H)  &
+          +k(16)*n(idx_H2)  &
+          -k(19)*n(idx_Hk)
+      pdj(3) =  &
+          -k(1)*n(idx_H)  &
+          +k(2)*n(idx_Hj)  &
+          +k(3)*n(idx_Hj)  &
+          -k(9)*n(idx_H)  &
+          +k(16)*n(idx_H2)  &
+          +2.d0*k(17)*n(idx_H2)  &
+          +k(19)*n(idx_Hk)  &
+          +2.d0*k(24)*n(idx_H2j)  &
+          +2.d0*k(25)*n(idx_H2j)  &
+          +k(37)*n(idx_Hj)
+      pdj(4) =  &
+          -k(4)*n(idx_HE)  &
+          +k(5)*n(idx_HEj)  &
+          +k(6)*n(idx_HEj)  &
+          +k(38)*n(idx_HEj)
+      pdj(5) =  &
+          -k(16)*n(idx_H2)  &
+          -k(17)*n(idx_H2)
+      pdj(6) =  &
+          +k(1)*n(idx_H)  &
+          -k(2)*n(idx_Hj)  &
+          -k(3)*n(idx_Hj)  &
+          -k(37)*n(idx_Hj)
+      pdj(7) =  &
+          +k(4)*n(idx_HE)  &
+          -k(5)*n(idx_HEj)  &
+          -k(6)*n(idx_HEj)  &
+          -k(7)*n(idx_HEj)  &
+          +k(8)*n(idx_HEjj)  &
+          -k(38)*n(idx_HEj)
+      pdj(8) =  &
+          -k(24)*n(idx_H2j)  &
+          -k(25)*n(idx_H2j)
+      pdj(9) =  &
+          +k(7)*n(idx_HEj)  &
+          -k(8)*n(idx_HEjj)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(1)*1d-3
+      if(dnn>0.d0) then
+        nn(1) = n(1) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
 
-!d[C+_dot]/d[C]
-pd(3,2) =  &
-    +k(1)  &
-    +k(3)*n(idx_E)
+    elseif(j==2) then
+      pdj(1) =  &
+          +k(10)*n(idx_H)  &
+          -k(19)*n(idx_E)  &
+          +2.d0*k(19)*n(idx_E)  &
+          +k(20)*n(idx_H)  &
+          +k(21)*n(idx_H)  &
+          +k(23)*n(idx_Hj)
+      pdj(2) =  &
+          -k(10)*n(idx_H)  &
+          -k(19)*n(idx_E)  &
+          -k(20)*n(idx_H)  &
+          -k(21)*n(idx_H)  &
+          -k(22)*n(idx_Hj)  &
+          -k(23)*n(idx_Hj)  &
+          -k(26)*n(idx_H2j)
+      pdj(3) =  &
+          -k(10)*n(idx_H)  &
+          +k(19)*n(idx_E)  &
+          -k(20)*n(idx_H)  &
+          +2.d0*k(20)*n(idx_H)  &
+          -k(21)*n(idx_H)  &
+          +2.d0*k(21)*n(idx_H)  &
+          +2.d0*k(22)*n(idx_Hj)  &
+          +k(26)*n(idx_H2j)
+      pdj(5) =  &
+          +k(10)*n(idx_H)  &
+          +k(26)*n(idx_H2j)
+      pdj(6) =  &
+          -k(22)*n(idx_Hj)  &
+          -k(23)*n(idx_Hj)
+      pdj(8) =  &
+          +k(23)*n(idx_Hj)  &
+          -k(26)*n(idx_H2j)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(2)*1d-3
+      if(dnn>0.d0) then
+        nn(2) = n(2) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
 
-!d[E_dot]/d[C+]
-pd(1,3) =  &
-    -k(2)*n(idx_E)
+    elseif(j==3) then
+      pdj(1) =  &
+          -k(1)*n(idx_E)  &
+          +2.d0*k(1)*n(idx_E)  &
+          -k(9)*n(idx_E)  &
+          +k(10)*n(idx_Hk)  &
+          +k(20)*n(idx_Hk)  &
+          +k(21)*n(idx_Hk)  &
+          +2.d0*k(34)*n(idx_H)  &
+          +k(35)*n(idx_HE)
+      pdj(2) =  &
+          +k(9)*n(idx_E)  &
+          -k(10)*n(idx_Hk)  &
+          -k(20)*n(idx_Hk)  &
+          -k(21)*n(idx_Hk)
+      pdj(3) =  &
+          -k(1)*n(idx_E)  &
+          -k(9)*n(idx_E)  &
+          -k(10)*n(idx_Hk)  &
+          -k(11)*n(idx_Hj)  &
+          -k(12)*n(idx_Hj)  &
+          -k(13)*n(idx_H2j)  &
+          -k(18)*n(idx_H2)  &
+          +3.d0*k(18)*n(idx_H2)  &
+          -k(20)*n(idx_Hk)  &
+          +2.d0*k(20)*n(idx_Hk)  &
+          -k(21)*n(idx_Hk)  &
+          +2.d0*k(21)*n(idx_Hk)  &
+          -k(28)*n(idx_HEj)  &
+          -4.d0*k(34)*n(idx_H)  &
+          +2.d0*k(34)*n(idx_H)  &
+          -k(35)*n(idx_HE)
+      pdj(4) =  &
+          +k(28)*n(idx_HEj)  &
+          -k(35)*n(idx_HE)  &
+          +k(35)*n(idx_HE)
+      pdj(5) =  &
+          +k(10)*n(idx_Hk)  &
+          +k(13)*n(idx_H2j)  &
+          -k(18)*n(idx_H2)
+      pdj(6) =  &
+          +k(1)*n(idx_E)  &
+          -k(11)*n(idx_Hj)  &
+          -k(12)*n(idx_Hj)  &
+          +k(13)*n(idx_H2j)  &
+          +k(28)*n(idx_HEj)  &
+          +2.d0*k(34)*n(idx_H)  &
+          +k(35)*n(idx_HE)
+      pdj(7) =  &
+          -k(28)*n(idx_HEj)
+      pdj(8) =  &
+          +k(11)*n(idx_Hj)  &
+          +k(12)*n(idx_Hj)  &
+          -k(13)*n(idx_H2j)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(3)*1d-3
+      if(dnn>0.d0) then
+        nn(3) = n(3) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
 
-!d[C_dot]/d[C+]
-pd(2,3) =  &
-    +k(2)*n(idx_E)
+    elseif(j==4) then
+      pdj(1) =  &
+          -k(4)*n(idx_E)  &
+          +2.d0*k(4)*n(idx_E)  &
+          +k(35)*n(idx_H)
+      pdj(3) =  &
+          +k(29)*n(idx_Hj)  &
+          +k(30)*n(idx_Hj)  &
+          +2.d0*k(32)*n(idx_H2)  &
+          -k(35)*n(idx_H)
+      pdj(4) =  &
+          -k(4)*n(idx_E)  &
+          -k(29)*n(idx_Hj)  &
+          -k(30)*n(idx_Hj)  &
+          -k(32)*n(idx_H2)  &
+          +k(32)*n(idx_H2)  &
+          -k(35)*n(idx_H)  &
+          +k(35)*n(idx_H)
+      pdj(5) =  &
+          -k(32)*n(idx_H2)
+      pdj(6) =  &
+          -k(29)*n(idx_Hj)  &
+          -k(30)*n(idx_Hj)  &
+          +k(35)*n(idx_H)
+      pdj(7) =  &
+          +k(4)*n(idx_E)  &
+          +k(29)*n(idx_Hj)  &
+          +k(30)*n(idx_Hj)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(4)*1d-3
+      if(dnn>0.d0) then
+        nn(4) = n(4) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
 
-!d[C+_dot]/d[C+]
-pd(3,3) =  &
-    -k(2)*n(idx_E)
+    elseif(j==5) then
+      pdj(1) =  &
+          -k(16)*n(idx_E)  &
+          -k(17)*n(idx_E)  &
+          +k(17)*n(idx_E)
+      pdj(2) =  &
+          +k(16)*n(idx_E)
+      pdj(3) =  &
+          +k(14)*n(idx_Hj)  &
+          +k(15)*n(idx_Hj)  &
+          +k(16)*n(idx_E)  &
+          +2.d0*k(17)*n(idx_E)  &
+          -k(18)*n(idx_H)  &
+          +3.d0*k(18)*n(idx_H)  &
+          +4.d0*k(27)*n(idx_H2)  &
+          +k(31)*n(idx_HEj)  &
+          +2.d0*k(32)*n(idx_HE)  &
+          +2.d0*k(36)
+      pdj(4) =  &
+          +k(31)*n(idx_HEj)  &
+          -k(32)*n(idx_HE)  &
+          +k(32)*n(idx_HE)  &
+          +k(33)*n(idx_HEj)
+      pdj(5) =  &
+          -k(14)*n(idx_Hj)  &
+          -k(15)*n(idx_Hj)  &
+          -k(16)*n(idx_E)  &
+          -k(17)*n(idx_E)  &
+          -k(18)*n(idx_H)  &
+          -4.d0*k(27)*n(idx_H2)  &
+          +2.d0*k(27)*n(idx_H2)  &
+          -k(31)*n(idx_HEj)  &
+          -k(32)*n(idx_HE)  &
+          -k(33)*n(idx_HEj)  &
+          -k(36)
+      pdj(6) =  &
+          -k(14)*n(idx_Hj)  &
+          -k(15)*n(idx_Hj)  &
+          +k(31)*n(idx_HEj)
+      pdj(7) =  &
+          -k(31)*n(idx_HEj)  &
+          -k(33)*n(idx_HEj)
+      pdj(8) =  &
+          +k(14)*n(idx_Hj)  &
+          +k(15)*n(idx_Hj)  &
+          +k(33)*n(idx_HEj)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(5)*1d-3
+      if(dnn>0.d0) then
+        nn(5) = n(5) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
 
-end subroutine jex
+    elseif(j==6) then
+      pdj(1) =  &
+          -k(2)*n(idx_E)  &
+          -k(3)*n(idx_E)  &
+          +k(23)*n(idx_Hk)  &
+          -k(37)*n(idx_E)
+      pdj(2) =  &
+          -k(22)*n(idx_Hk)  &
+          -k(23)*n(idx_Hk)
+      pdj(3) =  &
+          +k(2)*n(idx_E)  &
+          +k(3)*n(idx_E)  &
+          -k(11)*n(idx_H)  &
+          -k(12)*n(idx_H)  &
+          +k(14)*n(idx_H2)  &
+          +k(15)*n(idx_H2)  &
+          +2.d0*k(22)*n(idx_Hk)  &
+          +k(29)*n(idx_HE)  &
+          +k(30)*n(idx_HE)  &
+          +k(37)*n(idx_E)
+      pdj(4) =  &
+          -k(29)*n(idx_HE)  &
+          -k(30)*n(idx_HE)
+      pdj(5) =  &
+          -k(14)*n(idx_H2)  &
+          -k(15)*n(idx_H2)
+      pdj(6) =  &
+          -k(2)*n(idx_E)  &
+          -k(3)*n(idx_E)  &
+          -k(11)*n(idx_H)  &
+          -k(12)*n(idx_H)  &
+          -k(14)*n(idx_H2)  &
+          -k(15)*n(idx_H2)  &
+          -k(22)*n(idx_Hk)  &
+          -k(23)*n(idx_Hk)  &
+          -k(29)*n(idx_HE)  &
+          -k(30)*n(idx_HE)  &
+          -k(37)*n(idx_E)
+      pdj(7) =  &
+          +k(29)*n(idx_HE)  &
+          +k(30)*n(idx_HE)
+      pdj(8) =  &
+          +k(11)*n(idx_H)  &
+          +k(12)*n(idx_H)  &
+          +k(14)*n(idx_H2)  &
+          +k(15)*n(idx_H2)  &
+          +k(23)*n(idx_Hk)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(6)*1d-3
+      if(dnn>0.d0) then
+        nn(6) = n(6) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
+
+    elseif(j==7) then
+      pdj(1) =  &
+          -k(5)*n(idx_E)  &
+          -k(6)*n(idx_E)  &
+          -k(7)*n(idx_E)  &
+          +2.d0*k(7)*n(idx_E)  &
+          -k(38)*n(idx_E)
+      pdj(3) =  &
+          -k(28)*n(idx_H)  &
+          +k(31)*n(idx_H2)
+      pdj(4) =  &
+          +k(5)*n(idx_E)  &
+          +k(6)*n(idx_E)  &
+          +k(28)*n(idx_H)  &
+          +k(31)*n(idx_H2)  &
+          +k(33)*n(idx_H2)  &
+          +k(38)*n(idx_E)
+      pdj(5) =  &
+          -k(31)*n(idx_H2)  &
+          -k(33)*n(idx_H2)
+      pdj(6) =  &
+          +k(28)*n(idx_H)  &
+          +k(31)*n(idx_H2)
+      pdj(7) =  &
+          -k(5)*n(idx_E)  &
+          -k(6)*n(idx_E)  &
+          -k(7)*n(idx_E)  &
+          -k(28)*n(idx_H)  &
+          -k(31)*n(idx_H2)  &
+          -k(33)*n(idx_H2)  &
+          -k(38)*n(idx_E)
+      pdj(8) =  &
+          +k(33)*n(idx_H2)
+      pdj(9) =  &
+          +k(7)*n(idx_E)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(7)*1d-3
+      if(dnn>0.d0) then
+        nn(7) = n(7) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
+
+    elseif(j==8) then
+      pdj(1) =  &
+          -k(24)*n(idx_E)  &
+          -k(25)*n(idx_E)
+      pdj(2) =  &
+          -k(26)*n(idx_Hk)
+      pdj(3) =  &
+          -k(13)*n(idx_H)  &
+          +2.d0*k(24)*n(idx_E)  &
+          +2.d0*k(25)*n(idx_E)  &
+          +k(26)*n(idx_Hk)
+      pdj(5) =  &
+          +k(13)*n(idx_H)  &
+          +k(26)*n(idx_Hk)
+      pdj(6) =  &
+          +k(13)*n(idx_H)
+      pdj(8) =  &
+          -k(13)*n(idx_H)  &
+          -k(24)*n(idx_E)  &
+          -k(25)*n(idx_E)  &
+          -k(26)*n(idx_Hk)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(8)*1d-3
+      if(dnn>0.d0) then
+        nn(8) = n(8) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
+
+    elseif(j==9) then
+      pdj(1) =  &
+          -k(8)*n(idx_E)
+      pdj(7) =  &
+          +k(8)*n(idx_E)
+      pdj(9) =  &
+          -k(8)*n(idx_E)
+      dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      nn(:) = n(:)
+      dnn = n(9)*1d-3
+      if(dnn>0.d0) then
+        nn(9) = n(9) + dnn
+        dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+            * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+        pdj(idx_Tgas) = (dn1-dn0)/dnn
+      end if
+
+    elseif(j==10) then
+      pdj(12) = 0.d0
+    elseif(j==11) then
+      pdj(12) = 0.d0
+    elseif(j==12) then
+      !use fex to compute temperature-dependent Jacobian
+      dnn = n(idx_Tgas)*1d-3
+      nn(:) = n(:)
+      nn(idx_Tgas) = n(idx_Tgas) + dnn
+      call fex(neq,tt,nn(:),dn(:))
+      do i=1,neq-1
+        pdj(i) = dn(i) / dnn
+      end do
+    elseif(j==13) then
+      pdj(12) = 0.d0
+    end if
+
+    return
+  end subroutine jes
+
+  !*************************
+  subroutine jex(neq,t,n,ml,mu,pd,npd)
+    use krome_commons
+    use krome_tabs
+    use krome_cooling
+    use krome_heating
+    use krome_constants
+    use krome_subs
+    use krome_gadiab
+    implicit none
+    real*8::n(neq),pd(neq,neq),t,k(nrea),dn0,dn1,dnn,Tgas
+    real*8::krome_gamma,nn(neq),nH2dust
+    integer::neq,ml,mu,npd
+
+    Tgas = n(idx_Tgas)
+    npd = neq
+    k(:) = coe_tab(n(:))
+    pd(:,:) = 0d0
+    krome_gamma = gamma_index(n(:))
+
+    !d[E_dot]/d[E]
+    pd(1,1) =  &
+        -k(1)*n(idx_H)  &
+        +2.d0*k(1)*n(idx_H)  &
+        -k(2)*n(idx_Hj)  &
+        -k(3)*n(idx_Hj)  &
+        -k(4)*n(idx_HE)  &
+        +2.d0*k(4)*n(idx_HE)  &
+        -k(5)*n(idx_HEj)  &
+        -k(6)*n(idx_HEj)  &
+        -k(7)*n(idx_HEj)  &
+        +2.d0*k(7)*n(idx_HEj)  &
+        -k(8)*n(idx_HEjj)  &
+        -k(9)*n(idx_H)  &
+        -k(16)*n(idx_H2)  &
+        -k(17)*n(idx_H2)  &
+        +k(17)*n(idx_H2)  &
+        -k(19)*n(idx_Hk)  &
+        +2.d0*k(19)*n(idx_Hk)  &
+        -k(24)*n(idx_H2j)  &
+        -k(25)*n(idx_H2j)  &
+        -k(37)*n(idx_Hj)  &
+        -k(38)*n(idx_HEj)
+
+    !d[H-_dot]/d[E]
+    pd(2,1) =  &
+        +k(9)*n(idx_H)  &
+        +k(16)*n(idx_H2)  &
+        -k(19)*n(idx_Hk)
+
+    !d[H_dot]/d[E]
+    pd(3,1) =  &
+        -k(1)*n(idx_H)  &
+        +k(2)*n(idx_Hj)  &
+        +k(3)*n(idx_Hj)  &
+        -k(9)*n(idx_H)  &
+        +k(16)*n(idx_H2)  &
+        +2.d0*k(17)*n(idx_H2)  &
+        +k(19)*n(idx_Hk)  &
+        +2.d0*k(24)*n(idx_H2j)  &
+        +2.d0*k(25)*n(idx_H2j)  &
+        +k(37)*n(idx_Hj)
+
+    !d[HE_dot]/d[E]
+    pd(4,1) =  &
+        -k(4)*n(idx_HE)  &
+        +k(5)*n(idx_HEj)  &
+        +k(6)*n(idx_HEj)  &
+        +k(38)*n(idx_HEj)
+
+    !d[H2_dot]/d[E]
+    pd(5,1) =  &
+        -k(16)*n(idx_H2)  &
+        -k(17)*n(idx_H2)
+
+    !d[H+_dot]/d[E]
+    pd(6,1) =  &
+        +k(1)*n(idx_H)  &
+        -k(2)*n(idx_Hj)  &
+        -k(3)*n(idx_Hj)  &
+        -k(37)*n(idx_Hj)
+
+    !d[HE+_dot]/d[E]
+    pd(7,1) =  &
+        +k(4)*n(idx_HE)  &
+        -k(5)*n(idx_HEj)  &
+        -k(6)*n(idx_HEj)  &
+        -k(7)*n(idx_HEj)  &
+        +k(8)*n(idx_HEjj)  &
+        -k(38)*n(idx_HEj)
+
+    !d[H2+_dot]/d[E]
+    pd(8,1) =  &
+        -k(24)*n(idx_H2j)  &
+        -k(25)*n(idx_H2j)
+
+    !d[HE++_dot]/d[E]
+    pd(9,1) =  &
+        +k(7)*n(idx_HEj)  &
+        -k(8)*n(idx_HEjj)
+
+    !d[Tgas_dot]/d[E]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(1)*1d-3
+    if(dnn>0.d0) then
+      nn(1) = n(1) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,1) = (dn1-dn0)/dnn
+    end if
+
+    !d[E_dot]/d[H-]
+    pd(1,2) =  &
+        +k(10)*n(idx_H)  &
+        -k(19)*n(idx_E)  &
+        +2.d0*k(19)*n(idx_E)  &
+        +k(20)*n(idx_H)  &
+        +k(21)*n(idx_H)  &
+        +k(23)*n(idx_Hj)
+
+    !d[H-_dot]/d[H-]
+    pd(2,2) =  &
+        -k(10)*n(idx_H)  &
+        -k(19)*n(idx_E)  &
+        -k(20)*n(idx_H)  &
+        -k(21)*n(idx_H)  &
+        -k(22)*n(idx_Hj)  &
+        -k(23)*n(idx_Hj)  &
+        -k(26)*n(idx_H2j)
+
+    !d[H_dot]/d[H-]
+    pd(3,2) =  &
+        -k(10)*n(idx_H)  &
+        +k(19)*n(idx_E)  &
+        -k(20)*n(idx_H)  &
+        +2.d0*k(20)*n(idx_H)  &
+        -k(21)*n(idx_H)  &
+        +2.d0*k(21)*n(idx_H)  &
+        +2.d0*k(22)*n(idx_Hj)  &
+        +k(26)*n(idx_H2j)
+
+    !d[H2_dot]/d[H-]
+    pd(5,2) =  &
+        +k(10)*n(idx_H)  &
+        +k(26)*n(idx_H2j)
+
+    !d[H+_dot]/d[H-]
+    pd(6,2) =  &
+        -k(22)*n(idx_Hj)  &
+        -k(23)*n(idx_Hj)
+
+    !d[H2+_dot]/d[H-]
+    pd(8,2) =  &
+        +k(23)*n(idx_Hj)  &
+        -k(26)*n(idx_H2j)
+
+    !d[Tgas_dot]/d[H-]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(2)*1d-3
+    if(dnn>0.d0) then
+      nn(2) = n(2) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,2) = (dn1-dn0)/dnn
+    end if
+
+    !d[E_dot]/d[H]
+    pd(1,3) =  &
+        -k(1)*n(idx_E)  &
+        +2.d0*k(1)*n(idx_E)  &
+        -k(9)*n(idx_E)  &
+        +k(10)*n(idx_Hk)  &
+        +k(20)*n(idx_Hk)  &
+        +k(21)*n(idx_Hk)  &
+        +2.d0*k(34)*n(idx_H)  &
+        +k(35)*n(idx_HE)
+
+    !d[H-_dot]/d[H]
+    pd(2,3) =  &
+        +k(9)*n(idx_E)  &
+        -k(10)*n(idx_Hk)  &
+        -k(20)*n(idx_Hk)  &
+        -k(21)*n(idx_Hk)
+
+    !d[H_dot]/d[H]
+    pd(3,3) =  &
+        -k(1)*n(idx_E)  &
+        -k(9)*n(idx_E)  &
+        -k(10)*n(idx_Hk)  &
+        -k(11)*n(idx_Hj)  &
+        -k(12)*n(idx_Hj)  &
+        -k(13)*n(idx_H2j)  &
+        -k(18)*n(idx_H2)  &
+        +3.d0*k(18)*n(idx_H2)  &
+        -k(20)*n(idx_Hk)  &
+        +2.d0*k(20)*n(idx_Hk)  &
+        -k(21)*n(idx_Hk)  &
+        +2.d0*k(21)*n(idx_Hk)  &
+        -k(28)*n(idx_HEj)  &
+        -4.d0*k(34)*n(idx_H)  &
+        +2.d0*k(34)*n(idx_H)  &
+        -k(35)*n(idx_HE)
+
+    !d[HE_dot]/d[H]
+    pd(4,3) =  &
+        +k(28)*n(idx_HEj)  &
+        -k(35)*n(idx_HE)  &
+        +k(35)*n(idx_HE)
+
+    !d[H2_dot]/d[H]
+    pd(5,3) =  &
+        +k(10)*n(idx_Hk)  &
+        +k(13)*n(idx_H2j)  &
+        -k(18)*n(idx_H2)
+
+    !d[H+_dot]/d[H]
+    pd(6,3) =  &
+        +k(1)*n(idx_E)  &
+        -k(11)*n(idx_Hj)  &
+        -k(12)*n(idx_Hj)  &
+        +k(13)*n(idx_H2j)  &
+        +k(28)*n(idx_HEj)  &
+        +2.d0*k(34)*n(idx_H)  &
+        +k(35)*n(idx_HE)
+
+    !d[HE+_dot]/d[H]
+    pd(7,3) =  &
+        -k(28)*n(idx_HEj)
+
+    !d[H2+_dot]/d[H]
+    pd(8,3) =  &
+        +k(11)*n(idx_Hj)  &
+        +k(12)*n(idx_Hj)  &
+        -k(13)*n(idx_H2j)
+
+    !d[Tgas_dot]/d[H]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(3)*1d-3
+    if(dnn>0.d0) then
+      nn(3) = n(3) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,3) = (dn1-dn0)/dnn
+    end if
+
+    !d[E_dot]/d[HE]
+    pd(1,4) =  &
+        -k(4)*n(idx_E)  &
+        +2.d0*k(4)*n(idx_E)  &
+        +k(35)*n(idx_H)
+
+    !d[H_dot]/d[HE]
+    pd(3,4) =  &
+        +k(29)*n(idx_Hj)  &
+        +k(30)*n(idx_Hj)  &
+        +2.d0*k(32)*n(idx_H2)  &
+        -k(35)*n(idx_H)
+
+    !d[HE_dot]/d[HE]
+    pd(4,4) =  &
+        -k(4)*n(idx_E)  &
+        -k(29)*n(idx_Hj)  &
+        -k(30)*n(idx_Hj)  &
+        -k(32)*n(idx_H2)  &
+        +k(32)*n(idx_H2)  &
+        -k(35)*n(idx_H)  &
+        +k(35)*n(idx_H)
+
+    !d[H2_dot]/d[HE]
+    pd(5,4) =  &
+        -k(32)*n(idx_H2)
+
+    !d[H+_dot]/d[HE]
+    pd(6,4) =  &
+        -k(29)*n(idx_Hj)  &
+        -k(30)*n(idx_Hj)  &
+        +k(35)*n(idx_H)
+
+    !d[HE+_dot]/d[HE]
+    pd(7,4) =  &
+        +k(4)*n(idx_E)  &
+        +k(29)*n(idx_Hj)  &
+        +k(30)*n(idx_Hj)
+
+    !d[Tgas_dot]/d[HE]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(4)*1d-3
+    if(dnn>0.d0) then
+      nn(4) = n(4) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,4) = (dn1-dn0)/dnn
+    end if
+
+    !d[E_dot]/d[H2]
+    pd(1,5) =  &
+        -k(16)*n(idx_E)  &
+        -k(17)*n(idx_E)  &
+        +k(17)*n(idx_E)
+
+    !d[H-_dot]/d[H2]
+    pd(2,5) =  &
+        +k(16)*n(idx_E)
+
+    !d[H_dot]/d[H2]
+    pd(3,5) =  &
+        +k(14)*n(idx_Hj)  &
+        +k(15)*n(idx_Hj)  &
+        +k(16)*n(idx_E)  &
+        +2.d0*k(17)*n(idx_E)  &
+        -k(18)*n(idx_H)  &
+        +3.d0*k(18)*n(idx_H)  &
+        +4.d0*k(27)*n(idx_H2)  &
+        +k(31)*n(idx_HEj)  &
+        +2.d0*k(32)*n(idx_HE)  &
+        +2.d0*k(36)
+
+    !d[HE_dot]/d[H2]
+    pd(4,5) =  &
+        +k(31)*n(idx_HEj)  &
+        -k(32)*n(idx_HE)  &
+        +k(32)*n(idx_HE)  &
+        +k(33)*n(idx_HEj)
+
+    !d[H2_dot]/d[H2]
+    pd(5,5) =  &
+        -k(14)*n(idx_Hj)  &
+        -k(15)*n(idx_Hj)  &
+        -k(16)*n(idx_E)  &
+        -k(17)*n(idx_E)  &
+        -k(18)*n(idx_H)  &
+        -4.d0*k(27)*n(idx_H2)  &
+        +2.d0*k(27)*n(idx_H2)  &
+        -k(31)*n(idx_HEj)  &
+        -k(32)*n(idx_HE)  &
+        -k(33)*n(idx_HEj)  &
+        -k(36)
+
+    !d[H+_dot]/d[H2]
+    pd(6,5) =  &
+        -k(14)*n(idx_Hj)  &
+        -k(15)*n(idx_Hj)  &
+        +k(31)*n(idx_HEj)
+
+    !d[HE+_dot]/d[H2]
+    pd(7,5) =  &
+        -k(31)*n(idx_HEj)  &
+        -k(33)*n(idx_HEj)
+
+    !d[H2+_dot]/d[H2]
+    pd(8,5) =  &
+        +k(14)*n(idx_Hj)  &
+        +k(15)*n(idx_Hj)  &
+        +k(33)*n(idx_HEj)
+
+    !d[Tgas_dot]/d[H2]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(5)*1d-3
+    if(dnn>0.d0) then
+      nn(5) = n(5) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,5) = (dn1-dn0)/dnn
+    end if
+
+    !d[E_dot]/d[H+]
+    pd(1,6) =  &
+        -k(2)*n(idx_E)  &
+        -k(3)*n(idx_E)  &
+        +k(23)*n(idx_Hk)  &
+        -k(37)*n(idx_E)
+
+    !d[H-_dot]/d[H+]
+    pd(2,6) =  &
+        -k(22)*n(idx_Hk)  &
+        -k(23)*n(idx_Hk)
+
+    !d[H_dot]/d[H+]
+    pd(3,6) =  &
+        +k(2)*n(idx_E)  &
+        +k(3)*n(idx_E)  &
+        -k(11)*n(idx_H)  &
+        -k(12)*n(idx_H)  &
+        +k(14)*n(idx_H2)  &
+        +k(15)*n(idx_H2)  &
+        +2.d0*k(22)*n(idx_Hk)  &
+        +k(29)*n(idx_HE)  &
+        +k(30)*n(idx_HE)  &
+        +k(37)*n(idx_E)
+
+    !d[HE_dot]/d[H+]
+    pd(4,6) =  &
+        -k(29)*n(idx_HE)  &
+        -k(30)*n(idx_HE)
+
+    !d[H2_dot]/d[H+]
+    pd(5,6) =  &
+        -k(14)*n(idx_H2)  &
+        -k(15)*n(idx_H2)
+
+    !d[H+_dot]/d[H+]
+    pd(6,6) =  &
+        -k(2)*n(idx_E)  &
+        -k(3)*n(idx_E)  &
+        -k(11)*n(idx_H)  &
+        -k(12)*n(idx_H)  &
+        -k(14)*n(idx_H2)  &
+        -k(15)*n(idx_H2)  &
+        -k(22)*n(idx_Hk)  &
+        -k(23)*n(idx_Hk)  &
+        -k(29)*n(idx_HE)  &
+        -k(30)*n(idx_HE)  &
+        -k(37)*n(idx_E)
+
+    !d[HE+_dot]/d[H+]
+    pd(7,6) =  &
+        +k(29)*n(idx_HE)  &
+        +k(30)*n(idx_HE)
+
+    !d[H2+_dot]/d[H+]
+    pd(8,6) =  &
+        +k(11)*n(idx_H)  &
+        +k(12)*n(idx_H)  &
+        +k(14)*n(idx_H2)  &
+        +k(15)*n(idx_H2)  &
+        +k(23)*n(idx_Hk)
+
+    !d[Tgas_dot]/d[H+]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(6)*1d-3
+    if(dnn>0.d0) then
+      nn(6) = n(6) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,6) = (dn1-dn0)/dnn
+    end if
+
+    !d[E_dot]/d[HE+]
+    pd(1,7) =  &
+        -k(5)*n(idx_E)  &
+        -k(6)*n(idx_E)  &
+        -k(7)*n(idx_E)  &
+        +2.d0*k(7)*n(idx_E)  &
+        -k(38)*n(idx_E)
+
+    !d[H_dot]/d[HE+]
+    pd(3,7) =  &
+        -k(28)*n(idx_H)  &
+        +k(31)*n(idx_H2)
+
+    !d[HE_dot]/d[HE+]
+    pd(4,7) =  &
+        +k(5)*n(idx_E)  &
+        +k(6)*n(idx_E)  &
+        +k(28)*n(idx_H)  &
+        +k(31)*n(idx_H2)  &
+        +k(33)*n(idx_H2)  &
+        +k(38)*n(idx_E)
+
+    !d[H2_dot]/d[HE+]
+    pd(5,7) =  &
+        -k(31)*n(idx_H2)  &
+        -k(33)*n(idx_H2)
+
+    !d[H+_dot]/d[HE+]
+    pd(6,7) =  &
+        +k(28)*n(idx_H)  &
+        +k(31)*n(idx_H2)
+
+    !d[HE+_dot]/d[HE+]
+    pd(7,7) =  &
+        -k(5)*n(idx_E)  &
+        -k(6)*n(idx_E)  &
+        -k(7)*n(idx_E)  &
+        -k(28)*n(idx_H)  &
+        -k(31)*n(idx_H2)  &
+        -k(33)*n(idx_H2)  &
+        -k(38)*n(idx_E)
+
+    !d[H2+_dot]/d[HE+]
+    pd(8,7) =  &
+        +k(33)*n(idx_H2)
+
+    !d[HE++_dot]/d[HE+]
+    pd(9,7) =  &
+        +k(7)*n(idx_E)
+
+    !d[Tgas_dot]/d[HE+]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(7)*1d-3
+    if(dnn>0.d0) then
+      nn(7) = n(7) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,7) = (dn1-dn0)/dnn
+    end if
+
+    !d[E_dot]/d[H2+]
+    pd(1,8) =  &
+        -k(24)*n(idx_E)  &
+        -k(25)*n(idx_E)
+
+    !d[H-_dot]/d[H2+]
+    pd(2,8) =  &
+        -k(26)*n(idx_Hk)
+
+    !d[H_dot]/d[H2+]
+    pd(3,8) =  &
+        -k(13)*n(idx_H)  &
+        +2.d0*k(24)*n(idx_E)  &
+        +2.d0*k(25)*n(idx_E)  &
+        +k(26)*n(idx_Hk)
+
+    !d[H2_dot]/d[H2+]
+    pd(5,8) =  &
+        +k(13)*n(idx_H)  &
+        +k(26)*n(idx_Hk)
+
+    !d[H+_dot]/d[H2+]
+    pd(6,8) =  &
+        +k(13)*n(idx_H)
+
+    !d[H2+_dot]/d[H2+]
+    pd(8,8) =  &
+        -k(13)*n(idx_H)  &
+        -k(24)*n(idx_E)  &
+        -k(25)*n(idx_E)  &
+        -k(26)*n(idx_Hk)
+
+    !d[Tgas_dot]/d[H2+]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(8)*1d-3
+    if(dnn>0.d0) then
+      nn(8) = n(8) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,8) = (dn1-dn0)/dnn
+    end if
+
+    !d[E_dot]/d[HE++]
+    pd(1,9) =  &
+        -k(8)*n(idx_E)
+
+    !d[HE+_dot]/d[HE++]
+    pd(7,9) =  &
+        +k(8)*n(idx_E)
+
+    !d[HE++_dot]/d[HE++]
+    pd(9,9) =  &
+        -k(8)*n(idx_E)
+
+    !d[Tgas_dot]/d[HE++]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(9)*1d-3
+    if(dnn>0.d0) then
+      nn(9) = n(9) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,9) = (dn1-dn0)/dnn
+    end if
+
+    !d[Tgas_dot]/d[CR]
+    pd(12,10) = 0.d0
+
+    !d[Tgas_dot]/d[g]
+    pd(12,11) = 0.d0
+
+    !d[E_dot]/d[Tgas]
+    pd(1,12) = 0.d0
+
+    !d[H-_dot]/d[Tgas]
+    pd(2,12) = 0.d0
+
+    !d[H_dot]/d[Tgas]
+    pd(3,12) = 0.d0
+
+    !d[HE_dot]/d[Tgas]
+    pd(4,12) = 0.d0
+
+    !d[H2_dot]/d[Tgas]
+    pd(5,12) = 0.d0
+
+    !d[H+_dot]/d[Tgas]
+    pd(6,12) = 0.d0
+
+    !d[HE+_dot]/d[Tgas]
+    pd(7,12) = 0.d0
+
+    !d[H2+_dot]/d[Tgas]
+    pd(8,12) = 0.d0
+
+    !d[HE++_dot]/d[Tgas]
+    pd(9,12) = 0.d0
+
+    !d[CR_dot]/d[Tgas]
+    pd(10,12) = 0.d0
+
+    !d[g_dot]/d[Tgas]
+    pd(11,12) = 0.d0
+
+    !d[Tgas_dot]/d[Tgas]
+    dn0 = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+    nn(:) = n(:)
+    dnn = n(12)*1d-3
+    if(dnn>0.d0) then
+      nn(12) = n(12) + dnn
+      dn1 = (heating(nn(:), Tgas, k(:), nH2dust) - cooling(nn(:), Tgas)) &
+          * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+      pd(idx_Tgas,12) = (dn1-dn0)/dnn
+    end if
+
+    !d[dummy_dot]/d[Tgas]
+    pd(13,12) = 0.d0
+
+    !d[Tgas_dot]/d[dummy]
+    pd(12,13) = 0.d0
+
+  end subroutine jex
 
 end module krome_ode
 
 !############### MODULE ##############
 module krome_user
-implicit none
+  implicit none
 
-! *************************************************************
-!  This file has been generated with:
-!  KROME 14.08.dev on 2026-01-12 13:41:08
-!  Changeset cd85309
-!  see http://kromepackage.org
-!
-!  Written and developed by Tommaso Grassi and Stefano Bovino
-!
-!  Contributors:
-!  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
-!  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
-!  E.Tognelli
-!  KROME is provided "as it is", without any warranty.
-! *************************************************************
+  ! *************************************************************
+  !  This file has been generated with:
+  !  KROME 14.08.dev on 2026-02-05 08:53:42
+  !  Changeset cd85309
+  !  see http://kromepackage.org
+  !
+  !  Written and developed by Tommaso Grassi and Stefano Bovino
+  !
+  !  Contributors:
+  !  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
+  !  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
+  !  E.Tognelli
+  !  KROME is provided "as it is", without any warranty.
+  ! *************************************************************
 
-integer,parameter::KROME_idx_E = 1	!E
-integer,parameter::KROME_idx_C = 2	!C
-integer,parameter::KROME_idx_Cj = 3	!C+
-integer,parameter::KROME_idx_CR = 4	!CR
-integer,parameter::KROME_idx_g = 5	!g
-integer,parameter::KROME_idx_Tgas = 6	!Tgas
-integer,parameter::KROME_idx_dummy = 7	!dummy
+  integer,parameter::KROME_idx_E = 1	!E
+  integer,parameter::KROME_idx_Hk = 2	!H-
+  integer,parameter::KROME_idx_H = 3	!H
+  integer,parameter::KROME_idx_HE = 4	!HE
+  integer,parameter::KROME_idx_H2 = 5	!H2
+  integer,parameter::KROME_idx_Hj = 6	!H+
+  integer,parameter::KROME_idx_HEj = 7	!HE+
+  integer,parameter::KROME_idx_H2j = 8	!H2+
+  integer,parameter::KROME_idx_HEjj = 9	!HE++
+  integer,parameter::KROME_idx_CR = 10	!CR
+  integer,parameter::KROME_idx_g = 11	!g
+  integer,parameter::KROME_idx_Tgas = 12	!Tgas
+  integer,parameter::KROME_idx_dummy = 13	!dummy
 
-integer,parameter::krome_idx_cool_h2 = 1
-integer,parameter::krome_idx_cool_h2gp = 2
-integer,parameter::krome_idx_cool_atomic = 3
-integer,parameter::krome_idx_cool_cen = 3
-integer,parameter::krome_idx_cool_hd = 4
-integer,parameter::krome_idx_cool_z = 5
-integer,parameter::krome_idx_cool_metal = 5
-integer,parameter::krome_idx_cool_dh = 6
-integer,parameter::krome_idx_cool_enthalpic = 6
-integer,parameter::krome_idx_cool_dust = 7
-integer,parameter::krome_idx_cool_compton = 8
-integer,parameter::krome_idx_cool_cie = 9
-integer,parameter::krome_idx_cool_continuum = 10
-integer,parameter::krome_idx_cool_cont = 10
-integer,parameter::krome_idx_cool_exp = 11
-integer,parameter::krome_idx_cool_expansion = 11
-integer,parameter::krome_idx_cool_ff = 12
-integer,parameter::krome_idx_cool_bss = 12
-integer,parameter::krome_idx_cool_custom = 13
-integer,parameter::krome_idx_cool_co = 14
-integer,parameter::krome_idx_cool_zcie = 15
-integer,parameter::krome_idx_cool_zcienouv = 16
-integer,parameter::krome_idx_cool_zextend = 17
-integer,parameter::krome_idx_cool_gh = 18
-integer,parameter::krome_idx_cool_oh = 19
-integer,parameter::krome_idx_cool_h2o = 20
-integer,parameter::krome_idx_cool_hcn = 21
-integer,parameter::krome_ncools = 21
+  integer,parameter::krome_idx_cool_h2 = 1
+  integer,parameter::krome_idx_cool_h2gp = 2
+  integer,parameter::krome_idx_cool_atomic = 3
+  integer,parameter::krome_idx_cool_cen = 3
+  integer,parameter::krome_idx_cool_hd = 4
+  integer,parameter::krome_idx_cool_z = 5
+  integer,parameter::krome_idx_cool_metal = 5
+  integer,parameter::krome_idx_cool_dh = 6
+  integer,parameter::krome_idx_cool_enthalpic = 6
+  integer,parameter::krome_idx_cool_dust = 7
+  integer,parameter::krome_idx_cool_compton = 8
+  integer,parameter::krome_idx_cool_cie = 9
+  integer,parameter::krome_idx_cool_continuum = 10
+  integer,parameter::krome_idx_cool_cont = 10
+  integer,parameter::krome_idx_cool_exp = 11
+  integer,parameter::krome_idx_cool_expansion = 11
+  integer,parameter::krome_idx_cool_ff = 12
+  integer,parameter::krome_idx_cool_bss = 12
+  integer,parameter::krome_idx_cool_custom = 13
+  integer,parameter::krome_idx_cool_co = 14
+  integer,parameter::krome_idx_cool_zcie = 15
+  integer,parameter::krome_idx_cool_zcienouv = 16
+  integer,parameter::krome_idx_cool_zextend = 17
+  integer,parameter::krome_idx_cool_gh = 18
+  integer,parameter::krome_idx_cool_oh = 19
+  integer,parameter::krome_idx_cool_h2o = 20
+  integer,parameter::krome_idx_cool_hcn = 21
+  integer,parameter::krome_ncools = 21
 
-integer,parameter::krome_idx_heat_chem = 1
-integer,parameter::krome_idx_heat_compress = 2
-integer,parameter::krome_idx_heat_compr = 2
-integer,parameter::krome_idx_heat_photo = 3
-integer,parameter::krome_idx_heat_dh = 4
-integer,parameter::krome_idx_heat_enthalpic = 4
-integer,parameter::krome_idx_heat_photoav = 5
-integer,parameter::krome_idx_heat_av = 5
-integer,parameter::krome_idx_heat_cr = 6
-integer,parameter::krome_idx_heat_dust = 7
-integer,parameter::krome_idx_heat_xray = 8
-integer,parameter::krome_idx_heat_visc = 9
-integer,parameter::krome_idx_heat_viscous = 9
-integer,parameter::krome_idx_heat_custom = 10
-integer,parameter::krome_idx_heat_zcie = 11
-integer,parameter::krome_nheats = 11
+  integer,parameter::krome_idx_heat_chem = 1
+  integer,parameter::krome_idx_heat_compress = 2
+  integer,parameter::krome_idx_heat_compr = 2
+  integer,parameter::krome_idx_heat_photo = 3
+  integer,parameter::krome_idx_heat_dh = 4
+  integer,parameter::krome_idx_heat_enthalpic = 4
+  integer,parameter::krome_idx_heat_photoav = 5
+  integer,parameter::krome_idx_heat_av = 5
+  integer,parameter::krome_idx_heat_cr = 6
+  integer,parameter::krome_idx_heat_dust = 7
+  integer,parameter::krome_idx_heat_xray = 8
+  integer,parameter::krome_idx_heat_visc = 9
+  integer,parameter::krome_idx_heat_viscous = 9
+  integer,parameter::krome_idx_heat_custom = 10
+  integer,parameter::krome_idx_heat_zcie = 11
+  integer,parameter::krome_nheats = 11
 
-integer,parameter::krome_nrea=3
-integer,parameter::krome_nmols=3
-integer,parameter::krome_nspec=7
-integer,parameter::krome_natoms=2
-integer,parameter::krome_ndust=0
-integer,parameter::krome_ndustTypes=0
-integer,parameter::krome_nPhotoBins=200
-integer,parameter::krome_nPhotoRates=1
+  integer,parameter::krome_nrea=38
+  integer,parameter::krome_nmols=9
+  integer,parameter::krome_nspec=13
+  integer,parameter::krome_natoms=3
+  integer,parameter::krome_ndust=0
+  integer,parameter::krome_ndustTypes=0
+  integer,parameter::krome_nPhotoBins=0
+  integer,parameter::krome_nPhotoRates=0
 
-real*8,parameter::krome_boltzmann_eV = 8.617332478d-5 !eV / K
-real*8,parameter::krome_boltzmann_J = 1.380648d-23 !J / K
-real*8,parameter::krome_boltzmann_erg = 1.380648d-16 !erg / K
-real*8,parameter::krome_iboltzmann_eV = 1d0/krome_boltzmann_eV !K / eV
-real*8,parameter::krome_iboltzmann_erg = 1d0/krome_boltzmann_erg !K / erg
-real*8,parameter::krome_planck_eV = 4.135667516d-15 !eV s
-real*8,parameter::krome_planck_J = 6.62606957d-34 !J s
-real*8,parameter::krome_planck_erg = 6.62606957d-27 !erg s
-real*8,parameter::krome_iplanck_eV = 1d0/krome_planck_eV !1 / eV / s
-real*8,parameter::krome_iplanck_J = 1d0/krome_planck_J !1 / J / s
-real*8,parameter::krome_iplanck_erg = 1d0/krome_planck_erg !1 / erg / s
-real*8,parameter::krome_gravity = 6.674d-8 !cm3 / g / s2
-real*8,parameter::krome_e_mass = 9.10938188d-28 !g
-real*8,parameter::krome_p_mass = 1.67262158d-24 !g
-real*8,parameter::krome_n_mass = 1.674920d-24 !g
-real*8,parameter::krome_ip_mass = 1d0/krome_p_mass !1/g
-real*8,parameter::krome_clight = 2.99792458e10 !cm/s
-real*8,parameter::krome_pi = 3.14159265359d0 !#
-real*8,parameter::krome_eV_to_erg = 1.60217646d-12 !eV -> erg
-real*8,parameter::krome_ry_to_eV = 13.60569d0 !rydberg -> eV
-real*8,parameter::krome_ry_to_erg = 2.179872d-11 !rydberg -> erg
-real*8,parameter::krome_seconds_per_year = 365d0*24d0*3600d0 !yr -> s
-real*8,parameter::krome_km_to_cm = 1d5 !km -> cm
-real*8,parameter::krome_cm_to_Mpc = 1.d0/3.08d24 !cm -> Mpc
-real*8,parameter::krome_kvgas_erg = 8.d0*krome_boltzmann_erg/krome_pi/krome_p_mass !
-real*8,parameter::krome_pre_kvgas_sqrt = sqrt(8.d0*krome_boltzmann_erg/krome_pi) !
-real*8,parameter::krome_pre_planck = 2.d0*krome_planck_erg/krome_clight**2 !erg/cm2*s3
-real*8,parameter::krome_exp_planck = krome_planck_erg / krome_boltzmann_erg !s*K
-real*8,parameter::krome_stefboltz_erg = 5.670373d-5 !erg/s/cm2/K4
-real*8,parameter::krome_N_avogadro = 6.0221d23 !#
-real*8,parameter::krome_Rgas_J = 8.3144621d0 !J/K/mol
-real*8,parameter::krome_Rgas_kJ = 8.3144621d-3 !kJ/K/mol
-real*8,parameter::krome_hubble = 0.704d0 !dimensionless
-real*8,parameter::krome_Omega0 = 1.0d0 !dimensionless
-real*8,parameter::krome_Omegab = 0.0456d0 !dimensionless
-real*8,parameter::krome_Hubble0 = 1.d2*krome_hubble*krome_km_to_cm*krome_cm_to_Mpc !1/s
+  real*8,parameter::krome_boltzmann_eV = 8.617332478d-5 !eV / K
+  real*8,parameter::krome_boltzmann_J = 1.380648d-23 !J / K
+  real*8,parameter::krome_boltzmann_erg = 1.380648d-16 !erg / K
+  real*8,parameter::krome_iboltzmann_eV = 1d0/krome_boltzmann_eV !K / eV
+  real*8,parameter::krome_iboltzmann_erg = 1d0/krome_boltzmann_erg !K / erg
+  real*8,parameter::krome_planck_eV = 4.135667516d-15 !eV s
+  real*8,parameter::krome_planck_J = 6.62606957d-34 !J s
+  real*8,parameter::krome_planck_erg = 6.62606957d-27 !erg s
+  real*8,parameter::krome_iplanck_eV = 1d0/krome_planck_eV !1 / eV / s
+  real*8,parameter::krome_iplanck_J = 1d0/krome_planck_J !1 / J / s
+  real*8,parameter::krome_iplanck_erg = 1d0/krome_planck_erg !1 / erg / s
+  real*8,parameter::krome_gravity = 6.674d-8 !cm3 / g / s2
+  real*8,parameter::krome_e_mass = 9.10938188d-28 !g
+  real*8,parameter::krome_p_mass = 1.67262158d-24 !g
+  real*8,parameter::krome_n_mass = 1.674920d-24 !g
+  real*8,parameter::krome_ip_mass = 1d0/krome_p_mass !1/g
+  real*8,parameter::krome_clight = 2.99792458e10 !cm/s
+  real*8,parameter::krome_pi = 3.14159265359d0 !#
+  real*8,parameter::krome_eV_to_erg = 1.60217646d-12 !eV -> erg
+  real*8,parameter::krome_ry_to_eV = 13.60569d0 !rydberg -> eV
+  real*8,parameter::krome_ry_to_erg = 2.179872d-11 !rydberg -> erg
+  real*8,parameter::krome_seconds_per_year = 365d0*24d0*3600d0 !yr -> s
+  real*8,parameter::krome_km_to_cm = 1d5 !km -> cm
+  real*8,parameter::krome_cm_to_Mpc = 1.d0/3.08d24 !cm -> Mpc
+  real*8,parameter::krome_kvgas_erg = 8.d0*krome_boltzmann_erg/krome_pi/krome_p_mass !
+  real*8,parameter::krome_pre_kvgas_sqrt = sqrt(8.d0*krome_boltzmann_erg/krome_pi) !
+  real*8,parameter::krome_pre_planck = 2.d0*krome_planck_erg/krome_clight**2 !erg/cm2*s3
+  real*8,parameter::krome_exp_planck = krome_planck_erg / krome_boltzmann_erg !s*K
+  real*8,parameter::krome_stefboltz_erg = 5.670373d-5 !erg/s/cm2/K4
+  real*8,parameter::krome_N_avogadro = 6.0221d23 !#
+  real*8,parameter::krome_Rgas_J = 8.3144621d0 !J/K/mol
+  real*8,parameter::krome_Rgas_kJ = 8.3144621d-3 !kJ/K/mol
+  real*8,parameter::krome_hubble = 0.704d0 !dimensionless
+  real*8,parameter::krome_Omega0 = 1.0d0 !dimensionless
+  real*8,parameter::krome_Omegab = 0.0456d0 !dimensionless
+  real*8,parameter::krome_Hubble0 = 1.d2*krome_hubble*krome_km_to_cm*krome_cm_to_Mpc !1/s
 
 contains
 
-!************************
-!returns the Tdust averaged over the number density
-! as computed in the tables
-function krome_get_table_Tdust(x,Tgas)
-use krome_commons
-use krome_grfuncs
-implicit none
-real*8 :: Tgas
-real*8 :: x(nmols), krome_get_table_Tdust
-real*8::n(nspec)
-
-n(:) = 0d0
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-
-krome_get_table_Tdust = get_table_Tdust(n(:))
-
-end function krome_get_table_Tdust
-
-!**********************
-!convert from MOCASSIN abundances to KROME
-! xmoc(i,j): MOCASSIN matrix (note: cm-3, real*4)
-!  i=species, j=ionization level
-! imap: matrix position index map, integer
-! returns KROME abundances (cm-3, real*8)
-function krome_convert_xmoc(xmoc,imap) result(x)
-use krome_commons
-use krome_subs
-use krome_getphys
-implicit none
-real*4,intent(in):: xmoc(:,:)
-real*8::x(nmols),n(nspec)
-integer,intent(in)::imap(:)
-
-x(:) = 0d0
-
-x(idx_C) = xmoc(imap(6), 1)
-x(idx_Cj) = xmoc(imap(6), 2)
-
-n(1:nmols) = x(:)
-n(nmols+1:nspec) = 0d0
-x(idx_e) = get_electrons(n(:))
-
-end function krome_convert_xmoc
-
-!*************************
-!convert from KROME abundances to MOCASSIN
-! x: KROME abuances (cm-3, real*8)
-! imap: matrix position index map, integer
-! xmoc(i,j): MOCASSIN matrix (note: cm-3, real*4)
-!  i=species, j=ionization level
-subroutine krome_return_xmoc(x,imap,xmoc)
-use krome_commons
-implicit none
-real*8,intent(in)::x(nmols)
-real*4,intent(out)::xmoc(:,:)
-integer,intent(in)::imap(:)
-
-xmoc(:,:) = 0d0
-
-xmoc(imap(6), 1) = x(idx_C)
-xmoc(imap(6), 2) = x(idx_Cj)
-
-end subroutine krome_return_xmoc
-
-!**********************
-!convert number density (cm-3) into column
-! density (cm-2) using the specific density
-! column method (see help for option
-! -columnDensityMethod)
-! num is the number density, x(:) is the species
-! array, Tgas is the gas temperature
-! If the method is not JEANS, x(:) and Tgas
-! are dummy variables
-function krome_num2col(num,x,Tgas)
-use krome_subs
-use krome_commons
-use krome_getphys
-implicit none
-real*8 :: x(nmols),krome_num2col
-real*8 :: Tgas,num
-real*8::n(nspec)
-
-n(:) = 0d0
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-
-krome_num2col = num2col(num,n(:))
-
-end function krome_num2col
-
-!***********************
-!print on screen the current values of all phys variables
-subroutine krome_print_phys_variables()
-use krome_commons
-implicit none
-
-print *, "Tcmb:", phys_Tcmb
-print *, "zredshift:", phys_zredshift
-print *, "orthoParaRatio:", phys_orthoParaRatio
-print *, "metallicity:", phys_metallicity
-print *, "Tfloor:", phys_Tfloor
-
-end subroutine krome_print_phys_variables
-
-!*******************
-subroutine krome_set_Tcmb(arg)
-use krome_commons
-implicit none
-real*8 :: arg
-phys_Tcmb = arg
-end subroutine krome_set_Tcmb
-
-!*******************
-function krome_get_Tcmb()
-use krome_commons
-implicit none
-real*8 :: krome_get_Tcmb
-krome_get_Tcmb = phys_Tcmb
-end function krome_get_Tcmb
-
-!*******************
-subroutine krome_set_zredshift(arg)
-use krome_commons
-implicit none
-real*8 :: arg
-phys_zredshift = arg
-end subroutine krome_set_zredshift
-
-!*******************
-function krome_get_zredshift()
-use krome_commons
-implicit none
-real*8 :: krome_get_zredshift
-krome_get_zredshift = phys_zredshift
-end function krome_get_zredshift
-
-!*******************
-subroutine krome_set_orthoParaRatio(arg)
-use krome_commons
-implicit none
-real*8 :: arg
-phys_orthoParaRatio = arg
-end subroutine krome_set_orthoParaRatio
-
-!*******************
-function krome_get_orthoParaRatio()
-use krome_commons
-implicit none
-real*8 :: krome_get_orthoParaRatio
-krome_get_orthoParaRatio = phys_orthoParaRatio
-end function krome_get_orthoParaRatio
-
-!*******************
-subroutine krome_set_metallicity(arg)
-use krome_commons
-implicit none
-real*8 :: arg
-phys_metallicity = arg
-end subroutine krome_set_metallicity
-
-!*******************
-function krome_get_metallicity()
-use krome_commons
-implicit none
-real*8 :: krome_get_metallicity
-krome_get_metallicity = phys_metallicity
-end function krome_get_metallicity
-
-!*******************
-subroutine krome_set_Tfloor(arg)
-use krome_commons
-implicit none
-real*8 :: arg
-phys_Tfloor = arg
-end subroutine krome_set_Tfloor
-
-!*******************
-function krome_get_Tfloor()
-use krome_commons
-implicit none
-real*8 :: krome_get_Tfloor
-krome_get_Tfloor = phys_Tfloor
-end function krome_get_Tfloor
-
-!*****************************
-!dump the data for restart (UNDER DEVELOPEMENT!)
-!arguments: the species array and the gas temperature
-subroutine krome_store(x,Tgas,dt)
-use krome_commons
-implicit none
-integer::nfile,i
-real*8 :: x(nmols)
-real*8 :: Tgas,dt
-
-nfile = 92
-
-open(nfile,file="krome_dump.dat",status="replace")
-!dump temperature
-write(nfile,*) Tgas
-write(nfile,*) dt
-!dump species
-do i=1,nmols
-write(nfile,*) x(i)
-end do
-close(nfile)
-
-end subroutine krome_store
-
-!*****************************
-!restore the data from a dump (UNDER DEVELOPEMENT!)
-!arguments: the species array and the gas temperature
-subroutine krome_restore(x,Tgas,dt)
-use krome_commons
-implicit none
-integer::nfile,i
-real*8 :: x(nmols)
-real*8 :: Tgas,dt
-
-nfile = 92
-
-open(nfile,file="krome_dump.dat",status="old")
-!restore temperature
-read(nfile,*) Tgas
-read(nfile,*) dt
-!restore species
-do i=1,nmols
-read(nfile,*) x(i)
-end do
-close(nfile)
-
-end subroutine krome_restore
-
-!****************************
-!switch on the thermal calculation
-subroutine krome_thermo_on()
-use krome_commons
-krome_thermo_toggle = 1
-end subroutine krome_thermo_on
-
-!****************************
-!switch off the thermal calculation
-subroutine krome_thermo_off()
-use krome_commons
-krome_thermo_toggle = 0
-end subroutine krome_thermo_off
-
-!************************
-! prepares tables for cross sections and
-! photorates
-subroutine krome_calc_photobins()
-use krome_photo
-call calc_photobins()
-end subroutine krome_calc_photobins
-
-!****************************
-! set the energy per photo bin
-! eV/cm2/sr
-subroutine krome_set_photoBinJ(phbin)
-use krome_commons
-use krome_photo
-implicit none
-real*8 :: phbin(nPhotoBins)
-photoBinJ(:) = phbin(:)
-photoBinJ_org(:) = phbin(:) !for restore
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_set_photoBinJ
-
-!*************************
-! set the energy (frequency) of the photobin
-! as left-right limits in eV
-subroutine krome_set_photobinE_lr(phbinleft,phbinright,Tgas)
-use krome_commons
-use krome_photo
-implicit none
-real*8 :: phbinleft(nPhotoBins),phbinright(nPhotoBins)
-real*8,optional::Tgas
-real*8::bTgas
-
-!default Tgas for broadening
-bTgas = 1d1
-if(present(Tgas)) then
-bTgas = Tgas
-end if
-
-!$omp parallel
-photoBinEleft(:) = phbinleft(:)
-photoBinEright(:) = phbinright(:)
-photoBinEmid(:) = 0.5d0*(phbinleft(:)+phbinright(:))
-photoBinEdelta(:) = phbinright(:)-phbinleft(:)
-photoBinEidelta(:) = 1d0/photoBinEdelta(:)
-!$omp end parallel
-
-!initialize xsecs table
-call init_photoBins(bTgas)
-
-end subroutine krome_set_photobinE_lr
-
-!*************************
-! set the energy (frequency) of photobins
-! when contiguous. Left and right limits are automatically
-! extracted. Energy in eV
-subroutine krome_set_photobinE_limits(phbinLimits,Tgas)
-use krome_commons
-use krome_photo
-implicit none
-real*8 :: phbinLimits(nPhotoBins+1)
-real*8,optional::Tgas
-real*8::phl(nPhotoBins),phr(nPhotoBins),bTgas
-
-!default Tgas for broadening
-bTgas = 1d1
-if(present(Tgas)) then
-bTgas = Tgas
-end if
-phl(:) = phbinLimits(1:nPhotoBins)
-phr(:) = phbinLimits(2:nPhotoBins+1)
-
-call krome_set_photobinE_lr(phl(:),phr(:),bTgas)
-
-end subroutine krome_set_photobinE_limits
-
-!*******************************
-!set the energy (eV) of the photobin according
-! to MOCASSIN way (position and width array)
-subroutine krome_set_photobinE_moc(binPos,binWidth,Tgas)
-use krome_commons
-use krome_photo
-implicit none
-real*8 :: binPos(nPhotoBins),binWidth(nPhotoBins)
-real*8,optional::Tgas
-real*8::bTgas
-
-bTgas = 1d1
-if(present(Tgas)) then
-bTgas = Tgas
-end if
-
-!$omp parallel
-photoBinEleft(:) = binPos(:)-binWidth(:)/2d0
-photoBinEright(:) = binPos(:)+binWidth(:)/2d0
-photoBinEmid(:) = binPos(:)
-photoBinEdelta(:) = photoBinEright(:)-photoBinEleft(:)
-photoBinEidelta(:) = 1d0/photoBinEdelta(:)
-!$omp end parallel
-
-!initialize xsecs table
-call init_photoBins(bTgas)
-
-end subroutine krome_set_photobinE_moc
-
-!********************************
-! set the energy (eV) of the photobin
-! linearly from lowest to highest energy value
-! in eV
-subroutine krome_set_photobinE_lin(lower,upper,Tgas)
-use krome_commons
-use krome_photo
-implicit none
-real*8 :: lower,upper
-real*8,optional::Tgas
-real*8::dE,bTgas
-integer::i
-
-bTgas = 1d1
-if(present(Tgas)) then
-bTgas = Tgas
-end if
-
-!$omp parallel
-dE = abs(upper-lower)/nPhotoBins
-!$omp end parallel
-do i=1,nPhotoBins
-!$omp parallel
-photoBinEleft(i) = dE*(i-1) + lower
-photoBinEright(i) = dE*i + lower
-photoBinEmid(i) = 0.5d0*(photoBinEleft(i)+photoBinEright(i))
-!$omp end parallel
-end do
-!$omp parallel
-photoBinEdelta(:) = photoBinEright(:)-photoBinEleft(:)
-photoBinEidelta(:) = 1d0/photoBinEdelta(:)
-!$omp end parallel
-
-!initialize xsecs table
-call init_photoBins(bTgas)
-
-end subroutine krome_set_photobinE_lin
-
-!********************************
-! set the energy (eV) of the photobin
-! logarithmically from lowest to highest energy value
-! in eV
-subroutine krome_set_photobinE_log(lower,upper,Tgas)
-use krome_commons
-use krome_photo
-implicit none
-real*8 :: lower,upper
-real*8,optional::Tgas
-real*8::dE,logup,loglow,bTgas
-integer::i
-
-bTgas = 1d1
-if(present(Tgas)) then
-bTgas = Tgas
-end if
-
-if(lower.ge.upper) then
-print *,"ERROR: in  krome_set_photobinE_log lower >= upper limit!"
-stop
-end if
-loglow = log10(lower)
-logup = log10(upper)
-!$omp parallel
-dE = 1d1**(abs(logup-loglow)/nPhotoBins)
-!$omp end parallel
-do i=1,nPhotoBins
-!$omp parallel
-photoBinEleft(i) = 1d1**((i-1)*(logup-loglow)/nPhotoBins + loglow)
-photoBinEright(i) = 1d1**(i*(logup-loglow)/nPhotoBins + loglow)
-photoBinEmid(i) = 0.5d0*(photoBinEleft(i)+photoBinEright(i))
-!$omp end parallel
-end do
-!$omp parallel
-photoBinEdelta(:) = photoBinEright(:)-photoBinEleft(:)
-photoBinEidelta(:) = 1d0/photoBinEdelta(:)
-!$omp end parallel
-
-!initialize xsecs table
-call init_photoBins(bTgas)
-
-end subroutine krome_set_photobinE_log
-
-!*********************************
-!returns an array containing the flux for each photo bin
-! in eV/cm2/sr
-function krome_get_photoBinJ()
-use krome_commons
-real*8 :: krome_get_photoBinJ(nPhotoBins)
-krome_get_photoBinJ(:) = photoBinJ(:)
-end function krome_get_photoBinJ
-
-!*********************************
-!get an array containing all the left positions
-! of the photobins, eV
-function krome_get_photoBinE_left()
-!returns an array of size krome_nPhotoBins with the
-! left energy limits (eV)
-use krome_commons
-real*8 :: krome_get_photoBinE_left(nPhotoBins)
-krome_get_photoBinE_left(:) = photoBinEleft(:)
-end function krome_get_photoBinE_left
-
-!*********************************
-!returns an array of size krome_nPhotoBins with the
-! right energy limits (eV)
-function krome_get_photoBinE_right()
-use krome_commons
-real*8 :: krome_get_photoBinE_right(nPhotoBins)
-krome_get_photoBinE_right(:) = photoBinEright(:)
-end function krome_get_photoBinE_right
-
-!*********************************
-!returns an array of size krome_nPhotoBins with the
-! middle energy values (eV)
-function krome_get_photoBinE_mid()
-use krome_commons
-real*8 :: krome_get_photoBinE_mid(nPhotoBins)
-krome_get_photoBinE_mid(:) = photoBinEmid(:)
-end function krome_get_photoBinE_mid
-
-!*********************************
-!returns an array of size krome_nPhotoBins with the
-! bin span (eV)
-function krome_get_photoBinE_delta()
-use krome_commons
-real*8 :: krome_get_photoBinE_delta(nPhotoBins)
-krome_get_photoBinE_delta(:) = photoBinEdelta(:)
-end function krome_get_photoBinE_delta
-
-!*********************************
-!returns an array of size krome_nPhotoBins with the
-! inverse of the bin span (1/eV)
-function krome_get_photoBinE_idelta()
-use krome_commons
-real*8 :: krome_get_photoBinE_idelta(nPhotoBins)
-krome_get_photoBinE_idelta(:) = photoBinEidelta(:)
-end function krome_get_photoBinE_idelta
-
-!*********************************
-!returns an array of size krome_nPhotoBins with the
-! integrated photo rates (1/s)
-function krome_get_photoBin_rates()
-use krome_commons
-real*8 :: krome_get_photoBin_rates(nPhotoRea)
-krome_get_photoBin_rates(:) = photoBinRates(:)
-end function krome_get_photoBin_rates
-
-!*********************************
-!returns an array of size krome_nPhotoBins containing
-! the cross section (cm2) of the idx-th photoreaction
-function krome_get_xsec(idx)
-use krome_commons
-implicit none
-real*8 :: krome_get_xsec(nPhotoBins)
-integer :: idx
-
-krome_get_xsec(:) = photoBinJTab(idx,:)
-
-end function krome_get_xsec
-
-!*********************************
-!returns an array of size krome_nPhotoBins with the
-! integrated photo heatings (erg/s)
-function krome_get_photoBin_heats()
-use krome_commons
-implicit none
-real*8 :: krome_get_photoBin_heats(nPhotoRea)
-krome_get_photoBin_heats(:) = photoBinHeats(:)
-
-end function krome_get_photoBin_heats
-
-!****************************
-!multiply all photobins by a factor real*8 xscale
-subroutine krome_photoBin_scale(xscale)
-use krome_commons
-use krome_photo
-implicit none
-real*8 :: xscale
-
-photoBinJ(:) = photoBinJ(:) * xscale
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_photoBin_scale
-
-!****************************
-!multiply all photobins by a real*8 array xscale(:)
-! of size krome_nPhotoBins
-subroutine krome_photoBin_scale_array(xscale)
-use krome_commons
-use krome_photo
-implicit none
-real*8 :: xscale(nPhotoBins)
-
-photoBinJ(:) = photoBinJ(:) * xscale(:)
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_photoBin_scale_array
-
-!********************************
-!restore the original flux (i.e. undo any rescale).
-! the flux is automatically stored by the functions
-! that set the flux, or by the function
-! krome_photoBin_store()
-subroutine krome_photoBin_restore()
-use krome_commons
-implicit none
-
-photoBinJ(:) = photoBinJ_org(:)
-
-end subroutine krome_photoBin_restore
-
-!**********************
-!store flux to be restored with the subroutine
-! krome_photoBin_restore later
-subroutine krome_photoBin_store()
-use krome_commons
-implicit none
-
-photoBinJ_org(:) = photoBinJ(:)
-
-end subroutine krome_photoBin_store
-
-!*********************
-!load flux radiation from a two-columns file
-! energy/eV, flux/(eV/cm2/sr)
-! Flux is interpolated over the existing binning
-! constant-area method
-subroutine krome_load_photoBin_file_2col(fname, logarithmic)
-use krome_commons
-implicit none
-integer,parameter::imax=int(1e4)
-character(len=*) :: fname
-logical, optional :: logarithmic
-logical :: is_log
-integer::unit,ios,icount,j,i
-real*8::xtmp(imax),ftmp(imax),intA,eL,eR
-real*8::xL,xR,pL,pR,fL,fR,Jflux(nPhotoBins)
-real*8::a,b
-
-if(present(logarithmic)) then
-is_log = logarithmic
-else
-is_log = .false.
-end if
-
-!open file to read
-open(newunit=unit,file=trim(fname),iostat=ios)
-if(ios/=0) then
-print *,"ERROR: problems reading "//trim(fname)
-stop
-end if
-
-!read file line by line and store to temporary
-ftmp(:) = 0d0
-icount = 1
-do
-read(unit,*,iostat=ios) xtmp(icount), ftmp(icount)
-if(ios/=0) exit
-icount = icount + 1
-end do
-close(unit)
-icount = icount - 1
-
-if(is_log) ftmp = log(merge(ftmp,1d-40,ftmp>0d0))
-!loop on photobins for interpolation
-do j=1,nPhotoBins
-intA = 0d0
-!photobin limits
-eL = photoBinEleft(j)
-eR = photoBinEright(j)
-!loop on flux bins
-do i=1,icount-1
-!flux bin limits
-xL = xtmp(i)
-xR = xtmp(i+1)
-!if outside the bin skip
-if((xR<eL).or.(xL>eR)) cycle
-!get the interval limit (consider partial overlapping)
-pL = max(xL,eL)
-pR = min(xR,eR)
-if(is_log) then
-  pL = log(max(pL,1d-40))
-  pR = log(max(pR,1d-40))
-  xL = log(max(xL,1d-40))
-  xR = log(max(xR,1d-40))
-end if
-!interpolate to get the flux at the interval limit
-fL = (ftmp(i+1)-ftmp(i))*(pL-xL)/(xR-xL)+ftmp(i)
-fR = (ftmp(i+1)-ftmp(i))*(pR-xL)/(xR-xL)+ftmp(i)
-if(is_log) then
-  fL = exp(fL)
-  fR = exp(fR)
-  pL = exp(pL)
-  pR = exp(pR)
-end if
-
-!compute area of the overlapped area
-intA = intA + (fL+fR)*(pR-pL)/2d0
-end do
-!distribute the flux in the photobin
-Jflux(j) = intA / (eR-eL)
-end do
-
-!initialize intensity according to data
-call krome_set_photoBinJ(Jflux(:))
-
-end subroutine krome_load_photoBin_file_2col
-
-!********************************
-!load the radiation bins from the file fname
-! data should be a 3-column file with
-! energy Left (eV), energy Right (eV)
-! intensity (eV/cm2/sr).
-! This subroutine sets also the bin-size
-subroutine krome_load_photoBin_file(fname) !! !! not yet callable from C
-use krome_commons
-implicit none
-integer::ios,icount
-character(len=*) :: fname
-real*8::tmp_El(nPhotoBins),tmp_Er(nPhotoBins)
-real*8::rout(3),tmp_J(nPhotoBins)
-
-!open file and check for errors
-open(33,file=fname,status="old",iostat=ios)
-if(ios.ne.0) then
-print *,"ERROR: problem opening "//fname//"!"
-print *," (e.g. file not found)"
-stop
-end if
-
-icount = 0 !count valid line
-!loop on file
-do
-read(33,*,iostat=ios) rout(:)
-if(ios==-1) exit !EOF
-if(ios.ne.0) cycle !skip comments
-icount = icount + 1
-if(icount>nPhotoBins) exit !can't load more than nPhotoBins
-tmp_El(icount) = rout(1) !energy L eV
-tmp_Er(icount) = rout(2) !energy R eV
-!check if left interval is before right
-if(tmp_El(icount)>tmp_Er(icount)) then
-print *,"ERROR: in file "//fname//" left"
-print *, " interval larger than right one!"
-print *,tmp_El(icount),tmp_Er(icount)
-stop
-end if
-tmp_J(icount) = rout(3) !intensity eV/cm2/sr
-end do
-close(33)
-
-!file data lines should be the same number of the photobins
-if(icount/=nPhotoBins) then
-print *,"ERROR: the number of data lines in the file"
-print *," "//fname//" should be equal to the number of"
-print *," photobins ",nPhotoBins
-print *,"Found",icount
-stop
-end if
-
-!initialize interval and intensity according to data
-call krome_set_photobinE_lr(tmp_El(:),tmp_Er(:))
-call krome_set_photoBinJ(tmp_J(:))
-
-end subroutine krome_load_photoBin_file
-
-!**********************************
-!this subroutine sets an Hardt+Madau flux in the
-! energy limits lower_in, upper_in (eV, log-spaced)
-subroutine krome_set_photoBin_HMlog(lower_in,upper_in)
-use krome_commons
-use krome_photo
-use krome_subs
-use krome_fit
-implicit none
-real*8::z(59),energy(500),HM(59,500)
-real*8::z_mul,energy_mul,x,lower,upper
-real*8,parameter::limit_lower = 0.1237d0
-real*8,parameter::limit_upper = 4.997d7
-real*8,parameter::limit_redshift = 15.660d0
-real*8,optional::lower_in,upper_in
-integer::i
-
-lower = limit_lower
-upper = limit_upper
-if(present(lower_in)) lower = lower_in
-if(present(upper_in)) upper = upper_in
-
-if(phys_zredshift>limit_redshift) then
-print *,"ERROR: redshift out of range in HM"
-print *,"redshift:",phys_zredshift
-print *,"limit:",limit_redshift
-stop
-end if
-
-if(lower<limit_lower .or. upper>limit_upper) then
-print *,"ERROR: upper or lower limit out of range in HM."
-print *,"lower limit (eV):",limit_lower
-print *,"upper limit (eV):",limit_upper
-stop
-end if
-
-call krome_set_photoBinE_log(lower,upper)
-
-call init_anytab2D("krome_HMflux.dat", z(:), energy(:), &
-    HM(:,:), z_mul, energy_mul)
-
-do i=1,nPhotoBins
-x = log10(photoBinEmid(i)) !log(eV)
-photoBinJ(i) = 1d1**fit_anytab2D(z(:), energy(:), HM(:,:), &
-    z_mul, energy_mul, phys_zredshift, x)
-end do
-
-photoBinJ_org(:) = photoBinJ(:)
-
-call calc_photobins()
-
-end subroutine krome_set_photoBin_HMlog
-
-!**********************************
-!this subroutine ADD an Hardt+Madau flux to the current radiation
-! in the energy limits lower_in, upper_in (eV), It assumes
-! the current binning
-subroutine krome_set_photoBin_HMCustom(lower_in,upper_in,additive)
-use krome_commons
-use krome_photo
-use krome_subs
-use krome_fit
-implicit none
-real*8::z(59),energy(500),HM(59,500)
-real*8::z_mul,energy_mul,x,lower,upper
-real*8::photoTmpJ(nPhotoBins)
-real*8,parameter::limit_lower = 0.1237d0
-real*8,parameter::limit_upper = 4.997d7
-real*8,parameter::limit_redshift = 15.660d0
-logical,optional::additive
-logical::add
-real*8,optional :: lower_in,upper_in
-integer::i
-
-lower = limit_lower
-upper = limit_upper
-if(present(lower_in)) lower = lower_in
-if(present(upper_in)) upper = upper_in
-
-add = .false.
-if(present(additive)) add = additive
-
-if(phys_zredshift>limit_redshift) then
-print *,"ERROR: redshift out of range in HM"
-print *,"redshift:",phys_zredshift
-print *,"limit:",limit_redshift
-stop
-end if
-
-if(lower<limit_lower .or. upper>limit_upper) then
-print *,"ERROR: upper or lower limit out of range in HM."
-print *,"lower limit (eV):",limit_lower
-print *,"upper limit (eV):",limit_upper
-stop
-end if
-
-call init_anytab2D("krome_HMflux.dat", z(:), energy(:), &
-    HM(:,:), z_mul, energy_mul)
-
-do i=1,nPhotoBins
-x = log10(photoBinEmid(i)) !log(eV)
-photoTmpJ(i) = 1d1**fit_anytab2D(z(:), energy(:), HM(:,:), &
-    z_mul, energy_mul, phys_zredshift, x)
-end do
-
-!add flux to already-present flux if optional argument
-if(add) then
-photoBinJ(:) = photoBinJ(:) + photoTmpJ(:)
-else
-photoBinJ(:) = photoTmpJ(:)
-end if
-
-photoBinJ_org(:) = photoBinJ(:)
-
-call calc_photobins()
-
-end subroutine krome_set_photoBin_HMCustom
-
-!**********************************
-!set the flux as a black body with temperature Tbb (K)
-! in the range lower to upper (eV),  linear-spaced
-subroutine krome_set_photoBin_BBlin(lower,upper,Tbb)
-use krome_commons
-use krome_constants
-use krome_photo
-use krome_subs
-use krome_phfuncs
-implicit none
-real*8 :: lower,upper,Tbb
-real*8::x
-integer::i
-
-call krome_set_photoBinE_lin(lower,upper)
-
-!eV/cm2/sr
-do i=1,nPhotoBins
-x = photoBinEmid(i) !eV
-photoBinJ(i) = planckBB(x,Tbb)
-end do
-photoBinJ_org(:) = photoBinJ(:)
-
-call calc_photobins()
-
-end subroutine krome_set_photoBin_BBlin
-
-!**********************************
-!set the flux as a black body with temperature Tbb (K)
-! in the range lower to upper (eV), log-spaced
-subroutine krome_set_photoBin_BBlog(lower,upper,Tbb)
-use krome_commons
-use krome_constants
-use krome_photo
-use krome_subs
-use krome_phfuncs
-implicit none
-real*8 :: lower,upper,Tbb
-real*8::x,xmax,xexp,Jlim
-integer::i
-
-!limit for the black body intensity to check limits
-Jlim = 1d-3
-
-call krome_set_photoBinE_log(lower,upper)
-
-!eV/cm2/sr
-do i=1,nPhotoBins
-x = photoBinEmid(i) !eV
-photoBinJ(i) = planckBB(x,Tbb)
-end do
-photoBinJ_org(:) = photoBinJ(:)
-
-!uncomment this below for additional control
-!!$    !find the maximum using Wien's displacement law
-!!$    xmax = Tbb/2.8977721d-1 * clight * planck_eV !eV
-!!$
-!!$    if(xmax<lower) then
-!!$       print *,"WARNING: maximum of the Planck function"
-!!$       print *," is below the lowest energy bin!"
-!!$       print *,"max (eV)",xmax
-!!$       print *,"lowest (eV)",lower
-!!$       print *,"Tbb (K)",Tbb
-!!$    end if
-!!$
-!!$    if(xmax>upper) then
-!!$       print *,"WARNING: maximum of the Planck function"
-!!$       print *," is above the highest energy bin!"
-!!$       print *,"max (eV)",xmax
-!!$       print *,"highest (eV)",upper
-!!$       print *,"Tbb (K)",Tbb
-!!$    end if
-!!$
-!!$    if(photoBinJ(1)>Jlim) then
-!!$       print *,"WARNING: lower bound of the Planck function"
-!!$       print *," has a flux of (ev/cm2/s/Hz/sr)",photoBinJ(1)
-!!$       print *," which is larger than the limit Jlim",Jlim
-!!$       print *,"Tbb (K)",Tbb
-!!$    end if
-!!$
-!!$    if(photoBinJ(nPhotoBins)>Jlim) then
-!!$       print *,"WARNING: upper bound of the Planck function"
-!!$       print *," has a flux of (ev/cm2/s/Hz/sr)",photoBinJ(nPhotoBins)
-!!$       print *," which is larger than the limit Jlim",Jlim
-!!$       print *,"Tbb (K)",Tbb
-!!$    end if
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_set_photoBin_BBlog
-
-!*************************************
-!set the BB spectrum and the limits using bisection
-subroutine krome_set_photoBin_BBlog_auto(Tbb)
-use krome_commons
-use krome_subs
-use krome_constants
-use krome_phfuncs
-implicit none
-real*8 :: Tbb
-real*8::xlow,xup,eps,xmax,J0,J1,x0,x1,xm,Jm
-eps = 1d-6
-
-!Rayleigh-Jeans approximation for the minimum energy
-xlow = planck_eV*clight*sqrt(.5d0/Tbb/boltzmann_eV*eps)
-
-!find energy of the Wien maximum (eV)
-xmax = Tbb / 2.8977721d-1 * clight * planck_eV
-
-!bisection to find the maximum
-x0 = xmax
-x1 = 2.9d2*Tbb*boltzmann_eV
-J0 = planckBB(x0,Tbb) - eps
-J1 = planckBB(x1,Tbb) - eps
-if(J0<0d0.or.J1>0d0) then
-print *,"ERROR: problems with auto planck bisection!"
-stop
-end if
-
-do
-xm = 0.5d0*(x0+x1)
-Jm = planckBB(xm,Tbb) - eps
-if(Jm>0d0) x0 = xm
-if(Jm<0d0) x1 = xm
-if(abs(Jm)<eps*1d-3) exit
-end do
-xup = xm
-
-!initialize BB radiation using the values found
-call krome_set_photoBin_BBlog(xlow,xup,Tbb)
-
-end subroutine krome_set_photoBin_BBlog_auto
-
-!*********************************
-!return the ratio between the current flux an Draine's
-function krome_get_ratioFluxDraine()
-use krome_subs
-use krome_phfuncs
-implicit none
-real*8::krome_get_ratioFluxDraine
-
-krome_get_ratioFluxDraine = get_ratioFluxDraine()
-
-end function krome_get_ratioFluxDraine
-
-!**********************************
-!set the flux as Draine's function
-! in the range lower to upper (eV). the spacing is linear
-subroutine krome_set_photoBin_draineLin(lower,upper)
-use krome_commons
-use krome_photo
-use krome_constants
-real*8 :: upper,lower
-real*8::x
-integer::i
-
-call krome_set_photoBinE_lin(lower,upper)
-
-do i=1,nPhotoBins
-x = photoBinEmid(i) !eV
-!eV/cm2/sr
-if(x<13.6d0.and.x>5d0) then
-photoBinJ(i) = (1.658d6*x - 2.152d5*x**2 + 6.919d3*x**3) &
-    * x *planck_eV
-else
-photoBinJ(i) = 0d0
-end if
-end do
-
-photoBinJ_org(:) = photoBinJ(:)
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_set_photoBin_draineLin
-
-!**************************
-!set the flux as Draine's function
-! in the range lower to upper (eV). log-spaced
-subroutine krome_set_photoBin_draineLog(lower,upper)
-use krome_commons
-use krome_photo
-use krome_constants
-real*8 :: upper,lower
-real*8::x
-integer::i
-
-call krome_set_photoBinE_log(lower,upper)
-
-do i=1,nPhotoBins
-x = photoBinEmid(i) !eV
-!eV/cm2/sr/s/Hz
-if(x<13.6d0.and.x>5d0) then
-photoBinJ(i) = (1.658d6*x - 2.152d5*x**2 + 6.919d3*x**3) &
-    * x *planck_eV
-else
-photoBinJ(i) = 0d0
-end if
-end do
-
-photoBinJ_org(:) = photoBinJ(:)
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_set_photoBin_draineLog
-
-!**************************
-!set the flux as Draine's function with the current binning
-! Note: you have to set the binning first
-subroutine krome_set_photoBin_draineCustom()
-use krome_commons
-use krome_photo
-use krome_constants
-real*8::xL,xR,f1,f2
-integer::i
-
-!return error if binning is not set
-if(maxval(photoBinEmid)==0d0) then
-print *,"ERROR: not initialized binning in draineCustom!"
-stop
-end if
-
-!loop on bins
-do i=1,nPhotoBins
-!eV/cm2/sr
-if(photoBinEright(i)<=13.6d0.and.photoBinEleft(i)>=5d0) then
-xL = photoBinEleft(i) !eV
-xR = photoBinEright(i) !eV
-elseif(photoBinEleft(i)<5d0.and.photoBinEright(i)>5d0) then
-xL = 5d0 !eV
-xR = photoBinEright(i) !eV
-elseif(photoBinEleft(i)<13d0.and.photoBinEright(i)>13.6d0) then
-xL = photoBinEleft(i) !eV
-xR = 13.6d0 !eV
-else
-xL = 0d0
-xR = 0d0
-end if
-f1 = (1.658d6*xL - 2.152d5*xL**2 + 6.919d3*xL**3) &
-    * planck_eV
-f2 = (1.658d6*xR - 2.152d5*xR**2 + 6.919d3*xR**3) &
-    * planck_eV
-photoBinJ(i) = (f1+f2)/2d0 * (xR-xL)/(photoBinEright(i)-photoBinEleft(i)) * photoBinEmid(i)
-
-end do
-
-photoBinJ_org(:) = photoBinJ(:)
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_set_photoBin_draineCustom
-
-!**************************
-!set the flux as power-law (J21-style)
-! in the range lower to upper (eV). linear-spaced
-subroutine krome_set_photoBin_J21lin(lower,upper)
-use krome_commons
-use krome_photo
-real*8 :: upper,lower
-
-call krome_set_photoBinE_lin(lower,upper)
-
-photoBinJ(:) = 6.2415d-10 * (13.6d0/photoBinEmid(:)) !eV/cm2/sr
-photoBinJ_org(:) = photoBinJ(:)
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_set_photoBin_J21lin
-
-!**************************
-!set the flux as power-law (J21-style)
-! in the range lower to upper (eV). the spacing is logarithmic
-subroutine krome_set_photoBin_J21log(lower,upper)
-use krome_commons
-use krome_photo
-real*8 :: upper,lower
-
-call krome_set_photoBinE_log(lower,upper)
-
-photoBinJ(:) = 6.2415d-10 * (13.6d0/photoBinEmid(:)) !eV/cm2/sr
-photoBinJ_org(:) = photoBinJ(:)
-
-!compute rates
-call calc_photobins()
-
-end subroutine krome_set_photoBin_J21log
-
-!*****************************
-!get the opacity tau corresponding to x(:)
-! chemical composition. The column density
-! is computed using the expression in the
-! num2col(x) function.
-! An array of size krome_nPhotoBins is returned
-function krome_get_opacity(x,Tgas)
-use krome_commons
-use krome_constants
-use krome_photo
-use krome_subs
-use krome_getphys
-implicit none
-real*8 :: x(nmols),krome_get_opacity(nPhotoBins)
-real*8,value :: Tgas
-real*8::tau,n(nspec)
-integer::i,j,idx
-
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-
-!loop on frequency bins
-do j=1,nPhotoBins
-tau = 0d0
-!loop on species
-do i=1,nPhotoRea
-!calc opacity as column_density * cross_section
-idx = photoPartners(i)
-tau = tau + num2col(x(idx),n(:)) * photoBinJTab(i,j)
-end do
-krome_get_opacity(j) = tau !store
-end do
-
-end function krome_get_opacity
-
-!*****************************
-!get the opacity tau corresponding to the x(:)
-! chemical composition. The column density
-! is computed using the size of the cell (csize)
-! An array of size krome_nPhotoBins is returned.
-function krome_get_opacity_size(x,Tgas,csize)
-use krome_commons
-use krome_constants
-use krome_photo
-use krome_subs
-use krome_dust
-implicit none
-real*8 :: x(nmols),krome_get_opacity_size(nPhotoBins)
-real*8,value :: Tgas,csize
-real*8::n(nspec),energy,tau
-integer::i,j,idx
-
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-
-!loop on frequency bins
-do j=1,nPhotoBins
-tau = 0d0
-!loop on species
-do i=1,nPhotoRea
-!calc opacity as column_density * cross_section
-!where column_density is density*cell_size
-idx = photoPartners(i)
-tau = tau + x(idx) * photoBinJTab(i,j)
-end do
-
-krome_get_opacity_size(j) = tau * csize !store
-end do
-
-end function krome_get_opacity_size
-
-!*****************************
-!get the opacity tau corresponding to the x(:)
-! chemical composition. The column density
-! is computed using the size of the cell (csize).
-! Dust is included using dust-to-gas mass ratio (d2g).
-! You should load the dust tables with the subroutine
-! krome_load_dust_opacity(fileName).
-! An array of size krome_nPhotoBins is returned.
-function krome_get_opacity_size_d2g(x,Tgas,csize,d2g)
-use krome_commons
-use krome_constants
-use krome_photo
-use krome_subs
-use krome_dust
-use krome_getphys
-implicit none
-real*8 :: x(nmols),krome_get_opacity_size_d2g(nPhotoBins)
-real*8,value :: Tgas,csize,d2g
-real*8::n(nspec),energy,tau,m(nspec),mgas
-integer::i,j,idx
-
-m(:) = get_mass()
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-mgas = sum(n(1:nmols)*m(1:nmols))
-
-!loop on frequency bins
-do j=1,nPhotoBins
-tau = 0d0
-!loop on species
-do i=1,nPhotoRea
-!calc opacity as column_density * cross_section
-!where column_density is density*cell_size
-idx = photoPartners(i)
-tau = tau + x(idx) * photoBinJTab(i,j)
-end do
-
-!sum dust opacity from interpolated table
-tau = tau + d2g*mgas*opacityDust(j)
-
-krome_get_opacity_size_d2g(j) = tau * csize !store
-end do
-
-end function krome_get_opacity_size_d2g
-
-!*********************
-!scale radiation intensity with opacity assuming a given
-! cell size and gas composition
-!  subroutine krome_opacity_scale_size(csize,n,Tgas)
-!    use krome_commons
-!    implicit none
-!    real*8::csize,n(nmols),xscale(nPhotoBins),Tgas
-!
-!    xscale(:) = krome_get_opacity_size(n(:),Tgas,csize)
-!    xscale(:) = exp(-xscale(:))
-!    call krome_photoBin_scale_array(xscale(:))
-!
-!  end subroutine krome_opacity_scale_size
-
-!*********************
-!scale radiation intensity with opacity assuming a given
-! cell size and gas composition
-subroutine krome_opacity_scale_size(csize,n,Tgas)
-use krome_commons
-implicit none
-real*8::csize,n(nmols),Tgas
-real*8 :: xscale(nPhotoBins)
-
-xscale(:) = krome_get_opacity_size(n(:),Tgas,csize)
-xscale(:) = exp(-xscale(:))
-call krome_photoBin_scale_array(xscale(:))
-end subroutine krome_opacity_scale_size
-
-!*******************************
-!load a frequency-dependent opacity table stored in fname file,
-! column 1 is energy or wavelenght in un units of unitEnergy
-! (default eV), column 2 is opacity in cm2/g.
-! opacity is interpolated over the current photo-binning.
-subroutine krome_load_opacity_table(fname, unitEnergy)
-use krome_commons
-use krome_constants
-use krome_photo
-implicit none
-character(len=*)::fname
-character(len=*),optional::unitEnergy
-character*10::eunit
-
-!read energy unit optional argument
-eunit = "eV" !default is eV
-if(present(unitEnergy)) then
-eunit = trim(unitEnergy)
-end if
-
-call load_opacity_table(fname, eunit)
-
-end subroutine krome_load_opacity_table
-
-! ******************************
-! load absorption data data from file, cm2/g
-subroutine krome_load_average_kabs()
-use krome_photo
-implicit none
-
-call find_Av_load_kabs()
-
-end subroutine krome_load_average_kabs
-
-! *******************************
-! use linear least squares and the current Jflux distribution
-! to return G0 and Av.
-! x(:) are the abundances (use for mean molecular weight)
-! and d2g is dust to gas mass ratio
-subroutine krome_find_G0_Av(G0, Av, x, d2g)
-use krome_commons
-use krome_photo
-implicit none
-real*8,intent(out)::G0, Av
-real*8,intent(in)::d2g, x(nmols)
-real*8::n(nspec)
-
-n(1:nmols) = x(:)
-n(nmols+1:nspec) = 0d0
-
-call estimate_G0_Av(G0, Av, n(:), d2g)
-
-end subroutine krome_find_G0_Av
-
-!*******************************
-!dump the Jflux profile to the file
-! with unit number nfile
-subroutine krome_dump_Jflux(nfile)
-use krome_commons
-implicit none
-integer::i
-integer :: nfile
-
-do i=1,nPhotoBins
-write(nfile,*) photoBinEmid(i),photoBinJ(i)
-end do
-
-end subroutine krome_dump_Jflux
-
-!**********************
-!set the velocity for line broadening, cm/s
-subroutine krome_set_lineBroadeningVturb(vturb)
-use krome_constants
-use krome_commons
-implicit none
-real*8::vturb
-
-broadeningVturb2 = vturb**2
-
-end subroutine krome_set_lineBroadeningVturb
-
-!***************************
-!alias for coe in krome_subs
-! returns the coefficient array of size krome_nrea
-! for a given Tgas
-function krome_get_coef(Tgas,x)
-use krome_commons
-use krome_subs
-use krome_tabs
-real*8 :: krome_get_coef(nrea),x(nmols)
-real*8,value:: Tgas
-real*8::n(nspec)
-n(:) = 0d0
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-
-krome_get_coef(:) = coe(n(:))
-
-end function krome_get_coef
-
-!****************************
-!get the mean molecular weight from
-! mass fractions
-function krome_get_mu_x(xin)
-use krome_commons
-implicit none
-real*8 :: xin(nmols), krome_get_mu_x
-real*8::n(nmols)
-n(:) = krome_x2n(xin(:),1d0)
-krome_get_mu_x = krome_get_mu(n(:))
-end function krome_get_mu_x
-
-!****************************
-!return the adiabatic index from mass fractions
-! and temperature in K
-function krome_get_gamma_x(xin,inTgas)
-use krome_commons
-implicit none
-real*8 :: inTgas
-real*8 :: xin(nmols), krome_get_gamma_x
-real*8::x(nmols),Tgas,rhogas
-
-Tgas = inTgas
-x(:) = krome_x2n(xin(:),1d0)
-krome_get_gamma_x = krome_get_gamma(x(:),Tgas)
-
-end function krome_get_gamma_x
-
-!***************************
-!normalize mass fractions and
-! set charge to zero
-subroutine krome_consistent_x(x)
-use krome_commons
-use krome_constants
-implicit none
-real*8 :: x(nmols)
-real*8::isumx,sumx,xerr,imass(nmols),ee
-
-!1. charge consistency
-imass(:) = krome_get_imass()
-
-x(idx_e) = 0.d0
-
-ee = sum(krome_get_charges()*x(:)*imass(:))
-ee = max(ee*e_mass,0d0)
-x(idx_e) = ee
-
-!2. mass fraction consistency
-sumx = sum(x)
-
-!NOTE: uncomment here if you want some additional control
-!conservation error threshold: rise an error if above xerr
-!xerr = 1d-2
-!if(abs(sum-1d0)>xerr) then
-!   print *,"ERROR: some problem with conservation!"
-!   print *,"|sum(x)-1|=",abs(sum-1d0)
-!   stop
-!end if
-
-isumx = 1d0/sumx
-x(:) = x(:) * isumx
-
-end subroutine krome_consistent_x
-
-!*********************
-!return an array sized krome_nmols containing
-! the mass fractions (#), computed from the number
-! densities (1/cm3) and the total density in g/cm3
-function krome_n2x(n,rhogas)
-use krome_commons
-implicit none
-real*8 :: n(nmols),krome_n2x(nmols)
-real*8,value :: rhogas
-
-krome_n2x(:) = n(:) * krome_get_mass() / rhogas
-
-end function krome_n2x
-
-!********************
-!return an array sized krome_nmols containing
-! the number densities (1/cm3), computed from the mass
-! fractions and the total density in g/cm3
-function krome_x2n(x,rhogas)
-use krome_commons
-implicit none
-real*8 :: x(nmols),krome_x2n(nmols)
-real*8,value :: rhogas
-
-!compute densities from fractions
-krome_x2n(:) = rhogas * x(:) * krome_get_imass()
-
-end function krome_x2n
-
-!******************
-!returns free-fall time using the number density
-! abundances of array x(:)
-function krome_get_free_fall_time(x)
-use krome_commons
-use krome_getphys
-implicit none
-real*8::krome_get_free_fall_time
-real*8::x(:),n(nspec)
-
-n(1:nmols) = x(:)
-n(nmols+1:nspec) = 0d0
-krome_get_free_fall_time = get_free_fall_time(n(:))
-
-end function krome_get_free_fall_time
-
-!******************
-!returns free-fall time using the total mass density
-!  of gas, rhogas (g/cm3)
-function krome_get_free_fall_time_rho(rhogas)
-use krome_getphys
-implicit none
-real*8::krome_get_free_fall_time_rho
-real*8::rhogas
-
-krome_get_free_fall_time_rho = get_free_fall_time_rho(rhogas)
-
-end function krome_get_free_fall_time_rho
-
-!*******************
-!do only cooling and heating
-subroutine krome_thermo(x,Tgas,dt)
-use krome_commons
-use krome_cooling
-use krome_heating
-use krome_subs
-use krome_tabs
-use krome_constants
-use krome_gadiab
-implicit none
-real*8 :: x(nmols), Tgas
-real*8 :: dt
-real*8::n(nspec),nH2dust,dTgas,k(nrea),krome_gamma
-
-end subroutine krome_thermo
-
-!*************************
-!get heating (erg/cm3/s) for a given species
-! array x(:) and Tgas
-function krome_get_heating(x,inTgas)
-use krome_heating
-use krome_subs
-use krome_commons
-implicit none
-real*8 :: inTgas
-real*8 :: x(nmols), krome_get_heating
-real*8::Tgas,k(nrea),nH2dust,n(nspec)
-n(1:nmols) = x(:)
-Tgas = inTgas
-n(idx_Tgas) = Tgas
-k(:) = coe(n(:))
-nH2dust = 0d0
-krome_get_heating = heating(n(:),Tgas,k(:),nH2dust)
-end function krome_get_heating
-
-!*****************************
-! get an array containing individual heatings (erg/cm3/s)
-! the array has size krome_nheats. see heatcool.gps
-! for index list
-function krome_get_heating_array(x,inTgas)
-use krome_heating
-use krome_subs
-use krome_commons
-implicit none
-real*8::n(nspec),Tgas,k(nrea),nH2dust
-real*8 :: x(nmols),krome_get_heating_array(nheats)
-real*8,value :: inTgas
-
-n(:) = 0d0
-n(1:nmols) = x(:)
-n(idx_Tgas) = inTgas
-!#KROME_Tdust_copy
-k(:) = coe(n(:))
-Tgas = inTgas
-nH2dust = 0d0
-krome_get_heating_array(:) = get_heating_array(n(:),Tgas,k(:),nH2dust)
-
-end function krome_get_heating_array
-
-!************************
-!conserve the total amount of nucleii,
-! alias for conserveLin_x in subs
-subroutine krome_conserveLin_x(x,ref)
-use krome_commons
-use krome_subs
-implicit none
-real*8 :: x(nmols),ref(natoms)
-
-call conserveLin_x(x(:),ref(:))
-
-end subroutine krome_conserveLin_x
-
-!************************
-!conserve the total amount of nucleii,
-! alias for conserveLin_x in subs
-function krome_conserveLinGetRef_x(x)
-use krome_commons
-use krome_subs
-implicit none
-real*8 :: x(nmols),krome_conserveLinGetRef_x(natoms)
-
-krome_conserveLinGetRef_x(:) = &
-    conserveLinGetRef_x(x(:))
-
-end function krome_conserveLinGetRef_x
-
-!*************************
-!force conservation to array x(:)
-!using xi(:) as initial abundances.
-!alias for conserve in krome_subs
-function krome_conserve(x,xi)
-use krome_subs
-implicit none
-real*8 :: x(krome_nmols),xi(krome_nmols),krome_conserve(krome_nmols)
-real*8::n(krome_nspec),ni(krome_nspec)
-
-n(:) = 0d0
-ni(:) = 0d0
-n(1:krome_nmols) = x(1:krome_nmols)
-ni(1:krome_nmols) = xi(1:krome_nmols)
-n(:) = conserve(n(:), ni(:))
-krome_conserve(:) = n(1:krome_nmols)
-
-end function krome_conserve
-
-!***************************
-!get the adiabatic index for x(:) species abundances
-! and Tgas.
-! alias for gamma_index in krome_subs
-function krome_get_gamma(x,Tgas)
-use krome_subs
-use krome_commons
-use krome_gadiab
-real*8 :: Tgas
-real*8 :: x(nmols), krome_get_gamma
-real*8::n(nspec)
-n(:) = 0.d0
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-krome_get_gamma = gamma_index(n(:))
-end function krome_get_gamma
-
-!***************************
-!get an integer array containing the atomic numbers Z
-! of the spcecies.
-! alias for get_zatoms
-function krome_get_zatoms()
-use krome_subs
-use krome_commons
-use krome_getphys
-implicit none
-integer :: krome_get_zatoms(nmols)
-integer::zatoms(nspec)
-
-zatoms(:) = get_zatoms()
-krome_get_zatoms(:) = zatoms(1:nmols)
-
-end function krome_get_zatoms
-
-!****************************
-!get the mean molecular weight from
-! number density and mass density.
-! alias for get_mu in krome_subs module
-function krome_get_mu(x)
-use krome_commons
-use krome_subs
-use krome_getphys
-implicit none
-real*8 :: x(nmols), krome_get_mu
-real*8::n(1:nspec)
-n(:) = 0d0
-n(1:nmols) = x(:)
-krome_get_mu = get_mu(n(:))
-end function krome_get_mu
-
-!***************************
-!get the names of the reactions as a
-! character*50 array of krome_nrea
-! elements
-!! !! cannot yet be called from C
-function krome_get_rnames()
-use krome_commons
-use krome_subs
-use krome_getphys
-implicit none
-character*50 :: krome_get_rnames(nrea)
-
-krome_get_rnames(:) = get_rnames()
-
-end function krome_get_rnames
-
-!*****************
-!get an array of double containing the masses in g
-! of the species.
-! alias for get_mass in krome_subs
-function krome_get_mass()
-use krome_subs
-use krome_commons
-use krome_getphys
-implicit none
-real*8::tmp(nspec)
-real*8 :: krome_get_mass(nmols)
-tmp(:) = get_mass()
-krome_get_mass = tmp(1:nmols)
-end function krome_get_mass
-
-!*****************
-!get an array of double containing the inverse
-! of the mass (1/g) of the species
-!alias for get_imass in krome_subs
-function krome_get_imass()
-use krome_subs
-use krome_commons
-use krome_getphys
-implicit none
-real*8::tmp(nspec)
-real*8 :: krome_get_imass(nmols)
-tmp(:) = get_imass()
-krome_get_imass = tmp(1:nmols)
-end function krome_get_imass
-
-!***********************
-!get the total number of H nuclei
-function krome_get_Hnuclei(x)
-use krome_commons
-use krome_subs
-use krome_getphys
-real*8::n(nspec)
-real*8 :: krome_get_Hnuclei, x(nmols)
-n(:) = 0d0
-n(1:nmols) = x(:)
-
-krome_get_Hnuclei = get_Hnuclei(n(:))
-
-end function krome_get_Hnuclei
-
-!*****************
-!get an array of size krome_nmols containing the
-! charges of the species.
-! alias for get_charges
-function krome_get_charges()
-use krome_subs
-use krome_commons
-use krome_getphys
-implicit none
-real*8::tmp(nspec)
-real*8 :: krome_get_charges(nmols)
-tmp(:) = get_charges()
-krome_get_charges = tmp(1:nmols)
-end function krome_get_charges
-
-!*****************
-!get an array of character*16 and size krome_nmols
-! containing the names of all the species.
-! alias for get_names
-!!  !! cannot yet be called from C
-function krome_get_names()
-use krome_subs
-use krome_commons
-use krome_getphys
-implicit none
-character*16 :: krome_get_names(nmols)
-character*16::tmp(nspec)
-tmp(:) = get_names()
-krome_get_names = tmp(1:nmols)
-end function krome_get_names
-
-!********************
-!get space-separated header of chemical species
-function krome_get_names_header()
-use krome_commons
-use krome_getphys
-implicit none
-character*7::krome_get_names_header
-character*16::tmp(nspec)
-integer::i
-
-tmp(:) = get_names()
-
-krome_get_names_header = ""
-do i=1,nmols
-krome_get_names_header = trim(krome_get_names_header)//" "//trim(tmp(i))
-end do
-
-end function krome_get_names_header
-
-!********************
-!get space-separated header of coolings
-function krome_get_cooling_names_header()
-use krome_commons
-use krome_getphys
-implicit none
-character*141::krome_get_cooling_names_header
-character*16::tmp(ncools)
-integer::i
-
-tmp(:) = get_cooling_names()
-
-krome_get_cooling_names_header = ""
-do i=1,ncools
-if(trim(tmp(i))=="") cycle
-krome_get_cooling_names_header = trim(krome_get_cooling_names_header)//" "//trim(tmp(i))
-end do
-
-end function krome_get_cooling_names_header
-
-!********************
-!get space-separated header of heatings
-function krome_get_heating_names_header()
-use krome_commons
-use krome_getphys
-implicit none
-character*87::krome_get_heating_names_header
-character*16::tmp(nheats)
-integer::i
-
-tmp(:) = get_heating_names()
-
-krome_get_heating_names_header = ""
-do i=1,nheats
-if(trim(tmp(i))=="") cycle
-krome_get_heating_names_header = trim(krome_get_heating_names_header)//" "//trim(tmp(i))
-end do
-
-end function krome_get_heating_names_header
-
-!*****************
-!get the index of the species with name name.
-! alias for get_index
-!! !! cannot yet be called from C
-function krome_get_index(name)
-use krome_subs
-implicit none
-integer :: krome_get_index
-character*(*) :: name
-krome_get_index = get_index(name)
-end function krome_get_index
-
-!*******************
-!get the total density of the gas in g/cm3
-! giving all the number densities n(:)
-function krome_get_rho(n)
-use krome_commons
-real*8 :: krome_get_rho, n(nmols)
-real*8::m(nmols)
-m(:) = krome_get_mass()
-krome_get_rho = sum(m(:)*n(:))
-end function krome_get_rho
-
-!*************************
-!scale the abundances of the metals contained in n(:)
-! to Z according to Asplund+2009.
-! note that this applies only to neutral atoms.
-subroutine krome_scale_Z(x,Z)
-use krome_commons
-use krome_getphys
-real*8 :: x(nmols)
-real*8 :: Z
-real*8::Htot,n(nspec)
-
-n(1:nmols) = x(:)
-n(nmols+1:nspec) = 0d0
-
-end subroutine krome_scale_Z
-
-!*************************
-!set the total metallicity
-! in terms of Z/Z_solar
-subroutine krome_set_Z(xarg)
-use krome_commons
-real*8 :: xarg
-
-total_Z = xarg
-
-end subroutine krome_set_Z
-
-!*************************
-!set D is in terms of D_solar (D/D_sol).
-subroutine krome_set_dust_to_gas(xarg)
-use krome_commons
-real*8 :: xarg
-
-dust2gas_ratio = xarg
-
-end subroutine
-
-!*************************
-!set the clumping factor
-subroutine krome_set_clump(xarg)
-use krome_commons
-real*8 :: xarg
-
-clump_factor = xarg
-
-end subroutine krome_set_clump
-
-!***********************
-!get the number of electrons assuming
-! total neutral charge (cations-anions)
-function krome_get_electrons(x)
-use krome_commons
-use krome_subs
-use krome_getphys
-real*8 :: x(nmols), krome_get_electrons
-real*8::n(nspec)
-n(1:nmols) = x(:)
-n(nmols+1:nspec) = 0d0
-krome_get_electrons = get_electrons(n(:))
-end function krome_get_electrons
-
-!**********************
-!print on screen the first nbest highest reaction fluxes
-subroutine krome_print_best_flux(xin,Tgas,nbest)
-use krome_subs
-use krome_commons
-implicit none
-real*8 :: xin(nmols)
-real*8 :: Tgas
-real*8::x(nmols),n(nspec)
-integer :: nbest
-n(1:nmols) = xin(:)
-n(idx_Tgas) = Tgas
-call print_best_flux(n,Tgas,nbest)
-
-end subroutine krome_print_best_flux
-
-!*********************
-!print only the highest fluxes greater than a fraction frac
-! of the maximum flux
-subroutine krome_print_best_flux_frac(xin,Tgas,frac)
-use krome_subs
-use krome_commons
-implicit none
-real*8 :: xin(nmols)
-real*8 :: Tgas,frac
-real*8::n(nspec)
-n(1:nmols) = xin(:)
-n(idx_Tgas) = Tgas
-call print_best_flux_frac(n,Tgas,frac)
-
-end subroutine krome_print_best_flux_frac
-
-!**********************
-!print the highest nbest fluxes for reactions involving
-!a given species using the index idx_find (e.g. krome_idx_H2)
-subroutine krome_print_best_flux_spec(xin,Tgas,nbest,idx_find)
-use krome_subs
-use krome_commons
-implicit none
-real*8 :: xin(nmols)
-real*8 :: Tgas
-real*8::n(nspec)
-integer :: nbest,idx_find
-n(1:nmols) = xin(:)
-n(idx_Tgas) = Tgas
-call print_best_flux_spec(n,Tgas,nbest,idx_find)
-end subroutine krome_print_best_flux_spec
-
-!*******************************
-!get an array of size krome_nrea with
-! the fluxes of all the reactions in cm-3/s
-function krome_get_flux(n,Tgas)
-use krome_commons
-use krome_subs
-real*8 :: krome_get_flux(nrea),n(nmols)
-real*8,value :: Tgas
-real*8::x(nspec)
-x(:) = 0.d0
-x(1:nmols) = n(:)
-x(idx_Tgas) = Tgas
-krome_get_flux(:) = get_flux(x(:), Tgas)
-end function krome_get_flux
-
-!*****************************
-!store the fluxes to the file unit ifile
-! using the chemical composition x(:), and the
-! gas temperature Tgas. xvar is th value of an
-! user-defined independent variable that
-! can be employed for plots.
-! the file columns are as follow
-! rate number, xvar, absolute flux,
-!  flux/maxflux, flux fraction wrt total,
-!  reaction name (*50 string)
-subroutine krome_explore_flux(x,Tgas,ifile,xvar)
-use krome_commons
-use krome_subs
-use krome_getphys
-implicit none
-real*8 :: x(nmols)
-real*8 :: Tgas,xvar
-real*8::flux(nrea),fluxmax,sumflux,n(nspec)
-integer :: ifile
-integer::i
-character*50::rname(nrea)
-
-!get reaction names
-rname(:) = get_rnames()
-n(:) = 0d0
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-!get fluxes
-flux(:) = get_flux(n(:), Tgas)
-fluxmax = maxval(flux) !maximum flux
-sumflux = sum(flux) !sum of all the fluxes
-!loop on reactions
-do i=1,nrea
-write(ifile,'(I8,5E17.8e3,a3,a50)') i,xvar,Tgas,flux(i),&
-    flux(i)/fluxmax, flux(i)/sumflux," ",rname(i)
-end do
-write(ifile,*)
-
-end subroutine krome_explore_flux
-
-!*********************
-!get nulcear qeff for the reactions
-function krome_get_qeff()
-use krome_commons
-use krome_subs
-use krome_getphys
-implicit none
-real*8 :: krome_get_qeff(nrea)
-
-krome_get_qeff(:) = get_qeff()
-
-end function krome_get_qeff
-
-!************************
-!dump the fluxes to the file unit nfile
-subroutine krome_dump_flux(n,Tgas,nfile)
-use krome_commons
-real*8 :: n(nmols)
-real*8 :: Tgas
-real*8::flux(nrea)
-integer :: nfile
-integer::i
-
-flux(:) = krome_get_flux(n(:),Tgas)
-do i=1,nrea
-write(nfile,'(I8,E17.8e3)') i,flux(i)
-end do
-write(nfile,*)
-
-end subroutine krome_dump_flux
-
-!************************
-!dump all the evaluation of the coefficient rates in
-! the file funit, in the range inTmin, inTmax, using
-! imax points
-subroutine krome_dump_rates(inTmin,inTmax,imax,funit)
-use krome_commons
-use krome_subs
-implicit none
-integer::i,j
-integer :: funit,imax
-real*8 :: inTmin,inTmax
-real*8::Tmin,Tmax,Tgas,k(nrea),n(nspec)
-
-Tmin = log10(inTmin)
-Tmax = log10(inTmax)
-
-n(:) = 1d-40
-do i=1,imax
-Tgas = 1d1**((i-1)*(Tmax-Tmin)/(imax-1)+Tmin)
-n(idx_Tgas) = Tgas
-k(:) = coe(n(:))
-do j=1,nrea
-write(funit,'(E17.8e3,I8,E17.8e3)') Tgas,j,k(j)
-end do
-write(funit,*)
-end do
-
-end subroutine krome_dump_rates
-
-!************************
-!print species informations on screen
-subroutine krome_get_info(x, Tgas)
-use krome_commons
-use krome_subs
-use krome_getphys
-implicit none
-integer::i,charges(nspec)
-real*8 :: x(nmols)
-real*8 :: Tgas
-real*8::masses(nspec)
-character*16::names(nspec)
-
-names(:) = get_names()
-charges(:) = get_charges()
-masses(:) = get_mass()
-
-print '(a4,a10,a11,a5,a11)',"#","Name","m (g)","Chrg","x"
-do i=1,size(x)
-print '(I4,a10,E11.3,I5,E11.3)',i," "//names(i),masses(i),charges(i),x(i)
-end do
-print '(a30,E11.3)'," sum",sum(x)
-
-print '(a14,E11.3)',"Tgas",Tgas
-end subroutine krome_get_info
-
-!*****************************
-subroutine krome_set_mpi_rank(xarg)
-use krome_commons
-implicit none
-integer :: xarg
-krome_mpi_rank=xarg
-end subroutine krome_set_mpi_rank
-
-!**************************
-function krome_get_jacobian(j,x,Tgas)
-use krome_ode
-use krome_commons
-implicit none
-integer, value :: j
-real*8,value :: Tgas
-real*8 :: x(nmols),krome_get_jacobian(nspec)
-integer::ian, jan, i
-real*8::tt, n(nspec)
-real*8::pdj(nspec)
-
-n(:) = 0d0
-n(1:nmols) = x(:)
-n(idx_Tgas) = tgas
-
-tt = 0d0
-ian = 0
-jan = 0
-
-call jes(nspec, tt, n, j, ian, jan, pdj)
-krome_get_jacobian(:) = pdj(:)
-
-end function krome_get_jacobian
+  !*******************
+  subroutine krome_set_user_crate(argset)
+    use krome_commons
+    implicit none
+    real*8 :: argset
+    user_crate = argset
+  end subroutine krome_set_user_crate
+
+  !*******************
+  function krome_get_user_crate()
+    use krome_commons
+    implicit none
+    real*8 :: krome_get_user_crate
+    krome_get_user_crate = user_crate
+  end function krome_get_user_crate
+
+  !************************
+  !returns the Tdust averaged over the number density
+  ! as computed in the tables
+  function krome_get_table_Tdust(x,Tgas)
+    use krome_commons
+    use krome_grfuncs
+    implicit none
+    real*8 :: Tgas
+    real*8 :: x(nmols), krome_get_table_Tdust
+    real*8::n(nspec)
+
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+    n(idx_Tgas) = Tgas
+
+    krome_get_table_Tdust = get_table_Tdust(n(:))
+
+  end function krome_get_table_Tdust
+
+  !**********************
+  !convert from MOCASSIN abundances to KROME
+  ! xmoc(i,j): MOCASSIN matrix (note: cm-3, real*4)
+  !  i=species, j=ionization level
+  ! imap: matrix position index map, integer
+  ! returns KROME abundances (cm-3, real*8)
+  function krome_convert_xmoc(xmoc,imap) result(x)
+    use krome_commons
+    use krome_subs
+    use krome_getphys
+    implicit none
+    real*4,intent(in):: xmoc(:,:)
+    real*8::x(nmols),n(nspec)
+    integer,intent(in)::imap(:)
+
+    x(:) = 0d0
+
+    x(idx_H) = xmoc(imap(1), 1)
+    x(idx_HE) = xmoc(imap(2), 1)
+    x(idx_Hj) = xmoc(imap(1), 2)
+    x(idx_HEj) = xmoc(imap(2), 2)
+    x(idx_HEjj) = xmoc(imap(2), 3)
+
+    n(1:nmols) = x(:)
+    n(nmols+1:nspec) = 0d0
+    x(idx_e) = get_electrons(n(:))
+
+  end function krome_convert_xmoc
+
+  !*************************
+  !convert from KROME abundances to MOCASSIN
+  ! x: KROME abuances (cm-3, real*8)
+  ! imap: matrix position index map, integer
+  ! xmoc(i,j): MOCASSIN matrix (note: cm-3, real*4)
+  !  i=species, j=ionization level
+  subroutine krome_return_xmoc(x,imap,xmoc)
+    use krome_commons
+    implicit none
+    real*8,intent(in)::x(nmols)
+    real*4,intent(out)::xmoc(:,:)
+    integer,intent(in)::imap(:)
+
+    xmoc(:,:) = 0d0
+
+    xmoc(imap(1), 1) = x(idx_H)
+    xmoc(imap(2), 1) = x(idx_HE)
+    xmoc(imap(1), 2) = x(idx_Hj)
+    xmoc(imap(2), 2) = x(idx_HEj)
+    xmoc(imap(2), 3) = x(idx_HEjj)
+
+  end subroutine krome_return_xmoc
+
+  !**********************
+  !convert number density (cm-3) into column
+  ! density (cm-2) using the specific density
+  ! column method (see help for option
+  ! -columnDensityMethod)
+  ! num is the number density, x(:) is the species
+  ! array, Tgas is the gas temperature
+  ! If the method is not JEANS, x(:) and Tgas
+  ! are dummy variables
+  function krome_num2col(num,x,Tgas)
+    use krome_subs
+    use krome_commons
+    use krome_getphys
+    implicit none
+    real*8 :: x(nmols),krome_num2col
+    real*8 :: Tgas,num
+    real*8::n(nspec)
+
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+    n(idx_Tgas) = Tgas
+
+    krome_num2col = num2col(num,n(:))
+
+  end function krome_num2col
+
+  !***********************
+  !print on screen the current values of all phys variables
+  subroutine krome_print_phys_variables()
+    use krome_commons
+    implicit none
+
+    print *, "Tcmb:", phys_Tcmb
+    print *, "zredshift:", phys_zredshift
+    print *, "orthoParaRatio:", phys_orthoParaRatio
+    print *, "metallicity:", phys_metallicity
+    print *, "Tfloor:", phys_Tfloor
+
+  end subroutine krome_print_phys_variables
+
+  !*******************
+  subroutine krome_set_Tcmb(arg)
+    use krome_commons
+    implicit none
+    real*8 :: arg
+    phys_Tcmb = arg
+  end subroutine krome_set_Tcmb
+
+  !*******************
+  function krome_get_Tcmb()
+    use krome_commons
+    implicit none
+    real*8 :: krome_get_Tcmb
+    krome_get_Tcmb = phys_Tcmb
+  end function krome_get_Tcmb
+
+  !*******************
+  subroutine krome_set_zredshift(arg)
+    use krome_commons
+    implicit none
+    real*8 :: arg
+    phys_zredshift = arg
+  end subroutine krome_set_zredshift
+
+  !*******************
+  function krome_get_zredshift()
+    use krome_commons
+    implicit none
+    real*8 :: krome_get_zredshift
+    krome_get_zredshift = phys_zredshift
+  end function krome_get_zredshift
+
+  !*******************
+  subroutine krome_set_orthoParaRatio(arg)
+    use krome_commons
+    implicit none
+    real*8 :: arg
+    phys_orthoParaRatio = arg
+  end subroutine krome_set_orthoParaRatio
+
+  !*******************
+  function krome_get_orthoParaRatio()
+    use krome_commons
+    implicit none
+    real*8 :: krome_get_orthoParaRatio
+    krome_get_orthoParaRatio = phys_orthoParaRatio
+  end function krome_get_orthoParaRatio
+
+  !*******************
+  subroutine krome_set_metallicity(arg)
+    use krome_commons
+    implicit none
+    real*8 :: arg
+    phys_metallicity = arg
+  end subroutine krome_set_metallicity
+
+  !*******************
+  function krome_get_metallicity()
+    use krome_commons
+    implicit none
+    real*8 :: krome_get_metallicity
+    krome_get_metallicity = phys_metallicity
+  end function krome_get_metallicity
+
+  !*******************
+  subroutine krome_set_Tfloor(arg)
+    use krome_commons
+    implicit none
+    real*8 :: arg
+    phys_Tfloor = arg
+  end subroutine krome_set_Tfloor
+
+  !*******************
+  function krome_get_Tfloor()
+    use krome_commons
+    implicit none
+    real*8 :: krome_get_Tfloor
+    krome_get_Tfloor = phys_Tfloor
+  end function krome_get_Tfloor
+
+  !*****************************
+  !dump the data for restart (UNDER DEVELOPEMENT!)
+  !arguments: the species array and the gas temperature
+  subroutine krome_store(x,Tgas,dt)
+    use krome_commons
+    implicit none
+    integer::nfile,i
+    real*8 :: x(nmols)
+    real*8 :: Tgas,dt
+
+    nfile = 92
+
+    open(nfile,file="krome_dump.dat",status="replace")
+    !dump temperature
+    write(nfile,*) Tgas
+    write(nfile,*) dt
+    !dump species
+    do i=1,nmols
+      write(nfile,*) x(i)
+    end do
+    close(nfile)
+
+  end subroutine krome_store
+
+  !*****************************
+  !restore the data from a dump (UNDER DEVELOPEMENT!)
+  !arguments: the species array and the gas temperature
+  subroutine krome_restore(x,Tgas,dt)
+    use krome_commons
+    implicit none
+    integer::nfile,i
+    real*8 :: x(nmols)
+    real*8 :: Tgas,dt
+
+    nfile = 92
+
+    open(nfile,file="krome_dump.dat",status="old")
+    !restore temperature
+    read(nfile,*) Tgas
+    read(nfile,*) dt
+    !restore species
+    do i=1,nmols
+      read(nfile,*) x(i)
+    end do
+    close(nfile)
+
+  end subroutine krome_restore
+
+  !****************************
+  !switch on the thermal calculation
+  subroutine krome_thermo_on()
+    use krome_commons
+    krome_thermo_toggle = 1
+  end subroutine krome_thermo_on
+
+  !****************************
+  !switch off the thermal calculation
+  subroutine krome_thermo_off()
+    use krome_commons
+    krome_thermo_toggle = 0
+  end subroutine krome_thermo_off
+
+  !***************************
+  !alias for coe in krome_subs
+  ! returns the coefficient array of size krome_nrea
+  ! for a given Tgas
+  function krome_get_coef(Tgas,x)
+    use krome_commons
+    use krome_subs
+    use krome_tabs
+    real*8 :: krome_get_coef(nrea),x(nmols)
+    real*8,value:: Tgas
+    real*8::n(nspec)
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+    n(idx_Tgas) = Tgas
+
+    krome_get_coef(:) = coe(n(:))
+
+  end function krome_get_coef
+
+  !****************************
+  !get the mean molecular weight from
+  ! mass fractions
+  function krome_get_mu_x(xin)
+    use krome_commons
+    implicit none
+    real*8 :: xin(nmols), krome_get_mu_x
+    real*8::n(nmols)
+    n(:) = krome_x2n(xin(:),1d0)
+    krome_get_mu_x = krome_get_mu(n(:))
+  end function krome_get_mu_x
+
+  !****************************
+  !return the adiabatic index from mass fractions
+  ! and temperature in K
+  function krome_get_gamma_x(xin,inTgas)
+    use krome_commons
+    implicit none
+    real*8 :: inTgas
+    real*8 :: xin(nmols), krome_get_gamma_x
+    real*8::x(nmols),Tgas,rhogas
+
+    Tgas = inTgas
+    x(:) = krome_x2n(xin(:),1d0)
+    krome_get_gamma_x = krome_get_gamma(x(:),Tgas)
+
+  end function krome_get_gamma_x
+
+  !***************************
+  !normalize mass fractions and
+  ! set charge to zero
+  subroutine krome_consistent_x(x)
+    use krome_commons
+    use krome_constants
+    implicit none
+    real*8 :: x(nmols)
+    real*8::isumx,sumx,xerr,imass(nmols),ee
+
+    !1. charge consistency
+    imass(:) = krome_get_imass()
+
+    x(idx_e) = 0.d0
+
+    ee = sum(krome_get_charges()*x(:)*imass(:))
+    ee = max(ee*e_mass,0d0)
+    x(idx_e) = ee
+
+    !2. mass fraction consistency
+    sumx = sum(x)
+
+    !NOTE: uncomment here if you want some additional control
+    !conservation error threshold: rise an error if above xerr
+    !xerr = 1d-2
+    !if(abs(sum-1d0)>xerr) then
+    !   print *,"ERROR: some problem with conservation!"
+    !   print *,"|sum(x)-1|=",abs(sum-1d0)
+    !   stop
+    !end if
+
+    isumx = 1d0/sumx
+    x(:) = x(:) * isumx
+
+  end subroutine krome_consistent_x
+
+  !*********************
+  !return an array sized krome_nmols containing
+  ! the mass fractions (#), computed from the number
+  ! densities (1/cm3) and the total density in g/cm3
+  function krome_n2x(n,rhogas)
+    use krome_commons
+    implicit none
+    real*8 :: n(nmols),krome_n2x(nmols)
+    real*8,value :: rhogas
+
+    krome_n2x(:) = n(:) * krome_get_mass() / rhogas
+
+  end function krome_n2x
+
+  !********************
+  !return an array sized krome_nmols containing
+  ! the number densities (1/cm3), computed from the mass
+  ! fractions and the total density in g/cm3
+  function krome_x2n(x,rhogas)
+    use krome_commons
+    implicit none
+    real*8 :: x(nmols),krome_x2n(nmols)
+    real*8,value :: rhogas
+
+    !compute densities from fractions
+    krome_x2n(:) = rhogas * x(:) * krome_get_imass()
+
+  end function krome_x2n
+
+  !******************
+  !returns free-fall time using the number density
+  ! abundances of array x(:)
+  function krome_get_free_fall_time(x)
+    use krome_commons
+    use krome_getphys
+    implicit none
+    real*8::krome_get_free_fall_time
+    real*8::x(:),n(nspec)
+
+    n(1:nmols) = x(:)
+    n(nmols+1:nspec) = 0d0
+    krome_get_free_fall_time = get_free_fall_time(n(:))
+
+  end function krome_get_free_fall_time
+
+  !******************
+  !returns free-fall time using the total mass density
+  !  of gas, rhogas (g/cm3)
+  function krome_get_free_fall_time_rho(rhogas)
+    use krome_getphys
+    implicit none
+    real*8::krome_get_free_fall_time_rho
+    real*8::rhogas
+
+    krome_get_free_fall_time_rho = get_free_fall_time_rho(rhogas)
+
+  end function krome_get_free_fall_time_rho
+
+  !*******************
+  !do only cooling and heating
+  subroutine krome_thermo(x,Tgas,dt)
+    use krome_commons
+    use krome_cooling
+    use krome_heating
+    use krome_subs
+    use krome_tabs
+    use krome_constants
+    use krome_gadiab
+    implicit none
+    real*8 :: x(nmols), Tgas
+    real*8 :: dt
+    real*8::n(nspec),nH2dust,dTgas,k(nrea),krome_gamma
+
+    nH2dust = 0d0
+    n(:) = 0d0
+    n(idx_Tgas) = Tgas
+    n(1:nmols) = x(:)
+    k(:) = coe_tab(n(:)) !compute coefficients
+    krome_gamma = gamma_index(n(:))
+
+    dTgas = (heating(n(:), Tgas, k(:), nH2dust) - cooling(n(:), Tgas)) &
+        * (krome_gamma - 1.d0) / boltzmann_erg / sum(n(1:nmols))
+
+    Tgas = Tgas + dTgas*dt !update gas
+
+  end subroutine krome_thermo
+
+  !*************************
+  !get heating (erg/cm3/s) for a given species
+  ! array x(:) and Tgas
+  function krome_get_heating(x,inTgas)
+    use krome_heating
+    use krome_subs
+    use krome_commons
+    implicit none
+    real*8 :: inTgas
+    real*8 :: x(nmols), krome_get_heating
+    real*8::Tgas,k(nrea),nH2dust,n(nspec)
+    n(1:nmols) = x(:)
+    Tgas = inTgas
+    n(idx_Tgas) = Tgas
+    k(:) = coe(n(:))
+    nH2dust = 0d0
+    krome_get_heating = heating(n(:),Tgas,k(:),nH2dust)
+  end function krome_get_heating
+
+  !*****************************
+  ! get an array containing individual heatings (erg/cm3/s)
+  ! the array has size krome_nheats. see heatcool.gps
+  ! for index list
+  function krome_get_heating_array(x,inTgas)
+    use krome_heating
+    use krome_subs
+    use krome_commons
+    implicit none
+    real*8::n(nspec),Tgas,k(nrea),nH2dust
+    real*8 :: x(nmols),krome_get_heating_array(nheats)
+    real*8,value :: inTgas
+
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+    n(idx_Tgas) = inTgas
+    !#KROME_Tdust_copy
+    k(:) = coe(n(:))
+    Tgas = inTgas
+    nH2dust = 0d0
+    krome_get_heating_array(:) = get_heating_array(n(:),Tgas,k(:),nH2dust)
+
+  end function krome_get_heating_array
+
+  !*************************
+  !get cooling (erg/cm3/s) for x(:) species array
+  ! and Tgas
+  function krome_get_cooling(x,inTgas)
+    use krome_cooling
+    use krome_commons
+    implicit none
+    real*8 :: inTgas
+    real*8 :: x(nmols), krome_get_cooling
+    real*8::Tgas,n(nspec)
+    n(1:nmols) = x(:)
+    Tgas = inTgas
+    n(idx_Tgas) = Tgas
+    krome_get_cooling = cooling(n,Tgas)
+  end function krome_get_cooling
+
+  !*****************************
+  ! get an array containing individual coolings (erg/cm3/s)
+  ! the array has size krome_ncools. see heatcool.gps
+  ! for index list
+  function krome_get_cooling_array(x,inTgas)
+    use krome_cooling
+    use krome_commons
+    implicit none
+    real*8::n(nspec),Tgas
+    real*8 :: x(nmols),krome_get_cooling_array(ncools)
+    real*8,value :: inTgas
+
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+    n(idx_Tgas) = inTgas
+    !#KROME_Tdust_copy
+    Tgas = inTgas
+    krome_get_cooling_array(:) = get_cooling_array(n(:),Tgas)
+
+  end function krome_get_cooling_array
+
+  !******************
+  !alias of plot_cool
+  subroutine krome_plot_cooling(n)
+    use krome_cooling
+    implicit none
+    real*8 :: n(krome_nmols)
+
+    call plot_cool(n(:))
+
+  end subroutine krome_plot_cooling
+
+  !****************
+  !alias for dumping cooling in the unit nfile_in
+  subroutine krome_dump_cooling(n,Tgas,nfile_in)
+    use krome_cooling
+    use krome_commons
+    implicit none
+    real*8 :: n(nmols)
+    real*8 :: Tgas
+    real*8::x(nspec)
+    integer, optional :: nfile_in
+    integer::nfile
+    nfile = 31
+    x(:) = 0.d0
+    x(1:nmols) = n(:)
+    if(present(nfile_in)) nfile = nfile_in
+    call dump_cool(x(:),Tgas,nfile)
+
+  end subroutine krome_dump_cooling
+
+  !************************
+  !conserve the total amount of nucleii,
+  ! alias for conserveLin_x in subs
+  subroutine krome_conserveLin_x(x,ref)
+    use krome_commons
+    use krome_subs
+    implicit none
+    real*8 :: x(nmols),ref(natoms)
+
+    call conserveLin_x(x(:),ref(:))
+
+  end subroutine krome_conserveLin_x
+
+  !************************
+  !conserve the total amount of nucleii,
+  ! alias for conserveLin_x in subs
+  function krome_conserveLinGetRef_x(x)
+    use krome_commons
+    use krome_subs
+    implicit none
+    real*8 :: x(nmols),krome_conserveLinGetRef_x(natoms)
+
+    krome_conserveLinGetRef_x(:) = &
+        conserveLinGetRef_x(x(:))
+
+  end function krome_conserveLinGetRef_x
+
+  !*************************
+  !force conservation to array x(:)
+  !using xi(:) as initial abundances.
+  !alias for conserve in krome_subs
+  function krome_conserve(x,xi)
+    use krome_subs
+    implicit none
+    real*8 :: x(krome_nmols),xi(krome_nmols),krome_conserve(krome_nmols)
+    real*8::n(krome_nspec),ni(krome_nspec)
+
+    n(:) = 0d0
+    ni(:) = 0d0
+    n(1:krome_nmols) = x(1:krome_nmols)
+    ni(1:krome_nmols) = xi(1:krome_nmols)
+    n(:) = conserve(n(:), ni(:))
+    krome_conserve(:) = n(1:krome_nmols)
+
+  end function krome_conserve
+
+  !***************************
+  !get the adiabatic index for x(:) species abundances
+  ! and Tgas.
+  ! alias for gamma_index in krome_subs
+  function krome_get_gamma(x,Tgas)
+    use krome_subs
+    use krome_commons
+    use krome_gadiab
+    real*8 :: Tgas
+    real*8 :: x(nmols), krome_get_gamma
+    real*8::n(nspec)
+    n(:) = 0.d0
+    n(1:nmols) = x(:)
+    n(idx_Tgas) = Tgas
+    krome_get_gamma = gamma_index(n(:))
+  end function krome_get_gamma
+
+  !***************************
+  !get an integer array containing the atomic numbers Z
+  ! of the spcecies.
+  ! alias for get_zatoms
+  function krome_get_zatoms()
+    use krome_subs
+    use krome_commons
+    use krome_getphys
+    implicit none
+    integer :: krome_get_zatoms(nmols)
+    integer::zatoms(nspec)
+
+    zatoms(:) = get_zatoms()
+    krome_get_zatoms(:) = zatoms(1:nmols)
+
+  end function krome_get_zatoms
+
+  !****************************
+  !get the mean molecular weight from
+  ! number density and mass density.
+  ! alias for get_mu in krome_subs module
+  function krome_get_mu(x)
+    use krome_commons
+    use krome_subs
+    use krome_getphys
+    implicit none
+    real*8 :: x(nmols), krome_get_mu
+    real*8::n(1:nspec)
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+    krome_get_mu = get_mu(n(:))
+  end function krome_get_mu
+
+  !***************************
+  !get the names of the reactions as a
+  ! character*50 array of krome_nrea
+  ! elements
+  !! !! cannot yet be called from C
+  function krome_get_rnames()
+    use krome_commons
+    use krome_subs
+    use krome_getphys
+    implicit none
+    character*50 :: krome_get_rnames(nrea)
+
+    krome_get_rnames(:) = get_rnames()
+
+  end function krome_get_rnames
+
+  !*****************
+  !get an array of double containing the masses in g
+  ! of the species.
+  ! alias for get_mass in krome_subs
+  function krome_get_mass()
+    use krome_subs
+    use krome_commons
+    use krome_getphys
+    implicit none
+    real*8::tmp(nspec)
+    real*8 :: krome_get_mass(nmols)
+    tmp(:) = get_mass()
+    krome_get_mass = tmp(1:nmols)
+  end function krome_get_mass
+
+  !*****************
+  !get an array of double containing the inverse
+  ! of the mass (1/g) of the species
+  !alias for get_imass in krome_subs
+  function krome_get_imass()
+    use krome_subs
+    use krome_commons
+    use krome_getphys
+    implicit none
+    real*8::tmp(nspec)
+    real*8 :: krome_get_imass(nmols)
+    tmp(:) = get_imass()
+    krome_get_imass = tmp(1:nmols)
+  end function krome_get_imass
+
+  !***********************
+  !get the total number of H nuclei
+  function krome_get_Hnuclei(x)
+    use krome_commons
+    use krome_subs
+    use krome_getphys
+    real*8::n(nspec)
+    real*8 :: krome_get_Hnuclei, x(nmols)
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+
+    krome_get_Hnuclei = get_Hnuclei(n(:))
+
+  end function krome_get_Hnuclei
+
+  !*****************
+  !get an array of size krome_nmols containing the
+  ! charges of the species.
+  ! alias for get_charges
+  function krome_get_charges()
+    use krome_subs
+    use krome_commons
+    use krome_getphys
+    implicit none
+    real*8::tmp(nspec)
+    real*8 :: krome_get_charges(nmols)
+    tmp(:) = get_charges()
+    krome_get_charges = tmp(1:nmols)
+  end function krome_get_charges
+
+  !*****************
+  !get an array of character*16 and size krome_nmols
+  ! containing the names of all the species.
+  ! alias for get_names
+  !!  !! cannot yet be called from C
+  function krome_get_names()
+    use krome_subs
+    use krome_commons
+    use krome_getphys
+    implicit none
+    character*16 :: krome_get_names(nmols)
+    character*16::tmp(nspec)
+    tmp(:) = get_names()
+    krome_get_names = tmp(1:nmols)
+  end function krome_get_names
+
+  !********************
+  !get space-separated header of chemical species
+  function krome_get_names_header()
+    use krome_commons
+    use krome_getphys
+    implicit none
+    character*29::krome_get_names_header
+    character*16::tmp(nspec)
+    integer::i
+
+    tmp(:) = get_names()
+
+    krome_get_names_header = ""
+    do i=1,nmols
+      krome_get_names_header = trim(krome_get_names_header)//" "//trim(tmp(i))
+    end do
+
+  end function krome_get_names_header
+
+  !********************
+  !get space-separated header of coolings
+  function krome_get_cooling_names_header()
+    use krome_commons
+    use krome_getphys
+    implicit none
+    character*141::krome_get_cooling_names_header
+    character*16::tmp(ncools)
+    integer::i
+
+    tmp(:) = get_cooling_names()
+
+    krome_get_cooling_names_header = ""
+    do i=1,ncools
+      if(trim(tmp(i))=="") cycle
+      krome_get_cooling_names_header = trim(krome_get_cooling_names_header)//" "//trim(tmp(i))
+    end do
+
+  end function krome_get_cooling_names_header
+
+  !********************
+  !get space-separated header of heatings
+  function krome_get_heating_names_header()
+    use krome_commons
+    use krome_getphys
+    implicit none
+    character*87::krome_get_heating_names_header
+    character*16::tmp(nheats)
+    integer::i
+
+    tmp(:) = get_heating_names()
+
+    krome_get_heating_names_header = ""
+    do i=1,nheats
+      if(trim(tmp(i))=="") cycle
+      krome_get_heating_names_header = trim(krome_get_heating_names_header)//" "//trim(tmp(i))
+    end do
+
+  end function krome_get_heating_names_header
+
+  !*****************
+  !get the index of the species with name name.
+  ! alias for get_index
+  !! !! cannot yet be called from C
+  function krome_get_index(name)
+    use krome_subs
+    implicit none
+    integer :: krome_get_index
+    character*(*) :: name
+    krome_get_index = get_index(name)
+  end function krome_get_index
+
+  !*******************
+  !get the total density of the gas in g/cm3
+  ! giving all the number densities n(:)
+  function krome_get_rho(n)
+    use krome_commons
+    real*8 :: krome_get_rho, n(nmols)
+    real*8::m(nmols)
+    m(:) = krome_get_mass()
+    krome_get_rho = sum(m(:)*n(:))
+  end function krome_get_rho
+
+  !*************************
+  !scale the abundances of the metals contained in n(:)
+  ! to Z according to Asplund+2009.
+  ! note that this applies only to neutral atoms.
+  subroutine krome_scale_Z(x,Z)
+    use krome_commons
+    use krome_getphys
+    real*8 :: x(nmols)
+    real*8 :: Z
+    real*8::Htot,n(nspec)
+
+    n(1:nmols) = x(:)
+    n(nmols+1:nspec) = 0d0
+
+    Htot = get_Hnuclei(n(:))
+
+  end subroutine krome_scale_Z
+
+  !*************************
+  !set the total metallicity
+  ! in terms of Z/Z_solar
+  subroutine krome_set_Z(xarg)
+    use krome_commons
+    real*8 :: xarg
+
+    total_Z = xarg
+
+  end subroutine krome_set_Z
+
+  !*************************
+  !set D is in terms of D_solar (D/D_sol).
+  subroutine krome_set_dust_to_gas(xarg)
+    use krome_commons
+    real*8 :: xarg
+
+    dust2gas_ratio = xarg
+
+  end subroutine
+
+  !*************************
+  !set the clumping factor
+  subroutine krome_set_clump(xarg)
+    use krome_commons
+    real*8 :: xarg
+
+    clump_factor = xarg
+
+  end subroutine krome_set_clump
+
+  !***********************
+  !get the number of electrons assuming
+  ! total neutral charge (cations-anions)
+  function krome_get_electrons(x)
+    use krome_commons
+    use krome_subs
+    use krome_getphys
+    real*8 :: x(nmols), krome_get_electrons
+    real*8::n(nspec)
+    n(1:nmols) = x(:)
+    n(nmols+1:nspec) = 0d0
+    krome_get_electrons = get_electrons(n(:))
+  end function krome_get_electrons
+
+  !**********************
+  !print on screen the first nbest highest reaction fluxes
+  subroutine krome_print_best_flux(xin,Tgas,nbest)
+    use krome_subs
+    use krome_commons
+    implicit none
+    real*8 :: xin(nmols)
+    real*8 :: Tgas
+    real*8::x(nmols),n(nspec)
+    integer :: nbest
+    n(1:nmols) = xin(:)
+    n(idx_Tgas) = Tgas
+    call print_best_flux(n,Tgas,nbest)
+
+  end subroutine krome_print_best_flux
+
+  !*********************
+  !print only the highest fluxes greater than a fraction frac
+  ! of the maximum flux
+  subroutine krome_print_best_flux_frac(xin,Tgas,frac)
+    use krome_subs
+    use krome_commons
+    implicit none
+    real*8 :: xin(nmols)
+    real*8 :: Tgas,frac
+    real*8::n(nspec)
+    n(1:nmols) = xin(:)
+    n(idx_Tgas) = Tgas
+    call print_best_flux_frac(n,Tgas,frac)
+
+  end subroutine krome_print_best_flux_frac
+
+  !**********************
+  !print the highest nbest fluxes for reactions involving
+  !a given species using the index idx_find (e.g. krome_idx_H2)
+  subroutine krome_print_best_flux_spec(xin,Tgas,nbest,idx_find)
+    use krome_subs
+    use krome_commons
+    implicit none
+    real*8 :: xin(nmols)
+    real*8 :: Tgas
+    real*8::n(nspec)
+    integer :: nbest,idx_find
+    n(1:nmols) = xin(:)
+    n(idx_Tgas) = Tgas
+    call print_best_flux_spec(n,Tgas,nbest,idx_find)
+  end subroutine krome_print_best_flux_spec
+
+  !*******************************
+  !get an array of size krome_nrea with
+  ! the fluxes of all the reactions in cm-3/s
+  function krome_get_flux(n,Tgas)
+    use krome_commons
+    use krome_subs
+    real*8 :: krome_get_flux(nrea),n(nmols)
+    real*8,value :: Tgas
+    real*8::x(nspec)
+    x(:) = 0.d0
+    x(1:nmols) = n(:)
+    x(idx_Tgas) = Tgas
+    krome_get_flux(:) = get_flux(x(:), Tgas)
+  end function krome_get_flux
+
+  !*****************************
+  !store the fluxes to the file unit ifile
+  ! using the chemical composition x(:), and the
+  ! gas temperature Tgas. xvar is th value of an
+  ! user-defined independent variable that
+  ! can be employed for plots.
+  ! the file columns are as follow
+  ! rate number, xvar, absolute flux,
+  !  flux/maxflux, flux fraction wrt total,
+  !  reaction name (*50 string)
+  subroutine krome_explore_flux(x,Tgas,ifile,xvar)
+    use krome_commons
+    use krome_subs
+    use krome_getphys
+    implicit none
+    real*8 :: x(nmols)
+    real*8 :: Tgas,xvar
+    real*8::flux(nrea),fluxmax,sumflux,n(nspec)
+    integer :: ifile
+    integer::i
+    character*50::rname(nrea)
+
+    !get reaction names
+    rname(:) = get_rnames()
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+    n(idx_Tgas) = Tgas
+    !get fluxes
+    flux(:) = get_flux(n(:), Tgas)
+    fluxmax = maxval(flux) !maximum flux
+    sumflux = sum(flux) !sum of all the fluxes
+    !loop on reactions
+    do i=1,nrea
+      write(ifile,'(I8,5E17.8e3,a3,a50)') i,xvar,Tgas,flux(i),&
+          flux(i)/fluxmax, flux(i)/sumflux," ",rname(i)
+    end do
+    write(ifile,*)
+
+  end subroutine krome_explore_flux
+
+  !*********************
+  !get nulcear qeff for the reactions
+  function krome_get_qeff()
+    use krome_commons
+    use krome_subs
+    use krome_getphys
+    implicit none
+    real*8 :: krome_get_qeff(nrea)
+
+    krome_get_qeff(:) = get_qeff()
+
+  end function krome_get_qeff
+
+  !************************
+  !dump the fluxes to the file unit nfile
+  subroutine krome_dump_flux(n,Tgas,nfile)
+    use krome_commons
+    real*8 :: n(nmols)
+    real*8 :: Tgas
+    real*8::flux(nrea)
+    integer :: nfile
+    integer::i
+
+    flux(:) = krome_get_flux(n(:),Tgas)
+    do i=1,nrea
+      write(nfile,'(I8,E17.8e3)') i,flux(i)
+    end do
+    write(nfile,*)
+
+  end subroutine krome_dump_flux
+
+  !************************
+  !dump all the evaluation of the coefficient rates in
+  ! the file funit, in the range inTmin, inTmax, using
+  ! imax points
+  subroutine krome_dump_rates(inTmin,inTmax,imax,funit)
+    use krome_commons
+    use krome_subs
+    implicit none
+    integer::i,j
+    integer :: funit,imax
+    real*8 :: inTmin,inTmax
+    real*8::Tmin,Tmax,Tgas,k(nrea),n(nspec)
+
+    Tmin = log10(inTmin)
+    Tmax = log10(inTmax)
+
+    n(:) = 1d-40
+    do i=1,imax
+      Tgas = 1d1**((i-1)*(Tmax-Tmin)/(imax-1)+Tmin)
+      n(idx_Tgas) = Tgas
+      k(:) = coe(n(:))
+      do j=1,nrea
+        write(funit,'(E17.8e3,I8,E17.8e3)') Tgas,j,k(j)
+      end do
+      write(funit,*)
+    end do
+
+  end subroutine krome_dump_rates
+
+  !************************
+  !print species informations on screen
+  subroutine krome_get_info(x, Tgas)
+    use krome_commons
+    use krome_subs
+    use krome_getphys
+    implicit none
+    integer::i,charges(nspec)
+    real*8 :: x(nmols)
+    real*8 :: Tgas
+    real*8::masses(nspec)
+    character*16::names(nspec)
+
+    names(:) = get_names()
+    charges(:) = get_charges()
+    masses(:) = get_mass()
+
+    print '(a4,a10,a11,a5,a11)',"#","Name","m (g)","Chrg","x"
+    do i=1,size(x)
+      print '(I4,a10,E11.3,I5,E11.3)',i," "//names(i),masses(i),charges(i),x(i)
+    end do
+    print '(a30,E11.3)'," sum",sum(x)
+
+    print '(a14,E11.3)',"Tgas",Tgas
+  end subroutine krome_get_info
+
+  !*****************************
+  subroutine krome_set_mpi_rank(xarg)
+    use krome_commons
+    implicit none
+    integer :: xarg
+    krome_mpi_rank=xarg
+  end subroutine krome_set_mpi_rank
+
+  !**************************
+  function krome_get_jacobian(j,x,Tgas)
+    use krome_ode
+    use krome_commons
+    implicit none
+    integer, value :: j
+    real*8,value :: Tgas
+    real*8 :: x(nmols),krome_get_jacobian(nspec)
+    integer::ian, jan, i
+    real*8::tt, n(nspec)
+    real*8::pdj(nspec)
+
+    n(:) = 0d0
+    n(1:nmols) = x(:)
+    n(idx_Tgas) = tgas
+
+    tt = 0d0
+    ian = 0
+    jan = 0
+
+    call jes(nspec, tt, n, j, ian, jan, pdj)
+    krome_get_jacobian(:) = pdj(:)
+
+  end function krome_get_jacobian
 
 end module krome_user
 
@@ -6776,551 +6412,550 @@ end module krome_user
 module krome_reduction
 contains
 
-!**************************
-function fex_check(n,Tgas)
-use krome_commons
-use krome_tabs
-implicit none
-integer::i
-integer::r1,r2
-real*8::fex_check,n(nspec),k(nrea),rrmax,Tgas
+  !**************************
+  function fex_check(n,Tgas)
+    use krome_commons
+    use krome_tabs
+    implicit none
+    integer::i
+    integer::r1,r2
+    real*8::fex_check,n(nspec),k(nrea),rrmax,Tgas
 
-k(:) = coe_tab(n(:))
-rrmax = 0.d0
-n(idx_dummy) = 1.d0
-n(idx_g) = 1.d0
-n(idx_CR) = 1.d0
-do i=1,nrea
-r1 = arr_r1(i)
-r2 = arr_r2(i)
-arr_flux(i) = k(i)*n(r1)*n(r2)
-rrmax = max(rrmax, arr_flux(i))
-end do
-fex_check = rrmax
+    k(:) = coe_tab(n(:))
+    rrmax = 0.d0
+    n(idx_dummy) = 1.d0
+    n(idx_g) = 1.d0
+    n(idx_CR) = 1.d0
+    do i=1,nrea
+      r1 = arr_r1(i)
+      r2 = arr_r2(i)
+      arr_flux(i) = k(i)*n(r1)*n(r2)
+      rrmax = max(rrmax, arr_flux(i))
+    end do
+    fex_check = rrmax
 
-end function fex_check
+  end function fex_check
 
 end module krome_reduction
 
 !############### MODULE ##############
 module krome_main
 
-integer::krome_call_to_fex
-!$omp threadprivate(krome_call_to_fex)
+  integer::krome_call_to_fex
+  !$omp threadprivate(krome_call_to_fex)
 
 contains
 
-! *************************************************************
-!  This file has been generated with:
-!  KROME 14.08.dev on 2026-01-12 13:41:08
-!  Changeset cd85309
-!  see http://kromepackage.org
-!
-!  Written and developed by Tommaso Grassi and Stefano Bovino
-!
-!  Contributors:
-!  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
-!  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
-!  E.Tognelli
-!  KROME is provided "as it is", without any warranty.
-! *************************************************************
+  ! *************************************************************
+  !  This file has been generated with:
+  !  KROME 14.08.dev on 2026-02-05 08:53:42
+  !  Changeset cd85309
+  !  see http://kromepackage.org
+  !
+  !  Written and developed by Tommaso Grassi and Stefano Bovino
+  !
+  !  Contributors:
+  !  J.Boulangier, T.Frostholm, D.Galli, F.A.Gianturco, T.Haugboelle,
+  !  A.Lupi, J.Prieto, J.Ramsey, D.R.G.Schleicher, D.Seifried, E.Simoncini,
+  !  E.Tognelli
+  !  KROME is provided "as it is", without any warranty.
+  ! *************************************************************
 
-!*******************************
-!KROME main (interface to the solver library)
+  !*******************************
+  !KROME main (interface to the solver library)
 
-subroutine krome(x,Tgas,dt  )
-use krome_commons
-use krome_subs
-use krome_ode
-use krome_reduction
-use krome_dust
-use krome_getphys
-use krome_tabs
-implicit none
-real*8 :: Tgas,dt
-real*8 :: x(nmols)
-real*8 :: rhogas
+  subroutine krome(x,Tgas,dt  )
+    use krome_commons
+    use krome_subs
+    use krome_ode
+    use krome_reduction
+    use krome_dust
+    use krome_getphys
+    use krome_tabs
+    implicit none
+    real*8 :: Tgas,dt
+    real*8 :: x(nmols)
+    real*8 :: rhogas
 
-real*8::mass(nspec),n(nspec),tloc,xin
-real*8::rrmax,totmass,n_old(nspec),ni(nspec),invTdust(ndust)
-integer::icount,i,icount_max
-integer:: ierr
+    real*8::mass(nspec),n(nspec),tloc,xin
+    real*8::rrmax,totmass,n_old(nspec),ni(nspec),invTdust(ndust)
+    integer::icount,i,icount_max
+    integer:: ierr
 
-!DLSODES variables
-integer,parameter::meth=2 !1=adam, 2=BDF
-integer::neq(1),itol,itask,istate,iopt,lrw,liw,mf
-integer::iwork(47)
-real*8::atol(nspec),rtol(nspec)
-real*8::rwork(247)
-logical::got_error,equil
+    !DLSODES variables
+    integer,parameter::meth=2 !1=adam, 2=BDF
+    integer::neq(1),itol,itask,istate,iopt,lrw,liw,mf
+    integer::iwork(131)
+    real*8::atol(nspec),rtol(nspec)
+    real*8::rwork(555)
+    logical::got_error,equil
 
-!****************************
-!init DLSODES (see DLSODES manual)
-call XSETF(0)!toggle solver verbosity
-got_error = .false.
-neq = nspec !number of eqns
-liw = size(iwork)
-lrw = size(rwork)
-iwork(:) = 0
-rwork(:) = 0d0
-itol = 4 !both tolerances are scalar
-rtol(:) = 1.000000d-04 !relative tolerance
-atol(:) = 1.000000d-10 !absolute tolerance
-icount_max = 100 !maximum number of iterations
+    !****************************
+    !init DLSODES (see DLSODES manual)
+    call XSETF(0)!toggle solver verbosity
+    got_error = .false.
+    neq = nspec !number of eqns
+    liw = size(iwork)
+    lrw = size(rwork)
+    iwork(:) = 0
+    rwork(:) = 0d0
+    itol = 4 !both tolerances are scalar
+    rtol(:) = 1.000000d-04 !relative tolerance
+    atol(:) = 1.000000d-10 !absolute tolerance
+    icount_max = 100 !maximum number of iterations
 
-itask = 1
-iopt = 0
+    itask = 1
+    iopt = 0
 
-!MF=
-!  = 222 internal-generated JAC and sparsity
-!  = 121 user-provided JAC and internal generated sparsity
-!  =  22 internal-generated JAC but sparsity user-provided
-!  =  21 user-provided JAC and sparsity
-MF = 222
-!end init DLSODES
-!****************************
+    !MF=
+    !  = 222 internal-generated JAC and sparsity
+    !  = 121 user-provided JAC and internal generated sparsity
+    !  =  22 internal-generated JAC but sparsity user-provided
+    !  =  21 user-provided JAC and sparsity
+    MF = 222
+    !end init DLSODES
+    !****************************
 
-ierr = 0 !error flag, zero==OK!
-n(:) = 0d0 !initialize densities
+    ierr = 0 !error flag, zero==OK!
+    n(:) = 0d0 !initialize densities
 
-n(1:nmols) = x(:)
+    n(1:nmols) = x(:)
 
-n(idx_Tgas) = Tgas !put temperature in the input array
+    n(idx_Tgas) = Tgas !put temperature in the input array
 
-icount = 0 !count solver iterations
-istate = 1 !init solver state
-tloc = 0.d0 !set starting time
+    icount = 0 !count solver iterations
+    istate = 1 !init solver state
+    tloc = 0.d0 !set starting time
 
-!store initial values
-ni(:) = n(:)
-n_global(:) = n(:)
+    !store initial values
+    ni(:) = n(:)
+    n_global(:) = n(:)
 
-n_old(:) = -1d99
-krome_call_to_fex = 0
-do
-icount = icount + 1
-!solve ODE
-CALL DLSODES(fex, NEQ(:), n(:), tloc, dt, &
-    ITOL, RTOL, ATOL, ITASK, ISTATE, IOPT, RWORK, LRW, IWORK, &
-    LIW, JES, MF)
+    n_old(:) = -1d99
+    krome_call_to_fex = 0
+    do
+      icount = icount + 1
+      !solve ODE
+      CALL DLSODES(fex, NEQ(:), n(:), tloc, dt, &
+          ITOL, RTOL, ATOL, ITASK, ISTATE, IOPT, RWORK, LRW, IWORK, &
+          LIW, JES, MF)
 
-krome_call_to_fex = krome_call_to_fex + IWORK(12)
-!check DLSODES exit status
-if(istate==2) then
-exit !sucsessful integration
-elseif(istate==-1) then
-istate = 1 !exceeded internal max iterations
-elseif(istate==-5 .or. istate==-4) then
-istate = 3 !wrong sparsity recompute
-elseif(istate==-3) then
-n(:) = ni(:)
-istate = 1
-else
-got_error = .true.
-end if
+      krome_call_to_fex = krome_call_to_fex + IWORK(12)
+      !check DLSODES exit status
+      if(istate==2) then
+        exit !sucsessful integration
+      elseif(istate==-1) then
+        istate = 1 !exceeded internal max iterations
+      elseif(istate==-5 .or. istate==-4) then
+        istate = 3 !wrong sparsity recompute
+      elseif(istate==-3) then
+        n(:) = ni(:)
+        istate = 1
+      else
+        got_error = .true.
+      end if
 
-if(got_error.or.icount>icount_max) then
-if (krome_mpi_rank>0) then
-  print *,krome_mpi_rank,"ERROR: wrong solver exit status!"
-  print *,krome_mpi_rank,"istate:",istate
-  print *,krome_mpi_rank,"iter count:",icount
-  print *,krome_mpi_rank,"max iter count:",icount_max
-  print *,krome_mpi_rank,"SEE KROME_ERROR_REPORT file"
-else
-  print *,"ERROR: wrong solver exit status!"
-  print *,"istate:",istate
-  print *,"iter count:",icount
-  print *,"max iter count:",icount_max
-  print *,"SEE KROME_ERROR_REPORT file"
-end if
-call krome_dump(n(:), rwork(:), iwork(:), ni(:))
-stop
-end if
+      if(got_error.or.icount>icount_max) then
+        if (krome_mpi_rank>0) then
+          print *,krome_mpi_rank,"ERROR: wrong solver exit status!"
+          print *,krome_mpi_rank,"istate:",istate
+          print *,krome_mpi_rank,"iter count:",icount
+          print *,krome_mpi_rank,"max iter count:",icount_max
+          print *,krome_mpi_rank,"SEE KROME_ERROR_REPORT file"
+        else
+          print *,"ERROR: wrong solver exit status!"
+          print *,"istate:",istate
+          print *,"iter count:",icount
+          print *,"max iter count:",icount_max
+          print *,"SEE KROME_ERROR_REPORT file"
+        end if
+        call krome_dump(n(:), rwork(:), iwork(:), ni(:))
+        stop
+      end if
 
-end do
+    end do
 
-!avoid negative species
-do i=1,nspec
-n(i) = max(n(i),0d0)
-end do
+    !avoid negative species
+    do i=1,nspec
+      n(i) = max(n(i),0d0)
+    end do
 
-!returns to user array
-x(:) = n(1:nmols)
+    !returns to user array
+    x(:) = n(1:nmols)
 
-Tgas = n(idx_Tgas) !get new temperature
+    Tgas = n(idx_Tgas) !get new temperature
 
-end subroutine krome
+  end subroutine krome
 
-!*********************************
-!integrates to equilibrium using constant temperature
-subroutine krome_equilibrium(x,Tgas,verbosity)
-use krome_ode
-use krome_subs
-use krome_commons
-use krome_constants
-use krome_getphys
-use krome_tabs
-implicit none
-integer::mf,liw,lrw,itol,meth,iopt,itask,istate,neq(1)
-integer::i,imax
-integer,optional::verbosity
-integer::verbose
-real*8 :: Tgas
-real*8 :: x(nmols)
-real*8 :: rhogas
-real*8::tloc,n(nspec),mass(nspec),ni(nspec)
-real*8::dt,xin
-integer::iwork(47)
-real*8::atol(nspec),rtol(nspec)
-real*8::rwork(247)
-real*8::ertol,eatol,max_time,t_tot,ntot_tol,err_species
-logical::converged
+  !*********************************
+  !integrates to equilibrium using constant temperature
+  subroutine krome_equilibrium(x,Tgas,verbosity)
+    use krome_ode
+    use krome_subs
+    use krome_commons
+    use krome_constants
+    use krome_getphys
+    use krome_tabs
+    implicit none
+    integer::mf,liw,lrw,itol,meth,iopt,itask,istate,neq(1)
+    integer::i,imax
+    integer,optional::verbosity
+    integer::verbose
+    real*8 :: Tgas
+    real*8 :: x(nmols)
+    real*8 :: rhogas
+    real*8::tloc,n(nspec),mass(nspec),ni(nspec)
+    real*8::dt,xin
+    integer::iwork(131)
+    real*8::atol(nspec),rtol(nspec)
+    real*8::rwork(555)
+    real*8::ertol,eatol,max_time,t_tot,ntot_tol,err_species
+    logical::converged
 
-integer, save :: ncall=0
-integer, parameter :: ncall_print_frequency=20000
-integer :: ncallp
-integer::charges(nspec)
-real*8::masses(nspec)
-character*16::names(nspec)
+    integer, save :: ncall=0
+    integer, parameter :: ncall_print_frequency=20000
+    integer :: ncallp
+    integer::charges(nspec)
+    real*8::masses(nspec)
+    character*16::names(nspec)
 
-!set verbosity from argument
-verbose = 1 !default is verbose
-if(present(verbosity)) verbose = verbosity
+    !set verbosity from argument
+    verbose = 1 !default is verbose
+    if(present(verbosity)) verbose = verbosity
 
-call XSETF(0)!toggle solver verbosity
-meth = 2
-neq = nspec !number of eqns
-liw = size(iwork)
-lrw = size(rwork)
-iwork(:) = 0
-rwork(:) = 0d0
-itol = 4 !both tolerances are scalar
-rtol(:) = 1d-6 !relative tolerance
-atol(:) = 1d-20 !absolute tolerance
+    call XSETF(0)!toggle solver verbosity
+    meth = 2
+    neq = nspec !number of eqns
+    liw = size(iwork)
+    lrw = size(rwork)
+    iwork(:) = 0
+    rwork(:) = 0d0
+    itol = 4 !both tolerances are scalar
+    rtol(:) = 1d-6 !relative tolerance
+    atol(:) = 1d-20 !absolute tolerance
 
-! Switches to decide when equilibrium has been reached
-ertol = 1d-5  ! relative min change in a species
-eatol = 1d-12 ! absolute min change in a species
-max_time=seconds_per_year*5d8 ! max time we will be integrating for
+    ! Switches to decide when equilibrium has been reached
+    ertol = 1d-5  ! relative min change in a species
+    eatol = 1d-12 ! absolute min change in a species
+    max_time=seconds_per_year*5d8 ! max time we will be integrating for
 
-!for DLSODES options see its manual
-iopt = 0
-itask = 1
-istate = 1
+    !for DLSODES options see its manual
+    iopt = 0
+    itask = 1
+    istate = 1
 
-mf = 222 !internally evaluated sparsity and jacobian
-tloc = 0d0 !initial time
+    mf = 222 !internally evaluated sparsity and jacobian
+    tloc = 0d0 !initial time
 
-n(:) = 0d0 !initialize densities
-!copy into array
-n(nmols+1:) = 0d0
-n(1:nmols) = x(:)
+    n(:) = 0d0 !initialize densities
+    !copy into array
+    n(nmols+1:) = 0d0
+    n(1:nmols) = x(:)
 
-n(idx_Tgas) = Tgas
+    n(idx_Tgas) = Tgas
 
-!store previous values
-ni(:) = n(:)
-n_global(:) = ni(:)
+    !store previous values
+    ni(:) = n(:)
+    n_global(:) = ni(:)
 
-imax = 1000
+    imax = 1000
 
-dt = seconds_per_year * 1d2
-t_tot = dt
-converged = .false.
-do while (.not. converged)
-do i=1,imax
-!solve ODE
-CALL DLSODES(fcn_tconst, NEQ(:), n(:), tloc, dt, ITOL, RTOL, ATOL,&
-    ITASK, ISTATE, IOPT, RWORK, LRW, IWORK, LIW, jcn_dummy, MF)
-if(istate==2) then
-  exit
-else
-  istate=1
-end if
-end do
-!check errors
-if(istate.ne.2) then
-print *,"ERROR: no equilibrium found!"
-stop
-end if
+    dt = seconds_per_year * 1d2
+    t_tot = dt
+    converged = .false.
+    do while (.not. converged)
+      do i=1,imax
+        !solve ODE
+        CALL DLSODES(fcn_tconst, NEQ(:), n(:), tloc, dt, ITOL, RTOL, ATOL,&
+            ITASK, ISTATE, IOPT, RWORK, LRW, IWORK, LIW, jcn_dummy, MF)
+        if(istate==2) then
+          exit
+        else
+          istate=1
+        end if
+      end do
+      !check errors
+      if(istate.ne.2) then
+        print *,"ERROR: no equilibrium found!"
+        stop
+      end if
 
-!avoid negative species
-do i=1,nspec
-n(i) = max(n(i),0d0)
-end do
+      !avoid negative species
+      do i=1,nspec
+        n(i) = max(n(i),0d0)
+      end do
 
-! check if we have converged by comparing the error in any species with an relative abundance above eatol
-converged = maxval(abs(n(1:nmols) - ni(1:nmols)) / max(n(1:nmols),eatol*sum(n(1:nmols)))) .lt. ertol &
-    .or. t_tot .gt. max_time
+      ! check if we have converged by comparing the error in any species with an relative abundance above eatol
+      converged = maxval(abs(n(1:nmols) - ni(1:nmols)) / max(n(1:nmols),eatol*sum(n(1:nmols)))) .lt. ertol &
+          .or. t_tot .gt. max_time
 
-! Increase integration time by a reasonable factor
-if(.not. converged) then
-dt = dt * 3.
-t_tot = t_tot + dt
-ni = n
-n_global = n
-endif
-enddo
-!returns to user array
-x(:) = n(1:nmols)
+      ! Increase integration time by a reasonable factor
+      if(.not. converged) then
+        dt = dt * 3.
+        t_tot = t_tot + dt
+        ni = n
+        n_global = n
+      endif
+    enddo
+    !returns to user array
+    x(:) = n(1:nmols)
 
-if(t_tot > max_time .and. &
-    maxval(abs(n(1:nmols) - ni(1:nmols)) / max(n(1:nmols),eatol*sum(n(1:nmols)))) > 0.2 .and. verbose>0) then
-print *, 'krome_equilibrium: Did not converge in ', max_time / seconds_per_year, ' years.'
-print *, 'Tgas :', Tgas
-names(:) = get_names()
-charges(:) = get_charges()
-masses(:) = get_mass()
+    if(t_tot > max_time .and. &
+        maxval(abs(n(1:nmols) - ni(1:nmols)) / max(n(1:nmols),eatol*sum(n(1:nmols)))) > 0.2 .and. verbose>0) then
+    print *, 'krome_equilibrium: Did not converge in ', max_time / seconds_per_year, ' years.'
+    print *, 'Tgas :', Tgas
+    names(:) = get_names()
+    charges(:) = get_charges()
+    masses(:) = get_mass()
 
-print '(a4,a10,a11,a5,a16)',"#","Name","m (g)","Chrg","  Current / Last"
-do i=1,nmols
-print '(I4,a10,E11.3,I5,2E14.6,E11.3)',i," "//names(i),masses(i),charges(i),n(i),ni(i),abs(n(i) - ni(i)) / max(n(i),eatol*sum(n(1:nmols)))
-end do
-print '(a30,2E14.6)'," sum",sum(n(1:nmols)),sum(ni(1:nmols))
-print *, 'Fractional error :', maxval(abs(n(1:nmols) - ni(1:nmols)) / max(n(1:nmols),eatol*sum(n(1:nmols))))
-print *, 'Absolute and relative floors:', eatol, ertol
-end if
+    print '(a4,a10,a11,a5,a16)',"#","Name","m (g)","Chrg","  Current / Last"
+    do i=1,nmols
+      print '(I4,a10,E11.3,I5,2E14.6,E11.3)',i," "//names(i),masses(i),charges(i),n(i),ni(i),abs(n(i) - ni(i)) / max(n(i),eatol*sum(n(1:nmols)))
+    end do
+    print '(a30,2E14.6)'," sum",sum(n(1:nmols)),sum(ni(1:nmols))
+    print *, 'Fractional error :', maxval(abs(n(1:nmols) - ni(1:nmols)) / max(n(1:nmols),eatol*sum(n(1:nmols))))
+    print *, 'Absolute and relative floors:', eatol, ertol
+  end if
 
-! Print info ever so often
-!$omp critical
-ncall=ncall+1
-ncallp = ncall
-!$omp end critical
+  ! Print info ever so often
+  !$omp critical
+  ncall=ncall+1
+  ncallp = ncall
+  !$omp end critical
 
-if(modulo(ncallp,ncall_print_frequency)==0 .and. verbose>0) then
-print *, 'Found equilibrium for ', ncallp, ' cells.'
-end if
+  if(modulo(ncallp,ncall_print_frequency)==0 .and. verbose>0) then
+    print *, 'Found equilibrium for ', ncallp, ' cells.'
+  end if
 
 end subroutine krome_equilibrium
 
 !********************
 !dummy jacobian
 subroutine jcn_dummy()
-implicit none
+  implicit none
 end subroutine jcn_dummy
 
 !*******************
 !dn/dt where dT/dt=0
 subroutine fcn_tconst(n,tt,x,f)
-use krome_commons
-use krome_ode
-implicit none
-integer::n,ierr
-real*8::x(n),f(n),tt
-call fex(n,tt,x(:),f(:))
-f(idx_Tgas) = 0d0
+  use krome_commons
+  use krome_ode
+  implicit none
+  integer::n,ierr
+  real*8::x(n),f(n),tt
+  call fex(n,tt,x(:),f(:))
+  f(idx_Tgas) = 0d0
 end subroutine fcn_tconst
 
 !*******************************
 subroutine krome_dump(n,rwork,iwork,ni)
-use krome_commons
-use krome_subs
-use krome_tabs
-use krome_reduction
-use krome_ode
-use krome_getphys
-integer::fnum,i,iwork(:),idx(nrea),j
-real*8::n(:),rwork(:),rrmax,k(nrea),kmax,rperc,kperc,dn(nspec),tt,ni(:)
-character*16::names(nspec),FMTi,FMTr
-character*50::rnames(nrea),fname,prex
-integer,save::mx_dump=1000 ! max nr of reports before terminating
-fnum = 99
-if (krome_mpi_rank>0) then
-write(fname,'(a,i5.5)') "KROME_ERROR_REPORT_",krome_mpi_rank
-else
-fname = "KROME_ERROR_REPORT"
-endif
-open(fnum,FILE=trim(fname),status="replace")
-tt = 0d0
-names(:) = get_names()
-rnames(:) = get_rnames()
-call fex(nspec,tt,n(:),dn(:))
+  use krome_commons
+  use krome_subs
+  use krome_tabs
+  use krome_reduction
+  use krome_ode
+  use krome_getphys
+  integer::fnum,i,iwork(:),idx(nrea),j
+  real*8::n(:),rwork(:),rrmax,k(nrea),kmax,rperc,kperc,dn(nspec),tt,ni(:)
+  character*16::names(nspec),FMTi,FMTr
+  character*50::rnames(nrea),fname,prex
+  integer,save::mx_dump=1000 ! max nr of reports before terminating
+  fnum = 99
+  if (krome_mpi_rank>0) then
+    write(fname,'(a,i5.5)') "KROME_ERROR_REPORT_",krome_mpi_rank
+  else
+    fname = "KROME_ERROR_REPORT"
+  endif
+  open(fnum,FILE=trim(fname),status="replace")
+  tt = 0d0
+  names(:) = get_names()
+  rnames(:) = get_rnames()
+  call fex(nspec,tt,n(:),dn(:))
 
-write(fnum,*) "KROME ERROR REPORT"
-write(fnum,*)
-!SPECIES
-write(fnum,*) "Species abundances"
-write(fnum,*) "**********************"
-write(fnum,'(a5,a20,3a12)') "#","name","qty","dn/dt","ninit"
-write(fnum,*) "**********************"
-do i=1,nspec
-write(fnum,'(I5,a20,3E12.3e3)') i,names(i),n(i),dn(i),ni(i)
-end do
-write(fnum,*) "**********************"
+  write(fnum,*) "KROME ERROR REPORT"
+  write(fnum,*)
+  !SPECIES
+  write(fnum,*) "Species abundances"
+  write(fnum,*) "**********************"
+  write(fnum,'(a5,a20,3a12)') "#","name","qty","dn/dt","ninit"
+  write(fnum,*) "**********************"
+  do i=1,nspec
+    write(fnum,'(I5,a20,3E12.3e3)') i,names(i),n(i),dn(i),ni(i)
+  end do
+  write(fnum,*) "**********************"
 
-!F90 FRIENDLY RESTART
-write(fnum,*)
-write(fnum,*) "**********************"
-write(fnum,*) "F90-friendly species"
-write(fnum,*) "**********************"
-do i=1,nspec
-write(prex,'(a,i3,a)') "x(",i,") = "
-write(fnum,*) trim(prex),ni(i),"!"//names(i)
-end do
+  !F90 FRIENDLY RESTART
+  write(fnum,*)
+  write(fnum,*) "**********************"
+  write(fnum,*) "F90-friendly species"
+  write(fnum,*) "**********************"
+  do i=1,nspec
+    write(prex,'(a,i3,a)') "x(",i,") = "
+    write(fnum,*) trim(prex),ni(i),"!"//names(i)
+  end do
 
-write(fnum,*) "**********************"
+  write(fnum,*) "**********************"
 
-!RATE COEFFIECIENTS
-k(:) = coe_tab(n(:))
-idx(:) = idx_sort(k(:))
-kmax = maxval(k)
-write(fnum,*)
-write(fnum,*) "Rate coefficients (sorted) at Tgas",n(idx_Tgas)
-write(fnum,*) "**********************"
-write(fnum,'(a5,2a12,a10)') "#","k","k %","  name"
-write(fnum,*) "**********************"
-do j=1,nrea
-i = idx(j)
-kperc = 0.d0
-if(kmax>0.d0) kperc = k(i)*1d2/kmax
-write(fnum,'(I5,2E12.3e3,a2,a50)') i,k(i),kperc,"  ", rnames(i)
-end do
-write(fnum,*) "**********************"
-write(fnum,*)
+  !RATE COEFFIECIENTS
+  k(:) = coe_tab(n(:))
+  idx(:) = idx_sort(k(:))
+  kmax = maxval(k)
+  write(fnum,*)
+  write(fnum,*) "Rate coefficients (sorted) at Tgas",n(idx_Tgas)
+  write(fnum,*) "**********************"
+  write(fnum,'(a5,2a12,a10)') "#","k","k %","  name"
+  write(fnum,*) "**********************"
+  do j=1,nrea
+    i = idx(j)
+    kperc = 0.d0
+    if(kmax>0.d0) kperc = k(i)*1d2/kmax
+    write(fnum,'(I5,2E12.3e3,a2,a50)') i,k(i),kperc,"  ", rnames(i)
+  end do
+  write(fnum,*) "**********************"
+  write(fnum,*)
 
-!FLUXES
-call load_arrays
-rrmax = fex_check(n(:), n(idx_Tgas))
-idx(:) = idx_sort(arr_flux(:))
-write(fnum,*)
-write(fnum,*) "Reaction magnitude (sorted) [k*n1*n2*n3*...]"
-write(fnum,*) "**********************"
-write(fnum,'(a5,2a12,a10)') "#","flux","flux %","  name"
-write(fnum,*) "**********************"
-do j=1,nrea
-i = idx(j)
-rperc = 0.d0
-if(rrmax>0.d0) rperc = arr_flux(i)*1d2/rrmax
-write(fnum,'(I5,2E12.3e3,a2,a50)') i,arr_flux(i),rperc,"  ",rnames(i)
-end do
-write(fnum,*) "**********************"
-write(fnum,*)
+  !FLUXES
+  call load_arrays
+  rrmax = fex_check(n(:), n(idx_Tgas))
+  idx(:) = idx_sort(arr_flux(:))
+  write(fnum,*)
+  write(fnum,*) "Reaction magnitude (sorted) [k*n1*n2*n3*...]"
+  write(fnum,*) "**********************"
+  write(fnum,'(a5,2a12,a10)') "#","flux","flux %","  name"
+  write(fnum,*) "**********************"
+  do j=1,nrea
+    i = idx(j)
+    rperc = 0.d0
+    if(rrmax>0.d0) rperc = arr_flux(i)*1d2/rrmax
+    write(fnum,'(I5,2E12.3e3,a2,a50)') i,arr_flux(i),rperc,"  ",rnames(i)
+  end do
+  write(fnum,*) "**********************"
+  write(fnum,*)
 
-!SOLVER
-FMTr = "(a30,E16.7e3)"
-FMTi = "(a30,I10)"
-write(fnum,*) "Solver-related information:"
-write(fnum,FMTr) "step size last",rwork(11)
-write(fnum,FMTr) "step size attempt",rwork(12)
-write(fnum,FMTr) "time current",rwork(13)
-write(fnum,FMTr) "tol scale factor",rwork(14)
-write(fnum,FMTi) "numeber of steps",iwork(11)
-write(fnum,FMTi) "call to fex",iwork(12)
-write(fnum,FMTi) "call to jex",iwork(13)
-write(fnum,FMTi) "last order used",iwork(14)
-write(fnum,FMTi) "order attempt",iwork(15)
-write(fnum,FMTi) "idx largest error",iwork(16)
-write(fnum,FMTi) "RWORK size required",iwork(17)
-write(fnum,FMTi) "IWORK size required",iwork(18)
-write(fnum,FMTi) "NNZ in Jac",iwork(19)
-write(fnum,FMTi) "extra fex to compute jac",iwork(20)
-write(fnum,FMTi) "number of LU decomp",iwork(21)
-write(fnum,FMTi) "base address in RWORK",iwork(22)
-write(fnum,FMTi) "base address of IAN",iwork(23)
-write(fnum,FMTi) "base address of JAN",iwork(24)
-write(fnum,FMTi) "NNZ in lower LU",iwork(25)
-write(fnum,FMTi) "NNZ in upper LU",iwork(21)
-write(fnum,*) "See DLSODES manual for further details on Optional Outputs"
-write(fnum,*)
-write(fnum,*) "END KROME ERROR REPORT"
-write(fnum,*)
-close(fnum)
+  !SOLVER
+  FMTr = "(a30,E16.7e3)"
+  FMTi = "(a30,I10)"
+  write(fnum,*) "Solver-related information:"
+  write(fnum,FMTr) "step size last",rwork(11)
+  write(fnum,FMTr) "step size attempt",rwork(12)
+  write(fnum,FMTr) "time current",rwork(13)
+  write(fnum,FMTr) "tol scale factor",rwork(14)
+  write(fnum,FMTi) "numeber of steps",iwork(11)
+  write(fnum,FMTi) "call to fex",iwork(12)
+  write(fnum,FMTi) "call to jex",iwork(13)
+  write(fnum,FMTi) "last order used",iwork(14)
+  write(fnum,FMTi) "order attempt",iwork(15)
+  write(fnum,FMTi) "idx largest error",iwork(16)
+  write(fnum,FMTi) "RWORK size required",iwork(17)
+  write(fnum,FMTi) "IWORK size required",iwork(18)
+  write(fnum,FMTi) "NNZ in Jac",iwork(19)
+  write(fnum,FMTi) "extra fex to compute jac",iwork(20)
+  write(fnum,FMTi) "number of LU decomp",iwork(21)
+  write(fnum,FMTi) "base address in RWORK",iwork(22)
+  write(fnum,FMTi) "base address of IAN",iwork(23)
+  write(fnum,FMTi) "base address of JAN",iwork(24)
+  write(fnum,FMTi) "NNZ in lower LU",iwork(25)
+  write(fnum,FMTi) "NNZ in upper LU",iwork(21)
+  write(fnum,*) "See DLSODES manual for further details on Optional Outputs"
+  write(fnum,*)
+  write(fnum,*) "END KROME ERROR REPORT"
+  write(fnum,*)
+  close(fnum)
 
-mx_dump = mx_dump - 1
-if (mx_dump==0) stop
+  mx_dump = mx_dump - 1
+  if (mx_dump==0) stop
 
 end subroutine krome_dump
 
 !********************************
 subroutine krome_init()
-use krome_commons
-use krome_tabs
-use krome_subs
-use krome_reduction
-use krome_dust
-use krome_cooling
-use krome_photo
-use krome_fit
-use krome_getphys
+  use krome_commons
+  use krome_tabs
+  use krome_subs
+  use krome_reduction
+  use krome_dust
+  use krome_cooling
+  use krome_photo
+  use krome_fit
+  use krome_getphys
 
-!init phys common variables
-!$omp parallel
-phys_Tcmb = 2.73d0
-phys_zredshift = 0d0
-phys_orthoParaRatio = 3d0
-phys_metallicity = 0d0
-phys_Tfloor = 2.73d0
-!$omp end parallel
+  !init phys common variables
+  !$omp parallel
+  phys_Tcmb = 2.73d0
+  phys_zredshift = 0d0
+  phys_orthoParaRatio = 3d0
+  phys_metallicity = 0d0
+  phys_Tfloor = 2.73d0
+  !$omp end parallel
 
-!init metallicity default
-!assuming solar
-total_Z = 1d0
+  !init metallicity default
+  !assuming solar
+  total_Z = 1d0
 
-!default D/D_sol = Z/Z_sol
-!assuming linear scaling
-dust2gas_ratio = total_Z
+  !default D/D_sol = Z/Z_sol
+  !assuming linear scaling
+  dust2gas_ratio = total_Z
 
-!default broadening turubulence velocity
-broadeningVturb2 = 0d0
+  !default broadening turubulence velocity
+  broadeningVturb2 = 0d0
 
-!default clumping factor for
-! H2 formation on dust by Jura/Gnedin
-clump_factor = 1d0
+  !default clumping factor for
+  ! H2 formation on dust by Jura/Gnedin
+  clump_factor = 1d0
 
-!default for thermo and chem toggle is ON
-!$omp parallel
-krome_thermo_toggle = 1
-krome_chemo_toggle = 1
-!$omp end parallel
+  !default for thermo and chem toggle is ON
+  !$omp parallel
+  krome_thermo_toggle = 1
+  krome_chemo_toggle = 1
+  !$omp end parallel
 
-!load arrays with ractants/products indexes
-call load_arrays()
+  !load arrays with ractants/products indexes
+  call load_arrays()
 
-!initialize the table for exp(-a/T) function
-call init_exp_table()
+  !initialize the table for exp(-a/T) function
+  call init_exp_table()
 
-call load_parts()
+  call load_parts()
 
-!init photo reactants indexes
-photoPartners(1) = idx_C
+  !init photo reactants indexes
 
-!get machine precision
-krome_epsilon = epsilon(0d0)
+  !get machine precision
+  krome_epsilon = epsilon(0d0)
 
-!load verbatim reactions
-call loadReactionsVerbatim()
+  !load verbatim reactions
+  call loadReactionsVerbatim()
 
 end subroutine krome_init
 
 !****************************
 function krome_get_coe(x,Tgas)
-!krome_get_coe: public interface to obtain rate coefficients
-use krome_commons
-use krome_subs
-use krome_tabs
-implicit none
-real*8 :: krome_get_coe(nrea), x(nmols), Tgas
-real*8::n(nspec)
+  !krome_get_coe: public interface to obtain rate coefficients
+  use krome_commons
+  use krome_subs
+  use krome_tabs
+  implicit none
+  real*8 :: krome_get_coe(nrea), x(nmols), Tgas
+  real*8::n(nspec)
 
-n(:) = 0d0
-n(1:nmols) = x(:)
-n(idx_Tgas) = Tgas
-krome_get_coe(:) = coe_tab(n(:))
+  n(:) = 0d0
+  n(1:nmols) = x(:)
+  n(idx_Tgas) = Tgas
+  krome_get_coe(:) = coe_tab(n(:))
 
 end function krome_get_coe
 
 !****************************
 function krome_get_coeT(Tgas)
-!krome_get_coeT: public interface to obtain rate coefficients
-! with argument Tgas only
-use krome_commons
-use krome_subs
-use krome_tabs
-implicit none
-real*8 :: krome_get_coeT(nrea),Tgas
-real*8::n(nspec)
-n(idx_Tgas) = Tgas
-krome_get_coeT(:) = coe_tab(n(:))
+  !krome_get_coeT: public interface to obtain rate coefficients
+  ! with argument Tgas only
+  use krome_commons
+  use krome_subs
+  use krome_tabs
+  implicit none
+  real*8 :: krome_get_coeT(nrea),Tgas
+  real*8::n(nspec)
+  n(idx_Tgas) = Tgas
+  krome_get_coeT(:) = coe_tab(n(:))
 end function krome_get_coeT
 
 end module krome_main

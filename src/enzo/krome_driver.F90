@@ -1,7 +1,9 @@
 !KROME_DRIVER
 
 subroutine krome_driver(d, e, ge, u, v, w, &
-      De, CI, CII,  in, jn, kn, imethod, &
+      De, HM, HI, HeI, &
+      H2I, HII, HeII, H2II, &
+      HeIII,  in, jn, kn, imethod, &
       idual, idim, &
       is, js, ks, ie, je, ke, &
       dt, aye, &
@@ -60,8 +62,14 @@ subroutine krome_driver(d, e, ge, u, v, w, &
   integer::i,j,k
 
   real*8::De(in,jn,kn)
-  real*8::CI(in,jn,kn)
-  real*8::CII(in,jn,kn)
+  real*8::HM(in,jn,kn)
+  real*8::HI(in,jn,kn)
+  real*8::HeI(in,jn,kn)
+  real*8::H2I(in,jn,kn)
+  real*8::HII(in,jn,kn)
+  real*8::HeII(in,jn,kn)
+  real*8::H2II(in,jn,kn)
+  real*8::HeIII(in,jn,kn)
 
   !******************************
 
@@ -79,13 +87,25 @@ subroutine krome_driver(d, e, ge, u, v, w, &
         d(i,j,k) = d(i,j,k) * factor
         !scale comoving->proper
         De(i,j,k) = De(i,j,k) * factor
-        CI(i,j,k) = CI(i,j,k) * factor
-        CII(i,j,k) = CII(i,j,k) * factor
+        HM(i,j,k) = HM(i,j,k) * factor
+        HI(i,j,k) = HI(i,j,k) * factor
+        HeI(i,j,k) = HeI(i,j,k) * factor
+        H2I(i,j,k) = H2I(i,j,k) * factor
+        HII(i,j,k) = HII(i,j,k) * factor
+        HeII(i,j,k) = HeII(i,j,k) * factor
+        H2II(i,j,k) = H2II(i,j,k) * factor
+        HeIII(i,j,k) = HeIII(i,j,k) * factor
 
         !mimimal value check
         De(i,j,k) = max(De(i,j,k), krome_tiny)
-        CI(i,j,k) = max(CI(i,j,k), krome_tiny)
-        CII(i,j,k) = max(CII(i,j,k), krome_tiny)
+        HM(i,j,k) = max(HM(i,j,k), krome_tiny)
+        HI(i,j,k) = max(HI(i,j,k), krome_tiny)
+        HeI(i,j,k) = max(HeI(i,j,k), krome_tiny)
+        H2I(i,j,k) = max(H2I(i,j,k), krome_tiny)
+        HII(i,j,k) = max(HII(i,j,k), krome_tiny)
+        HeII(i,j,k) = max(HeII(i,j,k), krome_tiny)
+        H2II(i,j,k) = max(H2II(i,j,k), krome_tiny)
+        HeIII(i,j,k) = max(HeIII(i,j,k), krome_tiny)
 
       end do
     end do
@@ -100,8 +120,14 @@ subroutine krome_driver(d, e, ge, u, v, w, &
 
         !convert to number densities
         krome_x(krome_idx_E) = De(i,j,k) * dom
-        krome_x(krome_idx_C) = CI(i,j,k) * dom * 0.08333333333333333d0
-        krome_x(krome_idx_Cj) = CII(i,j,k) * dom * 0.08333333333333333d0
+        krome_x(krome_idx_Hk) = HM(i,j,k) * dom
+        krome_x(krome_idx_H) = HI(i,j,k) * dom
+        krome_x(krome_idx_HE) = HeI(i,j,k) * dom * 0.25d0
+        krome_x(krome_idx_H2) = H2I(i,j,k) * dom * 0.5d0
+        krome_x(krome_idx_Hj) = HII(i,j,k) * dom
+        krome_x(krome_idx_HEj) = HeII(i,j,k) * dom * 0.25d0
+        krome_x(krome_idx_H2j) = H2II(i,j,k) * dom * 0.5d0
+        krome_x(krome_idx_HEjj) = HeIII(i,j,k) * dom * 0.25d0
 
         call evaluate_tgas(d(i,j,k), e(i,j,k), ge(i,j,k),&
             u(i,j,k), v(i,j,k), w(i,j,k),&
@@ -119,8 +145,14 @@ subroutine krome_driver(d, e, ge, u, v, w, &
         idom = 1.d0/dom
         !convert back to code units
         De(i,j,k) = krome_x(krome_idx_E) * idom
-        CI(i,j,k) = krome_x(krome_idx_C) * idom * 12d0
-        CII(i,j,k) = krome_x(krome_idx_Cj) * idom * 12d0
+        HM(i,j,k) = krome_x(krome_idx_Hk) * idom
+        HI(i,j,k) = krome_x(krome_idx_H) * idom
+        HeI(i,j,k) = krome_x(krome_idx_HE) * idom * 4d0
+        H2I(i,j,k) = krome_x(krome_idx_H2) * idom * 2d0
+        HII(i,j,k) = krome_x(krome_idx_Hj) * idom
+        HeII(i,j,k) = krome_x(krome_idx_HEj) * idom * 4d0
+        H2II(i,j,k) = krome_x(krome_idx_H2j) * idom * 2d0
+        HeIII(i,j,k) = krome_x(krome_idx_HEjj) * idom * 4d0
 
         !evaluate energy from temperature difference
         edot = (tgas - tgasold) * d(i,j,k) &
@@ -142,13 +174,25 @@ subroutine krome_driver(d, e, ge, u, v, w, &
         d(i,j,k) = d(i,j,k) * factor
         !scale comoving->proper
         De(i,j,k) = De(i,j,k) * factor
-        CI(i,j,k) = CI(i,j,k) * factor
-        CII(i,j,k) = CII(i,j,k) * factor
+        HM(i,j,k) = HM(i,j,k) * factor
+        HI(i,j,k) = HI(i,j,k) * factor
+        HeI(i,j,k) = HeI(i,j,k) * factor
+        H2I(i,j,k) = H2I(i,j,k) * factor
+        HII(i,j,k) = HII(i,j,k) * factor
+        HeII(i,j,k) = HeII(i,j,k) * factor
+        H2II(i,j,k) = H2II(i,j,k) * factor
+        HeIII(i,j,k) = HeIII(i,j,k) * factor
 
         !mimimal value check
         De(i,j,k) = max(De(i,j,k), krome_tiny)
-        CI(i,j,k) = max(CI(i,j,k), krome_tiny)
-        CII(i,j,k) = max(CII(i,j,k), krome_tiny)
+        HM(i,j,k) = max(HM(i,j,k), krome_tiny)
+        HI(i,j,k) = max(HI(i,j,k), krome_tiny)
+        HeI(i,j,k) = max(HeI(i,j,k), krome_tiny)
+        H2I(i,j,k) = max(H2I(i,j,k), krome_tiny)
+        HII(i,j,k) = max(HII(i,j,k), krome_tiny)
+        HeII(i,j,k) = max(HeII(i,j,k), krome_tiny)
+        H2II(i,j,k) = max(H2II(i,j,k), krome_tiny)
+        HeIII(i,j,k) = max(HeIII(i,j,k), krome_tiny)
 
       end do
     end do

@@ -28,7 +28,7 @@
 
 StochasticForcing Forcing;
 void MHDCTSetupFieldLabels();
-
+int ReadEquilibriumTable(char *name, FLOAT Time);
 int DrivenFlowInitialize(FILE *fptr, FILE *Outfptr, 
              HierarchyEntry &TopGrid, TopGridData &MetaData, 
              int SetBaryonFields)
@@ -151,6 +151,8 @@ int DrivenFlowInitialize(FILE *fptr, FILE *Outfptr,
       fprintf(stderr, "warning: the following parameter line was not interpreted:\n%s\n", line);
 
   }
+
+  ReadEquilibriumTable("equilibrium_table_60_030-Zsun.h5", MetaData.Time); 
 
 
   /* thermodynamic initial values */

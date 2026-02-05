@@ -25,6 +25,17 @@ int GetUnits(float *DensityUnits, float *LengthUnits,
               float *TemperatureUnits, float *TimeUnits,
               float *VelocityUnits, FLOAT *MassUnits, FLOAT Time);
 
+void setup_chem(float density, float temperature, int equilibrate,
+		float& DEdest, float&  HIdest, float& HIIdest,
+		float& HeIdest, float& HeIIdest, float& HeIIIdest,
+		float& HMdest, float& H2Idest, float& H2IIdest,
+		float& DIdest, float& DIIdest, float& HDIdest);
+
+double bilinear_interp(double x, double y, 
+                       double x1, double x2, double y1, double y2,
+                       double f_x1y1, double f_x1y2, 
+                       double f_x2y1, double f_x2y2);
+
 int grid::DrivenFlowInitializeGrid(float DrivenFlowDensity,
                    float DrivenFlowPressure, float DrivenFlowMagField, int SetBaryonFields)
 {
@@ -32,9 +43,9 @@ int grid::DrivenFlowInitializeGrid(float DrivenFlowDensity,
   int DeNum, HINum, HIINum, HeINum, HeIINum, HeIIINum, HMNum, H2INum,
     H2IINum, DINum, DIINum, HDINum, B1Num, B2Num, B3Num, PhiNum;
   int CMNum, OMNum, CINum, OINum, OHINum, COINum, CHINum, CH2INum, C2INum, HCOINum, H2OINum, O2INum, CO_TOTALINum, H2O_TOTALINum, CIINum, OIINum, HOCIINum, HCOIINum, H3IINum, CHIINum, CH2IINum, COIINum, CH3IINum, OHIINum, H2OIINum, H3OIINum, O2IINum;  
-
+  int DensNum; 
   NumberOfBaryonFields = 0;
-  FieldType[NumberOfBaryonFields++] = Density;
+  FieldType[DensNum = NumberOfBaryonFields++] = Density;
 
   int vel = NumberOfBaryonFields;
 
@@ -182,6 +193,34 @@ int grid::DrivenFlowInitializeGrid(float DrivenFlowDensity,
   if (EquationOfState == 0)
     for( int i = 0; i < size; i++)
       BaryonField[ietot][i] = Energy;
+float temperature = 1e5; 
+int EquilibrateChem = 1; 
+for(int n = 0; n < size; n++){
+	if(MultiSpecies){
+	  if (MultiSpecies == 3)
+	    setup_chem(BaryonField[DensNum][n], temperature, EquilibrateChem,
+		       BaryonField[DeNum][n], BaryonField[HINum][n], BaryonField[HIINum][n],
+		       BaryonField[HeINum][n], BaryonField[HeIINum][n], BaryonField[HeIIINum][n],
+		       BaryonField[HMNum][n], BaryonField[H2INum][n], BaryonField[H2IINum][n],
+		       BaryonField[DINum][n], BaryonField[DIINum][n], BaryonField[HDINum][n]);
+	  else if (MultiSpecies == 2) {
+	    float temp;
+	    setup_chem(BaryonField[DensNum][n], temperature, EquilibrateChem,
+		       BaryonField[DeNum][n], BaryonField[HINum][n], BaryonField[HIINum][n],
+		       BaryonField[HeINum][n], BaryonField[HeIINum][n], BaryonField[HeIIINum][n],
+		       BaryonField[HMNum][n], BaryonField[H2INum][n], BaryonField[H2IINum][n],
+		       temp, temp, temp);
+	  }
+	  else {
+	    float temp;
+	    setup_chem(BaryonField[DensNum][n], temperature, EquilibrateChem,
+		       BaryonField[DeNum][n], BaryonField[HINum][n], BaryonField[HIINum][n],
+		       BaryonField[HeINum][n], BaryonField[HeIINum][n], BaryonField[HeIIINum][n],
+		       temp, temp, temp,
+		       temp, temp, temp);
+	  }
+	} // if(MultiSpecies)
+}
 
   return SUCCESS;
 }
