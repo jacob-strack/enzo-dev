@@ -88,9 +88,50 @@ int TurbulenceSimulationInitialize(FILE *fptr, FILE *Outfptr,
   char *Drive2Name = "DrivingField2";
   char *Drive3Name = "DrivingField3";
   char *GravPotName = "GravPotential";
+  char *ElectronName = "Electron_Density";
+  char *HIName    = "HI_Density";
+  char *HIIName   = "HII_Density";
+  char *HeIName   = "HeI_Density";
+  char *HeIIName  = "HeII_Density";
+  char *HeIIIName = "HeIII_Density";
+  char *HMName    = "HM_Density";
+  char *H2IName   = "H2I_Density";
+  char *H2IIName  = "H2II_Density";
+  char *DIName    = "DI_Density";
+  char *DIIName   = "DII_Density";
+  char *HDIName   = "HDI_Density";
+  char *MetalName   = "Metal_Density";
+  char *MetalIaName = "MetalSNIa_Density";
+  char *CMName = "CMDensity"; 
+  char *OMName = "OMDensity"; 
+  char *CIName = "CIDensity"; 
+  char *OIName = "OIDensity"; 
+  char *OHIName = "OHIDensity"; 
+  char *COIName = "COIDensity"; 
+  char *CHIName = "CHIDensity"; 
+  char *CH2IName = "CH2IDensity"; 
+  char *C2IName = "C2IDensity"; 
+  char *HCOIName = "HCOIDensity"; 
+  char *H2OIName = "H2O0IDensity"; 
+  char *O2IName = "O2IDensity"; 
+  char *CO_TOTALIName = "CO_TOTALIDensity"; 
+  char *H2O_TOTALIName = "H2O_TOTALIDensity"; 
+  char *CIIName = "CIIDensity"; 
+  char *OIIName = "OIIDensity"; 
+  char *HOCIIName = "HOCIIDensity";
+  char *HCOIIName = "HCOIIDensity"; 
+  char *H3IIName = "H3IIDensity"; 
+  char *CHIIName = "CHIIDensity"; 
+  char *CH2IIName = "CH2IIDensity"; 
+  char *COIIName = "COIIDensity"; 
+  char *CH3IIName = "CH3IIDensity"; 
+  char *OHIIName = "OHIIDensity"; 
+  char *H2OIIName = "H2OIIDensity"; 
+  char *H3OIIName = "H3OIIDensity"; 
+  char *O2IIName = "O2IIDensity"; 
  
   /* declarations */
- 
+  printf("DORK");  
   char line[MAX_LINE_LENGTH];
   int i, j, dim, gridnum, ret, SubgridsAreStatic, region;
   HierarchyEntry *Subgrid;
@@ -191,7 +232,8 @@ int TurbulenceSimulationInitialize(FILE *fptr, FILE *Outfptr,
                   &TurbulenceSimulationNumberOfInitialGrids);
     ret += sscanf(line, "TurbulenceSimulationSubgridsAreStatic = %"ISYM,
                   &TurbulenceSimulationSubgridsAreStatic);
- 
+    ret += sscanf(line, "use_krome = %"ISYM, &use_krome);  
+    ret += sscanf(line, "TurbulenceSimulationEnzoVersion		       = %"ISYM, &Enzo_Version); //added int value to specify which version of enzo to use 
     if (sscanf(line, "TurbulenceSimulationGridLeftEdge[%"ISYM"]", &gridnum) > 0)
       ret += sscanf(line, "TurbulenceSimulationGridLeftEdge[%"ISYM"] = %"PSYM" %"PSYM" %"PSYM,
                     &gridnum, &TurbulenceSimulationGridLeftEdge[gridnum][0],
@@ -236,6 +278,7 @@ int TurbulenceSimulationInitialize(FILE *fptr, FILE *Outfptr,
    "warning: the following parameter line was not interpreted:\n%s\n", line);
  
   }
+  printf("use_krome %d", use_krome); 
  
   /* More error checking. */
   /* dcc removed in favor of in house generation.
@@ -321,7 +364,9 @@ int TurbulenceSimulationInitialize(FILE *fptr, FILE *Outfptr,
   }
  
   /* Initialize the root grid by reading in data. */
- 
+
+  //printf("\n GridLevel %d \n", TurbulenceSimulationGridLevel[gridnum]);
+  //std::cout.flush(); 
   int TotalRefinement = nint(POW(FLOAT(RefineBy),
                                    TurbulenceSimulationGridLevel[gridnum]));
   if (GridsList->GridData->TurbulenceSimulationInitializeGrid(
@@ -368,6 +413,55 @@ int TurbulenceSimulationInitialize(FILE *fptr, FILE *Outfptr,
   if(WritePotential)
       DataLabel[i++] = GravPotName;
 
+if(Enzo_Version == 2){ 
+ if (MultiSpecies) {
+   DataLabel[i++] = ElectronName;
+   DataLabel[i++] = HIName;
+   DataLabel[i++] = HIIName;
+   DataLabel[i++] = HeIName;
+   DataLabel[i++] = HeIIName;
+   DataLabel[i++] = HeIIIName;
+   if (MultiSpecies > 1) {
+     DataLabel[i++] = HMName;
+     DataLabel[i++] = H2IName;
+     DataLabel[i++] = H2IIName;
+   }
+   if (MultiSpecies > 2) {
+     DataLabel[i++] = DIName;
+     DataLabel[i++] = DIIName;
+     DataLabel[i++] = HDIName;
+   }
+   /*
+   DataLabel[i++] = CMName;  
+   DataLabel[i++] = OMName; 
+   DataLabel[i++] = CIName; 
+   DataLabel[i++] = OIName; 
+   DataLabel[i++] = OHIName; 
+   DataLabel[i++] = COIName; 
+   DataLabel[i++] = CHIName; 
+   DataLabel[i++] = CH2IName; 
+   DataLabel[i++] = C2IName; 
+   DataLabel[i++] = HCOIName; 
+   DataLabel[i++] = H2OIName; 
+   DataLabel[i++] = O2IName; 
+   DataLabel[i++] = CO_TOTALIName; 
+   DataLabel[i++] = H2O_TOTALIName; 
+   DataLabel[i++] = CIIName; 
+   DataLabel[i++] = OIIName; 
+   DataLabel[i++] = HOCIIName; 
+   DataLabel[i++] = HCOIIName; 
+   DataLabel[i++] = H3IIName; 
+   DataLabel[i++] = CHIIName; 
+   DataLabel[i++] = CH2IIName; 
+   DataLabel[i++] = COIIName; 
+   DataLabel[i++] = CH3IIName; 
+   DataLabel[i++] = OHIIName; 
+   DataLabel[i++] = H2OIIName; 
+   DataLabel[i++] = H3OIIName; 
+   DataLabel[i++] = O2IIName; 
+   */
+ }
+}
   for (j = 0; j < i; j++)
     DataUnits[j] = NULL;
  
@@ -515,7 +609,6 @@ int TurbulenceSimulationReInitialize(HierarchyEntry *TopGrid,
  
   HierarchyEntry *Temp = TopGrid;
   while (Temp != NULL) {
- 
     if (Temp->GridData->TurbulenceSimulationInitializeGrid(
 		        TurbulenceSimulationInitialDensity,
 			TurbulenceSimulationInitialDensityPerturbationAmplitude,

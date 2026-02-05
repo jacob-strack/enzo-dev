@@ -57,6 +57,21 @@ void my_exit(int status);
 int ReadFile(char *name, int Rank, int Dim[], int StartIndex[],
                   int EndIndex[], int BufferOffset[], float *buffer,
                   inits_type **tempbuffer, int Part, int Npart);
+
+int GetUnits(float *DensityUnits, float *LengthUnits,
+             float *TemperatureUnits, float *TimeUnits,
+             float *VelocityUnits, FLOAT Time);
+
+void setup_chem(float density, float temperature, int equilibrate,
+		float& DEdest, float&  HIdest, float& HIIdest,
+		float& HeIdest, float& HeIIdest, float& HeIIIdest,
+		float& HMdest, float& H2Idest, float& H2IIdest,
+		float& DIdest, float& DIIdest, float& HDIdest);
+
+double bilinear_interp(double x, double y, 
+                       double x1, double x2, double y1, double y2,
+                       double f_x1y1, double f_x1y2, 
+                       double f_x2y1, double f_x2y2);
  
 int grid::TurbulenceSimulationInitializeGrid(
                           float TurbulenceSimulationInitialDensity,
@@ -76,14 +91,24 @@ int grid::TurbulenceSimulationInitializeGrid(
 {
  
   /* declarations */
+  printf("Grid_TurbInit \n");  
  
   int idim, dim, i, j, vel, ibx;
-  int DeNum;
+  int DeNum, HINum, HIINum, HeINum, HeIINum, HeIIINum, HMNum, H2INum,
+    H2IINum, DINum, DIINum, HDINum, B1Num, B2Num, B3Num, PhiNum;
+  int CMNum, OMNum, CINum, OINum, OHINum, COINum, CHINum, CH2INum, C2INum, HCOINum, H2OINum, O2INum, CO_TOTALINum, H2O_TOTALINum, CIINum, OIINum, HOCIINum, HCOIINum, H3IINum, CHIINum, CH2IINum, COIINum, CH3IINum, OHIINum, H2OIINum, H3OIINum, O2IINum;  
  
+  float DensityUnits=1, LengthUnits=1, VelocityUnits=1, TimeUnits=1,
+    TemperatureUnits=1;
+  double MassUnits=1;
+
+  if (GetUnits(&DensityUnits, &LengthUnits, &TemperatureUnits,
+         &TimeUnits, &VelocityUnits, Time) == FAIL) {
+    ENZO_FAIL("Error in GetUnits.");
+  }
   int ExtraField[2];
  
   inits_type *tempbuffer = NULL;
- 
   FILE *log_fptr;
  
 #ifdef IO_LOG
@@ -121,7 +146,6 @@ int grid::TurbulenceSimulationInitializeGrid(
  
   if (ParallelRootGridIO == TRUE && TotalRefinement == 1)
     ReadData = FALSE;
- 
   if (io_log) fprintf(log_fptr, "ReadData = %"ISYM"\n", ReadData);
  
   /* Calculate buffer Offset (same as Grid unless doing ParallelRootGridIO
@@ -171,6 +195,53 @@ int grid::TurbulenceSimulationInitializeGrid(
   if( WritePotential )
       FieldType[NumberOfBaryonFields++] = GravPotential; 
  
+  if (MultiSpecies) {
+    FieldType[DeNum    = NumberOfBaryonFields++] = ElectronDensity;
+    FieldType[HINum    = NumberOfBaryonFields++] = HIDensity;
+    FieldType[HIINum   = NumberOfBaryonFields++] = HIIDensity;
+    FieldType[HeINum   = NumberOfBaryonFields++] = HeIDensity;
+    FieldType[HeIINum  = NumberOfBaryonFields++] = HeIIDensity;
+    FieldType[HeIIINum = NumberOfBaryonFields++] = HeIIIDensity;
+    if (MultiSpecies > 1) {
+      FieldType[HMNum    = NumberOfBaryonFields++] = HMDensity;
+      FieldType[H2INum   = NumberOfBaryonFields++] = H2IDensity;
+      FieldType[H2IINum  = NumberOfBaryonFields++] = H2IIDensity;
+    }
+    if (MultiSpecies > 2) {
+      FieldType[DINum   = NumberOfBaryonFields++] = DIDensity;
+      FieldType[DIINum  = NumberOfBaryonFields++] = DIIDensity;
+      FieldType[HDINum  = NumberOfBaryonFields++] = HDIDensity;
+    }
+   /* 
+    FieldType[CMNum = NumberOfBaryonFields++] = CMDensity;
+    FieldType[OMNum = NumberOfBaryonFields++] = OMDensity;
+    FieldType[CINum = NumberOfBaryonFields++] = CIDensity; 
+    FieldType[OINum = NumberOfBaryonFields++] = OIDensity; 
+    FieldType[OHINum = NumberOfBaryonFields++] = OHIDensity; 
+    FieldType[COINum = NumberOfBaryonFields++] = COIDensity; 
+    FieldType[CHINum = NumberOfBaryonFields++] = CHIDensity; 
+    FieldType[CH2INum = NumberOfBaryonFields++] = CH2IDensity; 
+    FieldType[C2INum = NumberOfBaryonFields++] = C2IDensity; 
+    FieldType[HCOINum = NumberOfBaryonFields++] = HCOIDensity; 
+    FieldType[H2OINum = NumberOfBaryonFields++] = H2OIDensity;
+    FieldType[O2INum = NumberOfBaryonFields++] = O2IDensity;
+    FieldType[CO_TOTALINum = NumberOfBaryonFields++] = CO_TOTALIDensity; 
+    FieldType[H2O_TOTALINum = NumberOfBaryonFields++] = H2O_TOTALIDensity;
+    FieldType[CIINum = NumberOfBaryonFields++] = CIIDensity; 
+    FieldType[OIINum = NumberOfBaryonFields++] = OIIDensity; 
+    FieldType[HOCIINum = NumberOfBaryonFields++] = HOCIIDensity;
+    FieldType[HCOIINum = NumberOfBaryonFields++] = HCOIIDensity;
+    FieldType[H3IINum = NumberOfBaryonFields++] = H3IIDensity; 
+    FieldType[CHIINum = NumberOfBaryonFields++] = CHIIDensity; 
+    FieldType[CH2IINum = NumberOfBaryonFields++] = CH2IIDensity; 
+    FieldType[COIINum = NumberOfBaryonFields++] = COIIDensity;
+    FieldType[CH3IINum = NumberOfBaryonFields++] = CH3IIDensity; 
+    FieldType[OHIINum = NumberOfBaryonFields++] = OHIIDensity; 
+    FieldType[H2OIINum = NumberOfBaryonFields++] = H2OIIDensity; 
+    FieldType[H3OIINum = NumberOfBaryonFields++] = H3OIIDensity; 
+    FieldType[O2IINum = NumberOfBaryonFields++] = O2IIDensity;
+  */
+    }
   /* Set the subgrid static flag. */
  
   SubgridsAreStatic = TurbulenceSimulationSubgridsAreStatic;
@@ -180,7 +251,7 @@ int grid::TurbulenceSimulationInitializeGrid(
   if (ProcessorNumber == MyProcessorNumber) {
  
   /* Skip following if NumberOfBaryonFields == 0. */
- 
+  std::cout << "in initializer" << std::endl; 
   if (NumberOfBaryonFields > 0) {
 
       int DensNum = -1, GENum = -1, Vel1Num = -1, 
@@ -333,7 +404,7 @@ int grid::TurbulenceSimulationInitializeGrid(
   }
  
    /* If they were not read in above, set the total & gas energy fields now. */
- 
+  std::cout << "chk 1 " << ReadData << std::endl;  
   if (ReadData) {
     if (TurbulenceSimulationDensityName == NULL)
       for (i = 0; i < size; i++){
@@ -371,7 +442,35 @@ int grid::TurbulenceSimulationInitializeGrid(
           for(i=0;i<size;i++)
             BaryonField[1][i] /= (BaryonField[0][i]*(Gamma -1));
       }
-    
+      float temperature = 1e5; //K, maybe needs to be code units
+      int EquilibrateChem = 1; 
+	if(MultiSpecies){
+	  if (MultiSpecies == 3)
+	    setup_chem(BaryonField[DensNum][i], temperature, EquilibrateChem,
+		       BaryonField[DeNum][i], BaryonField[HINum][i], BaryonField[HIINum][i],
+		       BaryonField[HeINum][i], BaryonField[HeIINum][i], BaryonField[HeIIINum][i],
+		       BaryonField[HMNum][i], BaryonField[H2INum][i], BaryonField[H2IINum][i],
+		       BaryonField[DINum][i], BaryonField[DIINum][i], BaryonField[HDINum][i]);
+	  else if (MultiSpecies == 2) {
+	    float temp;
+	    setup_chem(BaryonField[DensNum][i], temperature, EquilibrateChem,
+		       BaryonField[DeNum][i], BaryonField[HINum][i], BaryonField[HIINum][i],
+		       BaryonField[HeINum][i], BaryonField[HeIINum][i], BaryonField[HeIIINum][i],
+		       BaryonField[HMNum][i], BaryonField[H2INum][i], BaryonField[H2IINum][i],
+		       temp, temp, temp);
+	  }
+	  else {
+	    float temp;
+	    setup_chem(BaryonField[DensNum][i], temperature, EquilibrateChem,
+		       BaryonField[DeNum][i], BaryonField[HINum][i], BaryonField[HIINum][i],
+		       BaryonField[HeINum][i], BaryonField[HeIINum][i], BaryonField[HeIIINum][i],
+		       temp, temp, temp,
+		       temp, temp, temp);
+	  }
+	} // if(MultiSpecies)
+	
+  
+  
     if (TurbulenceSimulationTotalEnergyName == NULL && TurbulenceSimulationGasPressureName == NULL){
         if( TurbulenceSimulationInitialTemperature != FLOAT_UNDEFINED ){
             for (i = 0; i < size; i++)
@@ -418,7 +517,7 @@ int grid::TurbulenceSimulationInitializeGrid(
   OldTime = Time;
  
   if (io_log) fclose(log_fptr);
-
  
   return SUCCESS;
 }
+
