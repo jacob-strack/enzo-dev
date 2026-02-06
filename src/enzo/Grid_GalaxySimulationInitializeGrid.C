@@ -199,6 +199,7 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
   int CMNum, OMNum, CINum, OINum, OHINum, COINum, CHINum, CH2INum, C2INum, HCOINum, H2OINum, O2INum, CO_TOTALINum, H2O_TOTALINum, CIINum, OIINum, HOCIINum, HCOIINum, H3IINum, CHIINum, CH2IINum, COIINum, CH3IINum, OHIINum, H2OIINum, H3OIINum, O2IINum;  
   float DiskDensity, DiskVelocityMag;
   int CRNum, DensNum;
+  int MassEnclosedNum; 
   /* global-scope variables for disk potential functions (would be better if not global) */
 
   gScaleHeightR = ScaleHeightR;
@@ -313,6 +314,7 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
     FieldType[H2OIINum = NumberOfBaryonFields++] = H2OIIDensity; 
     FieldType[H3OIINum = NumberOfBaryonFields++] = H3OIIDensity; 
     FieldType[O2IINum = NumberOfBaryonFields++] = O2IIDensity;
+    FieldType[MassEnclosedNum = NumberOfBaryonFields++] = MassEnclosed;  
   }
 
   if (UseMetallicityField)
@@ -651,7 +653,10 @@ int grid::GalaxySimulationInitializeGrid(FLOAT DiskRadius,
 	   a proper metallicity -- DWS (loop redundancy addressed by CEK) */
 	if (StarMakerTypeIaSNe)
 	  BaryonField[MetalIaNum][n] = 1.0e-10;
-    
+   
+    //set mass enclosed based on NFW profile 
+    //BaryonField[MassEnclosedNum][n] = NFWDarkMatterMassEnclosed(r_sph);
+
     //new chem densities; init to 0 they get populated with time evolution for now 
     BaryonField[CMNum][n] = 0.0*density; 
     BaryonField[OMNum][n] = 0.0*density; 

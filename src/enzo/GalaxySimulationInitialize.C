@@ -112,7 +112,8 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   char *OHIIName = "OHIIDensity"; 
   char *H2OIIName = "H2OIIDensity"; 
   char *H3OIIName = "H3OIIDensity"; 
-  char *O2IIName = "O2IIDensity"; 
+  char *O2IIName = "O2IIDensity";
+  char *MassEnclosedName = "MassEnclosed"; 
   char *BxName      = "Bx";
   char *ByName      = "By";
   char *BzName      = "Bz";
@@ -696,7 +697,8 @@ if(Enzo_Version == 2){
    DataLabel[count++] = OHIIName; 
    DataLabel[count++] = H2OIIName; 
    DataLabel[count++] = H3OIIName; 
-   DataLabel[count++] = O2IIName; 
+   DataLabel[count++] = O2IIName;
+   DataLabel[count++] = MassEnclosedName; 
  }
 }
  if(GalaxySimulationUseMetallicityField)
