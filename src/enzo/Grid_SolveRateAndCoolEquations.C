@@ -59,6 +59,9 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
   if (NumberOfBaryonFields == 0)
     return SUCCESS;
 
+  if(!use_krome)
+	  ENZO_FAIL("TRIED TO DO KROME STUFF W/O KROME"); 
+
   /* Declarations */
 
   int DensNum, GENum, TENum, Vel1Num, Vel2Num, Vel3Num, B1Num, B2Num, B3Num;
@@ -81,7 +84,7 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
 
   /* Find Multi-species fields. New routine from KROME */
 
-  if (MultiSpecies)
+  if (MultiSpecies && use_krome)
     if (IdentifySpeciesFieldsKrome(
   DeNum, HMNum, CMNum, OMNum, HINum, HeINum,
  H2INum, CINum, OINum, OHINum, COINum, CHINum,

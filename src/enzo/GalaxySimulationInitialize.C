@@ -24,6 +24,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <type_traits>
+#include <typeinfo>
+#include <cxxabi.h>
 
 #include "ErrorExceptions.h"
 #include "macros_and_parameters.h"
@@ -189,7 +192,13 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   	int GalaxySimulationGasHaloRotation;		
   	FLOAT GalaxySimulationInitialBfield[3] = {0.0, 0.0, 0.0};
   	int GalaxySimulationInitialBfieldTopology= 0; //Uniform cartesiani
-  FLOAT LeftEdge[MAX_DIMENSION], RightEdge[MAX_DIMENSION];
+  	FLOAT LeftEdge[MAX_DIMENSION], RightEdge[MAX_DIMENSION];
+	int hist_size = 100; 
+	FLOAT radius_bins[hist_size]; //I just chose the default number of bins that CGM data struct works 
+	FLOAT binned_mass[hist_size]; //Where the masses will be accumulated and then summed 
+	for(int i = 0; i < hist_size; i++){
+		binned_mass[i] = 0.0; 
+	}
 
   /* Default Values */
   //shared defaults
@@ -405,7 +414,7 @@ dummy[0] = 0;
   HierarchyEntry *CurrentGrid; // all level 0 grids on this processor first
   CurrentGrid = &TopGrid;
   while (CurrentGrid != NULL) {
-	  CurrentGrid->GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
+	  CurrentGrid->GridData->GalaxySimulationInitializeGrida(GalaxySimulationDiskRadius,
 					GalaxySimulationGalaxyMass, 
 					GalaxySimulationGasMass,
 					GalaxySimulationDiskPosition, 
@@ -441,16 +450,89 @@ dummy[0] = 0;
 					GalaxySimulationInflowDensity,0,
 					GalaxySimulationInitialBfield,
 					GalaxySimulationInitialBfieldTopology,
-	VCircRadius, VCircVelocity,
+	VCircRadius, VCircVelocity, radius_bins, binned_mass,
+					GalaxySimulationCR,
+          SetBaryons
+							       );
+    CurrentGrid = CurrentGrid->NextGridThisLevel;
+  }
+  double enclosed_mass = 0.0; 
+ int dbfile = 0; 
+while(GalaxySimulationDebugHold && dbfile == 0){
+	FILE *file = fopen("GO", "r"); 
+	if(file != NULL){dbfile = 1;}
+}
+  Eint32 nproc, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc); 
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+  std::cout << "NPROC " << nproc << std::endl; 
+  FLOAT rec_mass_enc[hist_size]; 
+  std::cout << "SIZE " << hist_size*nproc << std::endl;
+  for(int ind = 0; ind < hist_size; ind++)
+  	rec_mass_enc[ind] = 0.0; 
+  MPI_Allreduce(binned_mass, rec_mass_enc, hist_size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD); 
+  std::cout << "rank test " << rank << " " << binned_mass[0] << std::endl; 
+  for(int ind = 0; ind < hist_size; ind++){
+	  enclosed_mass += rec_mass_enc[ind]; 
+	  binned_mass[ind] = enclosed_mass; 
+	  std::cout << "enclosed_mass " << ind << " " << binned_mass[ind] << "  enclosed mass " << std::endl;
+  }
+  if ( DiskGravity + PointSourceGravity == FALSE && MyProcessorNumber == ROOT_PROCESSOR){
+    int nBulge, nDisk, nHalo, nParticles;
+    std::cout << "MetaData NumberOfParticles Set" << std::endl;
+    nBulge = nlines("bulge.dat");
+    nDisk = nlines("disk.dat");
+    nHalo = nlines("halo.dat");
+    nParticles = nBulge + nDisk + nHalo;
+    MetaData.NumberOfParticles = nParticles; 
+    std::cout << "End MetaData Set" << std::endl; 
+  }
+  //MPI Communication happens here so that MassEnclosed Can be calculated 
+  CurrentGrid = &TopGrid;
+  while (CurrentGrid != NULL) {
+	  CurrentGrid->GridData->GalaxySimulationInitializeGridb(GalaxySimulationDiskRadius,
+					GalaxySimulationGalaxyMass, 
+					GalaxySimulationGasMass,
+					GalaxySimulationDiskPosition, 
+					GalaxySimulationDiskScaleHeightz,
+					GalaxySimulationDiskScaleHeightR,
+					GalaxySimulationTruncationRadius, 
+					GalaxySimulationDiskDensityCap,
+					GalaxySimulationDarkMatterConcentrationParameter,
+					GalaxySimulationDiskTemperature, 
+					GalaxySimulationInitialTemperature,
+					GalaxySimulationUniformDensity,
+					GalaxySimulationEquilibrateChem,
+					GalaxySimulationGasHalo,
+					GalaxySimulationGasHaloScaleRadius,
+					GalaxySimulationGasHaloDensity,
+					GalaxySimulationGasHaloDensity2,
+					GalaxySimulationGasHaloTemperature,
+					GalaxySimulationGasHaloAlpha,
+					GalaxySimulationGasHaloZeta,
+					GalaxySimulationGasHaloZeta2,
+					GalaxySimulationGasHaloCoreEntropy,
+					GalaxySimulationGasHaloRatio,
+					GalaxySimulationGasHaloMetallicity,
+					GalaxySimulationGasHaloRotation,
+					GalaxySimulationGasHaloRotationScaleVelocity,
+					GalaxySimulationGasHaloRotationScaleRadius,
+					GalaxySimulationGasHaloRotationIndex,
+					GalaxySimulationDiskMetallicityEnhancementFactor,
+					GalaxySimulationAngularMomentum,
+					GalaxySimulationUniformVelocity,
+					GalaxySimulationUseMetallicityField,
+					GalaxySimulationInflowTime,
+					GalaxySimulationInflowDensity,0,
+					GalaxySimulationInitialBfield,
+					GalaxySimulationInitialBfieldTopology,
+	VCircRadius, VCircVelocity, radius_bins, binned_mass,
 					GalaxySimulationCR,
           SetBaryons
 							       );
     CurrentGrid = CurrentGrid->NextGridThisLevel;
   }
 
-  if ( DiskGravity + PointSourceGravity == FALSE ){
-      InitializeParticles(TopGrid.GridData, TopGrid, MetaData, GalaxySimulationDiskPosition);
-  }
   
   /* Convert minimum initial overdensity for refinement to mass
      (unless MinimumMass itself was actually set). */
@@ -464,6 +546,7 @@ switch(Enzo_Version){
 	  }
 	  break; 
 	case 2: //isogal version
+	  //if(MyProcessorNumber == ROOT_PROCESSOR){
 	  for (i = 0; i < MAX_FLAGGING_METHODS; i++)
 	    if (MinimumMassForRefinement[i] == FLOAT_UNDEFINED) {
 	      MinimumMassForRefinement[i] = MinimumOverDensityForRefinement[i];
@@ -472,6 +555,7 @@ switch(Enzo_Version){
 		(DomainRightEdge[dim]-DomainLeftEdge[dim])/
 		float(MetaData.TopGridDims[dim]);
 	    }
+	 // }
 	  break;
 }
   /* If requested, refine the grid to the desired level. */
@@ -491,7 +575,7 @@ if(SetBaryons){
     for (level = 0; level < MaximumRefinementLevel; level++) {
         //For refinement strategies that depend on the initial conditions on each level being resolved,
         //you'll need to iterate. For pre determined AMR structures, you do not.
-        if ( GalaxySimulationIterateRebuildHierarchy || level == 0 )
+        if ( GalaxySimulationIterateRebuildHierarchy || level == 0)
             if (RebuildHierarchy(&MetaData, LevelArray, level) == FAIL) {
                 fprintf(stderr, "Error in RebuildHierarchy.\n");
                 return FAIL;
@@ -502,7 +586,7 @@ if(SetBaryons){
         if ( debug ) fprintf(stderr,"Build level %d\n",level+1);
         LevelHierarchyEntry *Temp = LevelArray[level+1];
         while (Temp != NULL) {
-            if (Temp->GridData->GalaxySimulationInitializeGrid(GalaxySimulationDiskRadius,
+            if (Temp->GridData->GalaxySimulationInitializeGrida(GalaxySimulationDiskRadius,
                         GalaxySimulationGalaxyMass, 
                         GalaxySimulationGasMass,
                         GalaxySimulationDiskPosition, 
@@ -539,11 +623,57 @@ if(SetBaryons){
                         GalaxySimulationInitialBfield,
                         GalaxySimulationInitialBfieldTopology,
 			VCircRadius, VCircVelocity,
+			radius_bins, binned_mass,
                         GalaxySimulationCR, 
                         SetBaryons
                             )
                             == FAIL) {
-                                ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grid.");
+                                ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grida");
+                            }// end subgrid if
+            
+	    if (Temp->GridData->GalaxySimulationInitializeGridb(GalaxySimulationDiskRadius,
+                        GalaxySimulationGalaxyMass, 
+                        GalaxySimulationGasMass,
+                        GalaxySimulationDiskPosition, 
+                        GalaxySimulationDiskScaleHeightz,
+                        GalaxySimulationDiskScaleHeightR,
+                        GalaxySimulationTruncationRadius, 
+                        GalaxySimulationDiskDensityCap,
+                        GalaxySimulationDarkMatterConcentrationParameter,
+                        GalaxySimulationDiskTemperature, 
+                        GalaxySimulationInitialTemperature,
+                        GalaxySimulationUniformDensity,
+                        GalaxySimulationEquilibrateChem,
+                        GalaxySimulationGasHalo,
+                        GalaxySimulationGasHaloScaleRadius,
+                        GalaxySimulationGasHaloDensity,
+                        GalaxySimulationGasHaloDensity2,
+                        GalaxySimulationGasHaloTemperature,
+                        GalaxySimulationGasHaloAlpha,
+                        GalaxySimulationGasHaloZeta,
+                        GalaxySimulationGasHaloZeta2,
+                        GalaxySimulationGasHaloCoreEntropy,
+                        GalaxySimulationGasHaloRatio,
+                        GalaxySimulationGasHaloMetallicity,
+                        GalaxySimulationGasHaloRotation,
+                        GalaxySimulationGasHaloRotationScaleVelocity,
+                        GalaxySimulationGasHaloRotationScaleRadius,
+                        GalaxySimulationGasHaloRotationIndex,
+                        GalaxySimulationDiskMetallicityEnhancementFactor,
+                        GalaxySimulationAngularMomentum,
+                        GalaxySimulationUniformVelocity,
+                        GalaxySimulationUseMetallicityField,
+                        GalaxySimulationInflowTime,
+                        GalaxySimulationInflowDensity,level,
+                        GalaxySimulationInitialBfield,
+                        GalaxySimulationInitialBfieldTopology,
+			VCircRadius, VCircVelocity,
+			radius_bins, binned_mass,
+                        GalaxySimulationCR, 
+                        SetBaryons
+                            )
+                            == FAIL) {
+                                ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Gridb");
                             }// end subgrid if
             else {
                 Temp->GridData->_GalaxySimulationInitialization = 1;
@@ -698,9 +828,9 @@ if(Enzo_Version == 2){
    DataLabel[count++] = H2OIIName; 
    DataLabel[count++] = H3OIIName; 
    DataLabel[count++] = O2IIName;
-   DataLabel[count++] = MassEnclosedName; 
  }
 }
+   DataLabel[count++] = MassEnclosedName; 
  if(GalaxySimulationUseMetallicityField)
    DataLabel[count++] = MetalName;
  if (StarMakerTypeIaSNe)
@@ -766,20 +896,19 @@ for(int l = 0; l < count; l++)
 
  // BWO: this forces the synchronization of the various point source gravity
  // parameters between processors.  If this is not done, things go to pieces!
-
+ std::cout << "At MPI_Barrier" << std::endl; 
  MPI_Barrier(MPI_COMM_WORLD);
  MPI_Datatype DataType = (sizeof(float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
+ std::cout << "MPI_Bcast caclls" << std::endl; 
  MPI_Bcast(&PointSourceGravityConstant,1,DataType,ROOT_PROCESSOR, MPI_COMM_WORLD);
  MPI_Bcast(&PointSourceGravityCoreRadius,1,DataType,ROOT_PROCESSOR, MPI_COMM_WORLD);
- int dbfile = 0; 
-while(GalaxySimulationDebugHold && dbfile == 0){
-	FILE *file = fopen("GO", "r"); 
-	if(file != NULL){dbfile = 1;}
-}
 #endif
+ std::cout << "Leaving GalaxySimulationInitialize" << std::endl;
  return SUCCESS;
 
 }
+
+/*
 int InitializeParticles(grid *thisgrid, HierarchyEntry &TopGrid, TopGridData &MetaData, FLOAT * Center){
 
     int GridRank, dim;
@@ -824,6 +953,7 @@ int InitializeParticles(grid *thisgrid, HierarchyEntry &TopGrid, TopGridData &Me
       for (int j = 0; j < nParticles; j++)
 	Attribute[i][j] = FLOAT_UNDEFINED;
     }
+    std::cout << "GalaxySimulationInitialize thinks there are " << nParticles << " particles with " << NumberOfParticleAttributes << " attributes" << std::endl;
     FLOAT dx = CellWidth[0];
     // Read them in and assign them as we go
     int count = 0;
@@ -944,8 +1074,10 @@ break;
 
 if (i == 0)
   return (VCircVelocity[i]) * (radius - VCircRadius[0]) / VCircRadius[0];
-else if (i == VCIRC_TABLE_LENGTH)
-  ENZO_FAIL("Fell off the circular velocity interpolation table");
+else if (i == VCIRC_TABLE_LENGTH){
+	std::cout << "Falling off table at radius " << radius << " max radius " << VCircRadius[0] << std::endl; 
+  	ENZO_FAIL("Fell off the circular velocity interpolation table");
+}
 
 // we know the radius is between i and i-1
 return VCircVelocity[i-1] +
@@ -953,3 +1085,4 @@ return VCircVelocity[i-1] +
   (radius - VCircRadius[i-1])  /
   (VCircRadius[i] - VCircRadius[i-1]);
 }
+*/
