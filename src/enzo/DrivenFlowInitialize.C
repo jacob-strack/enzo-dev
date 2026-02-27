@@ -28,6 +28,7 @@
 
 StochasticForcing Forcing;
 void MHDCTSetupFieldLabels();
+int InitializeRateData(FLOAT Time); 
 int ReadEquilibriumTable(char *name, FLOAT Time);
 int DrivenFlowInitialize(FILE *fptr, FILE *Outfptr, 
              HierarchyEntry &TopGrid, TopGridData &MetaData, 
@@ -151,6 +152,12 @@ int DrivenFlowInitialize(FILE *fptr, FILE *Outfptr,
       fprintf(stderr, "warning: the following parameter line was not interpreted:\n%s\n", line);
 
   }
+  
+  //initialize rate equations
+  if (InitializeRateData(MetaData.Time) == FAIL) {
+      fprintf(stderr,"Error in InitializeRateData.\n");
+      return FAIL;
+    }
 
   ReadEquilibriumTable("equilibrium_table_60_030-Zsun.h5", MetaData.Time); 
 

@@ -57,6 +57,7 @@ void MHDCTSetupFieldLabels();
 float GetMagneticUnits(float DensityUnits, float LengthUnits, float TimeUnits);		
 int ReadEquilibriumTable(char * name, FLOAT Time);
 
+int InitializeRateData(FLOAT Time); 
 int nlines(const char* fname);
 int InitializeParticles(grid *thisgrid_orig, HierarchyEntry &TopGrid, TopGridData &MetaData, FLOAT * Center);
 int ReadParticlesFromFile(PINT *Number, int *Type, FLOAT *Position[],
@@ -363,6 +364,14 @@ dummy[0] = 0;
       fprintf(stderr, "warning: the following parameter line was not interpreted:\n%s\n", line);
 
   } // end input from parameter file
+  
+  //initialize rate equations
+  if(MyProcessorNumber == ROOT_PROCESSOR)
+      if (InitializeRateData(MetaData.Time) == FAIL) {
+          fprintf(stderr,"Error in InitializeRateData.\n");
+          return FAIL;
+        }
+  MPI_Barrier(MPI_COMM_WORLD);
   FLOAT VCircRadius[VCIRC_TABLE_LENGTH];
   float VCircVelocity[VCIRC_TABLE_LENGTH];
   ReadInVcircData(VCircRadius, VCircVelocity);
@@ -487,8 +496,8 @@ while(GalaxySimulationDebugHold && dbfile == 0){
     MetaData.NumberOfParticles = nParticles; 
     std::cout << "End MetaData Set" << std::endl; 
   }
-  //MPI Communication happens here so that MassEnclosed Can be calculated 
-  CurrentGrid = &TopGrid;
+  
+CurrentGrid = &TopGrid;
   while (CurrentGrid != NULL) {
 	  CurrentGrid->GridData->GalaxySimulationInitializeGridb(GalaxySimulationDiskRadius,
 					GalaxySimulationGalaxyMass, 
@@ -546,7 +555,6 @@ switch(Enzo_Version){
 	  }
 	  break; 
 	case 2: //isogal version
-	  //if(MyProcessorNumber == ROOT_PROCESSOR){
 	  for (i = 0; i < MAX_FLAGGING_METHODS; i++)
 	    if (MinimumMassForRefinement[i] == FLOAT_UNDEFINED) {
 	      MinimumMassForRefinement[i] = MinimumOverDensityForRefinement[i];
@@ -555,7 +563,6 @@ switch(Enzo_Version){
 		(DomainRightEdge[dim]-DomainLeftEdge[dim])/
 		float(MetaData.TopGridDims[dim]);
 	    }
-	 // }
 	  break;
 }
   /* If requested, refine the grid to the desired level. */
@@ -586,6 +593,7 @@ if(SetBaryons){
         if ( debug ) fprintf(stderr,"Build level %d\n",level+1);
         LevelHierarchyEntry *Temp = LevelArray[level+1];
         while (Temp != NULL) {
+            std::cout << "dork level " << level << std::endl; 
             if (Temp->GridData->GalaxySimulationInitializeGrida(GalaxySimulationDiskRadius,
                         GalaxySimulationGalaxyMass, 
                         GalaxySimulationGasMass,
@@ -630,8 +638,9 @@ if(SetBaryons){
                             == FAIL) {
                                 ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grida");
                             }// end subgrid if
-            
-	    if (Temp->GridData->GalaxySimulationInitializeGridb(GalaxySimulationDiskRadius,
+        for(int i = 0; i < 100; i++)
+            std::cout << i << " " << binned_mass[i] << std::endl; 
+        if (Temp->GridData->GalaxySimulationInitializeGridb(GalaxySimulationDiskRadius,
                         GalaxySimulationGalaxyMass, 
                         GalaxySimulationGasMass,
                         GalaxySimulationDiskPosition, 
