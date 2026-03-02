@@ -2379,7 +2379,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 				     int GalaxySimulationInitialBfieldTopology,
               FLOAT VCircRadius[], float VCircVelocity[], FLOAT radius_bins[8162], FLOAT binned_mass[8162],
 				     FLOAT GalaxySimulationCR = 0.0, 
-                 int SetBaryons = 0
+                 int SetBaryons = 0, int bin_mass = 0
 				);
   int GalaxySimulationInitializeGridb(
 				     FLOAT DiskRadius,
@@ -2421,7 +2421,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 				     int GalaxySimulationInitialBfieldTopology,
               FLOAT VCircRadius[], float VCircVelocity[], FLOAT radius_bins[8162], FLOAT binned_mass[8162],
 				     FLOAT GalaxySimulationCR = 0.0, 
-                 int SetBaryons = 0
+                 int SetBaryons = 0, int bin_mass = 0
 				);
   /* Single Star Test Problem initialize grid */
   /* Free expansion test */

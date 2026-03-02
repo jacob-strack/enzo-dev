@@ -197,6 +197,7 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
 	int hist_size = 100; 
 	FLOAT radius_bins[hist_size]; //I just chose the default number of bins that CGM data struct works 
 	FLOAT binned_mass[hist_size]; //Where the masses will be accumulated and then summed 
+	FLOAT binned_mass2[hist_size]; //cheap garbage trash  
 	for(int i = 0; i < hist_size; i++){
 		binned_mass[i] = 0.0; 
 	}
@@ -461,7 +462,7 @@ dummy[0] = 0;
 					GalaxySimulationInitialBfieldTopology,
 	VCircRadius, VCircVelocity, radius_bins, binned_mass,
 					GalaxySimulationCR,
-          SetBaryons
+          SetBaryons, 1
 							       );
     CurrentGrid = CurrentGrid->NextGridThisLevel;
   }
@@ -484,7 +485,7 @@ while(GalaxySimulationDebugHold && dbfile == 0){
   for(int ind = 0; ind < hist_size; ind++){
 	  enclosed_mass += rec_mass_enc[ind]; 
 	  binned_mass[ind] = enclosed_mass; 
-	  std::cout << "enclosed_mass " << ind << " " << binned_mass[ind] << "  enclosed mass " << std::endl;
+	  std::cout << "enclosed_mass " << ind << " " << binned_mass[ind] << "  enclosed mass rec " << rec_mass_enc[ind] << std::endl;
   }
   if ( DiskGravity + PointSourceGravity == FALSE && MyProcessorNumber == ROOT_PROCESSOR){
     int nBulge, nDisk, nHalo, nParticles;
@@ -537,7 +538,7 @@ CurrentGrid = &TopGrid;
 					GalaxySimulationInitialBfieldTopology,
 	VCircRadius, VCircVelocity, radius_bins, binned_mass,
 					GalaxySimulationCR,
-          SetBaryons
+          SetBaryons,1
 							       );
     CurrentGrid = CurrentGrid->NextGridThisLevel;
   }
@@ -594,6 +595,14 @@ if(SetBaryons){
         LevelHierarchyEntry *Temp = LevelArray[level+1];
         while (Temp != NULL) {
             std::cout << "dork level " << level << std::endl; 
+	  if(MyProcessorNumber == ROOT_PROCESSOR)
+	      if (InitializeRateData(MetaData.Time) == FAIL) {
+		  fprintf(stderr,"Error in InitializeRateData.\n");
+		  return FAIL;
+		}
+	    std::cout << "Calling InitializeGrida in RefineAtStart" << std::endl; 
+	    for(int i = 0; i < 100; i++)
+		std::cout << "ugh " << i << " " << binned_mass[i] << std::endl; 
             if (Temp->GridData->GalaxySimulationInitializeGrida(GalaxySimulationDiskRadius,
                         GalaxySimulationGalaxyMass, 
                         GalaxySimulationGasMass,
@@ -633,13 +642,14 @@ if(SetBaryons){
 			VCircRadius, VCircVelocity,
 			radius_bins, binned_mass,
                         GalaxySimulationCR, 
-                        SetBaryons
+                        SetBaryons, 0
                             )
                             == FAIL) {
                                 ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Grida");
                             }// end subgrid if
         for(int i = 0; i < 100; i++)
             std::cout << i << " " << binned_mass[i] << std::endl; 
+	std::cout << "Calling InitializeGridb in RefineAtStart" << std::endl; 
         if (Temp->GridData->GalaxySimulationInitializeGridb(GalaxySimulationDiskRadius,
                         GalaxySimulationGalaxyMass, 
                         GalaxySimulationGasMass,
@@ -679,7 +689,7 @@ if(SetBaryons){
 			VCircRadius, VCircVelocity,
 			radius_bins, binned_mass,
                         GalaxySimulationCR, 
-                        SetBaryons
+                        SetBaryons, 0
                             )
                             == FAIL) {
                                 ENZO_FAIL("Error in GalaxySimulationInitialize[Sub]Gridb");

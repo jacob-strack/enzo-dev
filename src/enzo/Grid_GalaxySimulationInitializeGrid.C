@@ -204,7 +204,8 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
             FLOAT  VCircRadius[], float  VCircVelocity[], 
 	   FLOAT radius_bins[100], FLOAT binned_mass[100],
            FLOAT GalaxySimulationCR,
-           int SetBaryons
+           int SetBaryons, 
+	   int bin_mass
           )
 {
   /* declarations */
@@ -333,7 +334,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
     FieldType[O2IINum = NumberOfBaryonFields++] = O2IIDensity;
     std::cout << "O2IINuma " << O2IINum << std::endl;  
   }
-    //FieldType[MassEnclosedNum = NumberOfBaryonFields++] = MassEnclosed;
+    FieldType[MassEnclosedNum = NumberOfBaryonFields++] = MassEnclosed;
     //std::cout << "MassEnclosedNuma " << MassEnclosedNum << std::endl;
 
   if (UseMetallicityField)
@@ -669,15 +670,16 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	} // end: loop over dims 
 
 	/* Set density. */
+	std::cout << "n " << n << " mass " << density*CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0] << std::endl; 
+	BaryonField[0][n] = density;
 
 	//this is about the dumbest thing to do but first pass
-	std::cout << "n " << n << " density " << density << std::endl; 
-	BaryonField[0][n] = density;
-	//BaryonField[MassEnclosedNum][n] = density * CellWidth[0][0] * CellWidth[1][0] * CellWidth[2][0]; //right now this is the total mass in each cell, which will need to be 
+	if(bin_mass){
+	BaryonField[MassEnclosedNum][n] = density * CellWidth[0][0] * CellWidth[1][0] * CellWidth[2][0]; //right now this is the total mass in each cell, which will need to be 
 		//communicated across processors 
 	double delta_r = 1.0 / 100; //code units
-	int radius_bin = int(r_sph / delta_r); 
-	binned_mass[radius_bin] += density * CellWidth[0][0] * CellWidth[1][0] * CellWidth[2][0]; 
+	int radius_bin = int(r_sph / delta_r);	
+	binned_mass[radius_bin] += density * CellWidth[0][0] * CellWidth[1][0] * CellWidth[2][0]; }
       } //end: first pass over grid
 	
   //if on the root grid, init particles now 
@@ -686,7 +688,8 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
   }
   
   //now deposit particle masses
-  if(level == 0){
+  if(level == 0 && bin_mass){
+  double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
   n = 0; 
   density = 0;
   for(int p = 0; p < this->NumberOfParticles; p++){
@@ -695,7 +698,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	x = ((ParticlePosition[0][p] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
 	y = ((ParticlePosition[1][p] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones; 
 	z = ((ParticlePosition[2][p] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones;
-        if(x < 0 || y < 0 || z < 0){
+        if(ParticlePosition[0][p] < GridLeftEdge[0] || ParticlePosition[1][p] < GridLeftEdge[1] || ParticlePosition[2][p] < GridLeftEdge[2] || ParticlePosition[0][p] > GridRightEdge[0] || ParticlePosition[1][p] > GridRightEdge[1] || ParticlePosition[2][p] > GridRightEdge[2]){
 		std::cout << "ppos " << ParticlePosition[0][p] << " " << ParticlePosition[1][p] << " " << ParticlePosition[2][p] << std::endl; 
 		std::cout << "Left edge " << GridLeftEdge[0] << " " << GridLeftEdge[1] << GridLeftEdge[2] << std::endl; 
 		std::cout << "Right edge " << GridRightEdge[0] << " " << GridRightEdge[1] << GridRightEdge[2] << std::endl; 
@@ -704,9 +707,18 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	}	
 	ind = (z * GridDimension[1] + y) * GridDimension[0] + x; 
 	std::cout << "depositing particle mass at ind " << ind << " of " << GridDimension[2]*GridDimension[1]*GridDimension[0] << " xyz " << x << " " << y << " " << z << " pos " << ParticlePosition[0][p] << " " << ParticlePosition[1][p] << " " << ParticlePosition[2][p] << std::endl; 
-	density = (ParticleMass[p] * SolarMass / MassUnits); 
+	density = (ParticleMass[p] * SolarMass / MassUnitsDouble); 
+	r_sph = sqrt(POW(fabs(x-DiskPosition[0]), 2) +
+		     POW(fabs(y-DiskPosition[1]), 2) +
+		     POW(fabs(z-DiskPosition[2]), 2) );
+	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
+
   	//BaryonField[0][ind] += density;
-  	//BaryonField[MassEnclosedNum][ind] += density * CellWidth[0][0] * CellWidth[1][0] * CellWidth[2][0]; 
+  	BaryonField[MassEnclosedNum][ind] += density;
+	std::cout << "depositing mass " << density << " " << ParticleMass[p] << " " << SolarMass << " " << MassUnitsDouble << std::endl;
+	double delta_r = 1.0 / 100; //code units
+        int ind_r = int(r_sph / delta_r); 
+	binned_mass[ind_r] += density; 	
   	}
   std::cout << "Done depositing particle masses" << std::endl; 
   std::cout.flush(); 
@@ -775,7 +787,8 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
             FLOAT  VCircRadius[], float  VCircVelocity[],
 	   FLOAT radius_bins[100], FLOAT binned_mass[100],
            FLOAT GalaxySimulationCR,
-           int SetBaryons
+           int SetBaryons, 
+	   int bin_mass
           )
 {
   /* declarations */
@@ -853,7 +866,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   H2OIINum = FindField(H2OIIDensity, FieldType, NumberOfBaryonFields); 
   H3OIINum = FindField(H3OIIDensity, FieldType, NumberOfBaryonFields);
   O2IINum = FindField(O2IIDensity, FieldType, NumberOfBaryonFields);
-  //MassEnclosedNum = FindField(MassEnclosed, FieldType, NumberOfBaryonFields);   
+  MassEnclosedNum = FindField(MassEnclosed, FieldType, NumberOfBaryonFields);   
   std::cout << "VelNum " << Vel1Num << " " << Vel2Num << " " << Vel3Num << std::endl; 
   std::cout << "BNum " << B1Num << " " << B2Num << " " << B3Num << std::endl;
   //std::cout << "MassEnclosedNumb " << MassEnclosedNum << std::endl;
@@ -899,8 +912,8 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
 
 	double delta_r = 1.0 / 100; //code units
-	int mass_enclosed_index = r_sph / delta_r; 
-	//BaryonField[MassEnclosedNum][n] = binned_mass[mass_enclosed_index]; 
+	int mass_enclosed_index = r_sph / delta_r;	
+	BaryonField[MassEnclosedNum][n] = binned_mass[mass_enclosed_index]; 
 	//std::cout << "set Massenclosed n " << n << " val " << BaryonField[MassEnclosedNum][n] << std::endl; 	
       } 
   //begin second pass over grid
