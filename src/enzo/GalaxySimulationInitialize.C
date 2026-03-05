@@ -194,7 +194,7 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   	FLOAT GalaxySimulationInitialBfield[3] = {0.0, 0.0, 0.0};
   	int GalaxySimulationInitialBfieldTopology= 0; //Uniform cartesiani
   	FLOAT LeftEdge[MAX_DIMENSION], RightEdge[MAX_DIMENSION];
-	int hist_size = 100; 
+	int hist_size = 1000; 
 	FLOAT radius_bins[hist_size]; //I just chose the default number of bins that CGM data struct works 
 	FLOAT binned_mass[hist_size]; //Where the masses will be accumulated and then summed 
 	FLOAT binned_mass2[hist_size]; //cheap garbage trash  
@@ -367,12 +367,11 @@ dummy[0] = 0;
   } // end input from parameter file
   
   //initialize rate equations
-  if(MyProcessorNumber == ROOT_PROCESSOR)
-      if (InitializeRateData(MetaData.Time) == FAIL) {
-          fprintf(stderr,"Error in InitializeRateData.\n");
-          return FAIL;
-        }
-  MPI_Barrier(MPI_COMM_WORLD);
+//      if (InitializeRateData(MetaData.Time) == FAIL) {
+ //         fprintf(stderr,"Error in InitializeRateData.\n");
+  //        return FAIL;
+   //     }
+  //MPI_Barrier(MPI_COMM_WORLD);
   FLOAT VCircRadius[VCIRC_TABLE_LENGTH];
   float VCircVelocity[VCIRC_TABLE_LENGTH];
   ReadInVcircData(VCircRadius, VCircVelocity);
@@ -480,6 +479,7 @@ while(GalaxySimulationDebugHold && dbfile == 0){
   std::cout << "SIZE " << hist_size*nproc << std::endl;
   for(int ind = 0; ind < hist_size; ind++)
   	rec_mass_enc[ind] = 0.0; 
+  std::cout << "about to call reduce" << std::endl; 
   MPI_Allreduce(binned_mass, rec_mass_enc, hist_size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD); 
   std::cout << "rank test " << rank << " " << binned_mass[0] << std::endl; 
   for(int ind = 0; ind < hist_size; ind++){
@@ -594,15 +594,6 @@ if(SetBaryons){
         if ( debug ) fprintf(stderr,"Build level %d\n",level+1);
         LevelHierarchyEntry *Temp = LevelArray[level+1];
         while (Temp != NULL) {
-            std::cout << "dork level " << level << std::endl; 
-	  if(MyProcessorNumber == ROOT_PROCESSOR)
-	      if (InitializeRateData(MetaData.Time) == FAIL) {
-		  fprintf(stderr,"Error in InitializeRateData.\n");
-		  return FAIL;
-		}
-	    std::cout << "Calling InitializeGrida in RefineAtStart" << std::endl; 
-	    for(int i = 0; i < 100; i++)
-		std::cout << "ugh " << i << " " << binned_mass[i] << std::endl; 
             if (Temp->GridData->GalaxySimulationInitializeGrida(GalaxySimulationDiskRadius,
                         GalaxySimulationGalaxyMass, 
                         GalaxySimulationGasMass,

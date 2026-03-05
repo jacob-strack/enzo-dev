@@ -675,9 +675,9 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 
 	//this is about the dumbest thing to do but first pass
 	if(bin_mass){
-	BaryonField[MassEnclosedNum][n] = density * CellWidth[0][0] * CellWidth[1][0] * CellWidth[2][0]; //right now this is the total mass in each cell, which will need to be 
+	//BaryonField[MassEnclosedNum][n] = density * CellWidth[0][0] * CellWidth[1][0] * CellWidth[2][0]; //right now this is the total mass in each cell, which will need to be 
 		//communicated across processors 
-	double delta_r = 1.0 / 100; //code units
+	double delta_r = 1.0 / 1000; //code units
 	int radius_bin = int(r_sph / delta_r);	
 	binned_mass[radius_bin] += density * CellWidth[0][0] * CellWidth[1][0] * CellWidth[2][0]; }
       } //end: first pass over grid
@@ -708,16 +708,24 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	ind = (z * GridDimension[1] + y) * GridDimension[0] + x; 
 	std::cout << "depositing particle mass at ind " << ind << " of " << GridDimension[2]*GridDimension[1]*GridDimension[0] << " xyz " << x << " " << y << " " << z << " pos " << ParticlePosition[0][p] << " " << ParticlePosition[1][p] << " " << ParticlePosition[2][p] << std::endl; 
 	density = (ParticleMass[p] * SolarMass / MassUnitsDouble); 
-	r_sph = sqrt(POW(fabs(x-DiskPosition[0]), 2) +
-		     POW(fabs(y-DiskPosition[1]), 2) +
-		     POW(fabs(z-DiskPosition[2]), 2) );
+	float xpos, ypos, zpos; 
+    xpos = CellLeftEdge[0][x] + 0.5*CellWidth[0][x];
+	if (GridRank > 1)
+	  ypos = CellLeftEdge[1][y] + 0.5*CellWidth[1][y];
+	if (GridRank > 2)
+	  zpos = CellLeftEdge[2][z] + 0.5*CellWidth[2][z];
+    r_sph = sqrt(POW(fabs(xpos-DiskPosition[0]), 2) +
+		     POW(fabs(ypos-DiskPosition[1]), 2) +
+		     POW(fabs(zpos-DiskPosition[2]), 2) );
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
 
   	//BaryonField[0][ind] += density;
   	BaryonField[MassEnclosedNum][ind] += density;
 	std::cout << "depositing mass " << density << " " << ParticleMass[p] << " " << SolarMass << " " << MassUnitsDouble << std::endl;
-	double delta_r = 1.0 / 100; //code units
-        int ind_r = int(r_sph / delta_r); 
+	double delta_r = 1.0 / 1000; //code units
+    int ind_r = int(r_sph / delta_r);
+    std::cout << "x y z " << xpos << " " << ypos << " " << zpos << std::endl; 
+    std::cout << "ind_r " << ind_r << " r_sph " << r_sph << std::endl; 
 	binned_mass[ind_r] += density; 	
   	}
   std::cout << "Done depositing particle masses" << std::endl; 
@@ -872,6 +880,30 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   //std::cout << "MassEnclosedNumb " << MassEnclosedNum << std::endl;
   //halo init needs to get called after all the mass is placed
   //so that we can tell what the actual m_enclosed is at a given r 
+  int n = 0;
+  for (k = 0; k < GridDimension[2]; k++)
+    for (j = 0; j < GridDimension[1]; j++)
+      for (i = 0; i < GridDimension[0]; i++, n++) {
+	/* Compute position */
+
+	x = CellLeftEdge[0][i] + 0.5*CellWidth[0][i];
+	if (GridRank > 1)
+	  y = CellLeftEdge[1][j] + 0.5*CellWidth[1][j];
+	if (GridRank > 2)
+	  z = CellLeftEdge[2][k] + 0.5*CellWidth[2][k];
+	
+	/* Find distance from center. */
+
+	r_sph = sqrt(POW(fabs(x-DiskPosition[0]), 2) +
+		     POW(fabs(y-DiskPosition[1]), 2) +
+		     POW(fabs(z-DiskPosition[2]), 2) );
+	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
+
+	double delta_r = 1.0 / 1000; //code units
+	int mass_enclosed_index = int(r_sph / delta_r);	
+	BaryonField[MassEnclosedNum][n] = binned_mass[mass_enclosed_index]; 
+	//std::cout << "set Massenclosed n " << n << " val " << BaryonField[MassEnclosedNum][n] << std::endl; 	
+      } 
   double far_left, far_right, largest_rad;
   
   far_left = DomainLeftEdge[0];
@@ -892,30 +924,6 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   for (int i=0; i<CGM_data.nbins; i++)
      printf("%d %g %g %g \n", i, CGM_data.rad[i]/LengthUnits, CGM_data.n_rad[i], CGM_data.T_rad[i]);
 
-  int n = 0;
-  for (k = 0; k < GridDimension[2]; k++)
-    for (j = 0; j < GridDimension[1]; j++)
-      for (i = 0; i < GridDimension[0]; i++, n++) {
-	/* Compute position */
-
-	x = CellLeftEdge[0][i] + 0.5*CellWidth[0][i];
-	if (GridRank > 1)
-	  y = CellLeftEdge[1][j] + 0.5*CellWidth[1][j];
-	if (GridRank > 2)
-	  z = CellLeftEdge[2][k] + 0.5*CellWidth[2][k];
-	
-	/* Find distance from center. */
-
-	r_sph = sqrt(POW(fabs(x-DiskPosition[0]), 2) +
-		     POW(fabs(y-DiskPosition[1]), 2) +
-		     POW(fabs(z-DiskPosition[2]), 2) );
-	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
-
-	double delta_r = 1.0 / 100; //code units
-	int mass_enclosed_index = r_sph / delta_r;	
-	BaryonField[MassEnclosedNum][n] = binned_mass[mass_enclosed_index]; 
-	//std::cout << "set Massenclosed n " << n << " val " << BaryonField[MassEnclosedNum][n] << std::endl; 	
-      } 
   //begin second pass over grid
   n = 0; 
   for (k = 0; k < GridDimension[2]; k++)
@@ -1105,8 +1113,8 @@ double NFWDarkMatterMassEnclosed(double r){
 
 double MassEnclosed_r(FLOAT *binned_mass, double rad){
 	rad /= LengthUnits; //to code
-    	double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
-	double delta_r = 1.0 / 100; 
+    double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
+	double delta_r = 1.0 / 1000; 
 	int bin_index = rad / delta_r;
 	double prev_menc = 0.0;
 	double next_menc = 0.0; 
@@ -1115,24 +1123,17 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad){
 	double next_r_bin = delta_r * ((bin_index + 1) + 0.5); 
 	double ans; 
 	if(prev_r_bin < 0){
-		next_menc = binned_mass[bin_index + 1]; 
-	        ans = (next_menc - binned_mass[bin_index]) / delta_r * (next_r_bin - rad) + binned_mass[bin_index]; 
 		ans = binned_mass[bin_index] / delta_r * (rad); 
 		return ans*MassUnitsDouble; 	
 	}
-	if(next_r_bin >= 100){
+	if(next_r_bin >= 1000){
 		prev_menc = binned_mass[bin_index - 1];
-	        ans = (binned_mass[bin_index] - prev_menc) / delta_r * (rad - prev_r_bin) + prev_menc; 
+	    ans = (binned_mass[bin_index] - prev_menc) / delta_r * (rad - prev_r_bin) + prev_menc; 
 		return ans*MassUnitsDouble; 	
 	}
 	prev_menc = binned_mass[bin_index - 1]; 
 	next_menc = binned_mass[bin_index + 1]; 
-	if(rad / (bin_index * delta_r) <= 0.5)
-		ans = (binned_mass[bin_index] - prev_menc) / delta_r * (rad - prev_r_bin) + prev_menc; 
-	else{
-		ans = (next_menc - binned_mass[bin_index]) / delta_r * (next_r_bin - rad) + binned_mass[bin_index]; 
-	}
-	//ans = 0.5 * (((binned_mass[bin_index] - prev_menc) / (delta_r) * (rad - prev_r_bin) + prev_menc) + ((next_menc - binned_mass[bin_index]) / delta_r * (next_r_bin - rad) + binned_mass[bin_index])); 
+	ans = 0.5 * (((binned_mass[bin_index] - prev_menc) / (delta_r) * (rad - prev_r_bin) + prev_menc) + ((next_menc - binned_mass[bin_index]) / delta_r * (next_r_bin - rad) + binned_mass[bin_index])); 
 	return ans*MassUnitsDouble; //cgs 
 
 }
