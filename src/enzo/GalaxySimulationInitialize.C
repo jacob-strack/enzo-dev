@@ -194,7 +194,7 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   	FLOAT GalaxySimulationInitialBfield[3] = {0.0, 0.0, 0.0};
   	int GalaxySimulationInitialBfieldTopology= 0; //Uniform cartesiani
   	FLOAT LeftEdge[MAX_DIMENSION], RightEdge[MAX_DIMENSION];
-	int hist_size = 1000; 
+	int hist_size = 100; 
 	FLOAT radius_bins[hist_size]; //I just chose the default number of bins that CGM data struct works 
 	FLOAT binned_mass[hist_size]; //Where the masses will be accumulated and then summed 
 	FLOAT binned_mass2[hist_size]; //cheap garbage trash  
@@ -465,39 +465,42 @@ dummy[0] = 0;
 							       );
     CurrentGrid = CurrentGrid->NextGridThisLevel;
   }
+
   double enclosed_mass = 0.0; 
- int dbfile = 0; 
-while(GalaxySimulationDebugHold && dbfile == 0){
+  int dbfile = 0; 
+  while(GalaxySimulationDebugHold && dbfile == 0){
 	FILE *file = fopen("GO", "r"); 
 	if(file != NULL){dbfile = 1;}
-}
+  }
+  //MPI add all the mass from each grid on every processor  
   Eint32 nproc, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &nproc); 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
-  std::cout << "NPROC " << nproc << std::endl; 
   FLOAT rec_mass_enc[hist_size]; 
-  std::cout << "SIZE " << hist_size*nproc << std::endl;
+  
   for(int ind = 0; ind < hist_size; ind++)
   	rec_mass_enc[ind] = 0.0; 
-  std::cout << "about to call reduce" << std::endl; 
+  
+  //sum all the mass 
   MPI_Allreduce(binned_mass, rec_mass_enc, hist_size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD); 
-  std::cout << "rank test " << rank << " " << binned_mass[0] << std::endl; 
+
+  //go through the summed mass histograms, setting bins with cumulative total of mass enclosed 
   for(int ind = 0; ind < hist_size; ind++){
 	  enclosed_mass += rec_mass_enc[ind]; 
-	  binned_mass[ind] = enclosed_mass; 
-	  std::cout << "enclosed_mass " << ind << " " << binned_mass[ind] << "  enclosed mass rec " << rec_mass_enc[ind] << std::endl;
+	  binned_mass[ind] = enclosed_mass;
+	  std::cout << "ass " << ind << " " << binned_mass[ind] << std::endl;  
   }
+ 
   if ( DiskGravity + PointSourceGravity == FALSE && MyProcessorNumber == ROOT_PROCESSOR){
     int nBulge, nDisk, nHalo, nParticles;
-    std::cout << "MetaData NumberOfParticles Set" << std::endl;
     nBulge = nlines("bulge.dat");
     nDisk = nlines("disk.dat");
     nHalo = nlines("halo.dat");
     nParticles = nBulge + nDisk + nHalo;
     MetaData.NumberOfParticles = nParticles; 
-    std::cout << "End MetaData Set" << std::endl; 
   }
   
+  //second part of grid initializer, this is where most grids will get setup 
 CurrentGrid = &TopGrid;
   while (CurrentGrid != NULL) {
 	  CurrentGrid->GridData->GalaxySimulationInitializeGridb(GalaxySimulationDiskRadius,

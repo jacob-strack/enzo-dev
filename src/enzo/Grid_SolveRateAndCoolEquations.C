@@ -28,16 +28,9 @@ int FindField(int field, int farray[], int numfields);
 double ReturnWallTime();
 extern "C" void FORTRAN_NAME(krome_driver)(
 	float *d, float *e, float *ge, float *u, float *v, float *w, 
-        float *De, float *HM, float *CM, float *OM,
- float *HI, float *HeI, float *H2I, float *CI,
- float *OI, float *OHI, float *COI, float *CHI,
- float *CH2I, float *C2I, float *HCOI, float *H2OI,
- float *O2I, float *CO_TOTALI, float *H2O_TOTALI,
- float *HII, float *HeII, float *H2II, float *CII,
- float *OII, float *HOCII, float *HCOII, float *H3II,
- float *CHII, float *CH2II, float *COII, float *CH3II,
- float *OHII, float *H2OII, float *H3OII,
- float *O2II, float *HeIII,  int *in, int *jn, int *kn,
+        float *De, float *HM, float *HI, float *HeI,
+ float *H2I, float *HII, float *HeII, float *H2II,
+ float *HeIII,  int *in, int *jn, int *kn,
 	hydro_method *imethod,
         int *idual, int *idim,
 	int *is, int *js, int *ks, int *ie, int *je, int *ke, 
@@ -59,19 +52,11 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
   if (NumberOfBaryonFields == 0)
     return SUCCESS;
 
-  if(!use_krome)
-	  ENZO_FAIL("TRIED TO DO KROME STUFF W/O KROME"); 
-
   /* Declarations */
 
   int DensNum, GENum, TENum, Vel1Num, Vel2Num, Vel3Num, B1Num, B2Num, B3Num;
-      int DeNum, HMNum, CMNum, OMNum, HINum, HeINum,
- H2INum, CINum, OINum, OHINum, COINum, CHINum,
- CH2INum, C2INum, HCOINum, H2OINum, O2INum,
- CO_TOTALINum, H2O_TOTALINum, HIINum, HeIINum,
- H2IINum, CIINum, OIINum, HOCIINum, HCOIINum,
- H3IINum, CHIINum, CH2IINum, COIINum, CH3IINum,
- OHIINum, H2OIINum, H3OIINum, O2IINum, HeIIINum;
+      int DeNum, HMNum, HINum, HeINum, H2INum, HIINum,
+ HeIINum, H2IINum, HeIIINum;
 
   FLOAT a = 1.0, dadt;
     
@@ -84,15 +69,10 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
 
   /* Find Multi-species fields. New routine from KROME */
 
-  if (MultiSpecies && use_krome)
+  if (MultiSpecies)
     if (IdentifySpeciesFieldsKrome(
-  DeNum, HMNum, CMNum, OMNum, HINum, HeINum,
- H2INum, CINum, OINum, OHINum, COINum, CHINum,
- CH2INum, C2INum, HCOINum, H2OINum, O2INum,
- CO_TOTALINum, H2O_TOTALINum, HIINum, HeIINum,
- H2IINum, CIINum, OIINum, HOCIINum, HCOIINum,
- H3IINum, CHIINum, CH2IINum, COIINum, CH3IINum,
- OHIINum, H2OIINum, H3OIINum, O2IINum, HeIIINum
+  DeNum, HMNum, HINum, HeINum, H2INum, HIINum,
+ HeIINum, H2IINum, HeIIINum
   ) == FAIL) {
             ENZO_FAIL("Error in grid->IdentifySpeciesFields.");
     }
@@ -104,6 +84,10 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
   for (dim = 0; dim < GridRank; dim++) {
     size *= GridDimension[dim];
   }
+ 
+  //undo the wierd grackle normalization for electron density 
+  for(int ind = 0; ind < size; ind++) 
+	  BaryonField[DeNum][ind] /= 1836.153; 
 
   /* Get easy to handle pointers for each variable. */
 
@@ -155,25 +139,13 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
 
   /* Call the fortran routine to solve cooling equations. */
 
+
   FORTRAN_NAME(krome_driver)(
     density, totalenergy, gasenergy, velocity1, velocity2, velocity3,
-    BaryonField[DeNum], BaryonField[HMNum], BaryonField[CMNum],
- BaryonField[OMNum], BaryonField[HINum], BaryonField[HeINum],
- BaryonField[H2INum], BaryonField[CINum],
- BaryonField[OINum], BaryonField[OHINum],
- BaryonField[COINum], BaryonField[CHINum],
- BaryonField[CH2INum], BaryonField[C2INum],
- BaryonField[HCOINum], BaryonField[H2OINum],
- BaryonField[O2INum], BaryonField[CO_TOTALINum],
- BaryonField[H2O_TOTALINum], BaryonField[HIINum],
- BaryonField[HeIINum], BaryonField[H2IINum],
- BaryonField[CIINum], BaryonField[OIINum],
- BaryonField[HOCIINum], BaryonField[HCOIINum],
- BaryonField[H3IINum], BaryonField[CHIINum],
- BaryonField[CH2IINum], BaryonField[COIINum],
- BaryonField[CH3IINum], BaryonField[OHIINum],
- BaryonField[H2OIINum], BaryonField[H3OIINum],
- BaryonField[O2IINum], BaryonField[HeIIINum],
+    BaryonField[DeNum], BaryonField[HMNum], BaryonField[HINum],
+ BaryonField[HeINum], BaryonField[H2INum],
+ BaryonField[HIINum], BaryonField[HeIINum],
+ BaryonField[H2IINum], BaryonField[HeIIINum],
  
     GridDimension, GridDimension+1, GridDimension+2, 
     &HydroMethod, 
@@ -204,6 +176,10 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
     }
     
     delete totalenergy;
+
+    //redo the grackle normalization 
+    for(int ind = 0; ind < size; ind++) 
+	    BaryonField[DeNum][ind] *= 1836.153; 
   }
 
   return SUCCESS;
