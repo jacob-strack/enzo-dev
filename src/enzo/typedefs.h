@@ -180,7 +180,7 @@ const field_type
   ImPsi = 102,
   FDMDensity = 103,
 
-  FieldUndefined  = 119,
+  FieldUndefined  = 120,
 
   //more chemistry 
   CMDensity = 105, 
@@ -197,7 +197,8 @@ const field_type
   H2OIIDensity = 116,
   H3OIIDensity = 117,
   O2IIDensity = 104,
-  MassEnclosed = 118; 
+  MassEnclosed = 118, 
+  isDisk = 119;
   
 
 /*
