@@ -450,7 +450,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
     for (j = 0; j < GridDimension[1]; j++)
       for (i = 0; i < GridDimension[0]; i++, n++) {
 	      density = UniformDensity;
-
+	      BaryonField[isDiskNum][n] = 0; 
 	if (UseMetallicityField) {
 	  /* Set a background metallicity value that will scale with density.
 	     If the cell is in the disk, this wifll be increased by a factor
@@ -681,7 +681,6 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	    Velocity[1] = disk_vel[1];
 	    Velocity[2] = disk_vel[2];
 	    BaryonField[isDiskNum][n] = 1; //flag we are in the disk for InitializeGridb 
-	   
 	  }
 
 	} // end: loop over dims 
