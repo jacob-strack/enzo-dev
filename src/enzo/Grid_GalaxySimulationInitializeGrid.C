@@ -218,6 +218,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
   float DiskDensity, DiskVelocityMag;
   int CRNum, DensNum;
   int MassEnclosedNum;
+  int isDiskNum; 
   int MassEnclosedSet = 0;  
   /* global-scope variables for disk potential functions (would be better if not global) */
 
@@ -335,6 +336,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
     FieldType[O2IINum = NumberOfBaryonFields++] = O2IIDensity;
   }
     FieldType[MassEnclosedNum = NumberOfBaryonFields++] = MassEnclosed;
+    FieldType[isDiskNum = NumberOfBaryonFields++] = isDisk; 
     //FieldType[gNum = NumberOfBaryonFields++] = gField;
   if (UseMetallicityField)
     FieldType[MetalNum = NumberOfBaryonFields++] = Metallicity; /* fake it with metals */
@@ -678,12 +680,19 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	    Velocity[0] = disk_vel[0];
 	    Velocity[1] = disk_vel[1];
 	    Velocity[2] = disk_vel[2];
+	    BaryonField[isDiskNum][n] = 1; //flag we are in the disk for InitializeGridb 
+	   
 	  }
 
 	} // end: loop over dims 
 
 	/* Set density. */
 	BaryonField[0][n] = density;
+	
+	//set velocity 
+	BaryonField[vel][n] = Velocity[0]; 
+	BaryonField[vel+1][n] = Velocity[1]; 
+	BaryonField[vel+2][n] = Velocity[2]; 
 
 	if(bin_mass){
 	double delta_r = 1.0 / 100; //code units
@@ -712,7 +721,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 		total_dm_particles++; 
 	}
 	if(ParticleType[p] != PARTICLE_TYPE_DARK_MATTER)
-		total_init_star_mass += ParticleMass[p]; 
+		total_init_star_mass += ParticleMass[p]*CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]/SolarMass*MassUnitsDouble; 
 	x = ((ParticlePosition[0][p] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
 	y = ((ParticlePosition[1][p] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones; 
 	z = ((ParticlePosition[2][p] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones;
@@ -812,7 +821,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   int CMNum, OMNum, CINum, OINum, OHINum, COINum, CHINum, CH2INum, C2INum, HCOINum, H2OINum, O2INum, CO_TOTALINum, H2O_TOTALINum, CIINum, OIINum, HOCIINum, HCOIINum, H3IINum, CHIINum, CH2IINum, COIINum, CH3IINum, OHIINum, H2OIINum, H3OIINum, O2IINum;  
   int CRNum, DensNum;
   int TENum, GENum, Vel1Num, Vel2Num, Vel3Num;  
-  int MassEnclosedNum;
+  int MassEnclosedNum, isDiskNum;
   float density, disk_dens;
   FLOAT halo_vmag, disk_vel[MAX_DIMENSION], Velocity[MAX_DIMENSION];
   FLOAT temperature, disk_temp, init_temp, initial_metallicity;
@@ -881,6 +890,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   H3OIINum = FindField(H3OIIDensity, FieldType, NumberOfBaryonFields);
   O2IINum = FindField(O2IIDensity, FieldType, NumberOfBaryonFields);
   MassEnclosedNum = FindField(MassEnclosed, FieldType, NumberOfBaryonFields);   
+  isDiskNum = FindField(isDisk, FieldType, NumberOfBaryonFields);   
   //std::cout << "MassEnclosedNumb " << MassEnclosedNum << std::endl;
   //halo init needs to get called after all the mass is placed
   //so that we can tell what the actual m_enclosed is at a given r 
@@ -985,10 +995,9 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	std::cout << "r_sph " << r_sph << std::endl;	
 	density = HaloGasDensity(r_sph, CGM_data)/DensityUnits + BaryonField[DensNum][n];
 	temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
-	float rcyl = sqrt(POW(fabs(xpos),2) + POW(fabs(ypos),2)); //this hack will FOR SURE break if the angular momentum vector isn't parallel to z 
-	if (fabs(rcyl*LengthUnits/Mpc) <= TruncRadius && fabs(zpos)*LengthUnits/Mpc <= .001){
-	    temperature = DiskTemperature;
-	    std::cout << "set disk temperature" << std::endl; 
+	if (BaryonField[isDiskNum][n]){
+	    temperature = DiskTemperature;//set disk temp as specified by parameter file
+	    density = BaryonField[DensNum][n]; //reset density in disk so it is just disk density w/o gas halo  
 	}
 	if (UseMetallicityField) {
 	  BaryonField[MetalNum][n] = initial_metallicity 
@@ -1020,14 +1029,13 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
     BaryonField[H3OIINum][n] = 0.0; 
     BaryonField[O2IINum][n] = 0.0; 
     }
-    float Velocity[3] = {0.0, 0.0, 0.0}; //make this work with halo rotation eventually 
     for(dim = 0; dim < 3; dim++){
-	BaryonField[Vel1Num][n] = Velocity[dim] + UniformVelocity[dim];
-	BaryonField[Vel2Num][n] = Velocity[dim] + UniformVelocity[dim];
-	BaryonField[Vel3Num][n] = Velocity[dim] + UniformVelocity[dim];
+	BaryonField[Vel1Num][n] += UniformVelocity[dim];
+	BaryonField[Vel2Num][n] += UniformVelocity[dim];
+	BaryonField[Vel3Num][n] += UniformVelocity[dim];
     }
 
-    //add the halo density
+    //add the halo density, it's already in code units
     	BaryonField[0][n] = density;
 
     /* Set energy (thermal and then total if necessary). */
@@ -1835,14 +1843,14 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
 
   int index;
   
-  M = GalaxySimulationGalaxyMass * SolarMass;  // halo total mass in CGS
+  M = 1.25444e12 * SolarMass;  // halo total mass in CGS
   
   R200 = pow(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
   if (Rstop < 0)
     Rstop = fabs(Rstop)*R200;
   CGM_data.R_outer = Rstop;// integrate out to the virial radius of halo
 
-  Rstart = 0.01*LengthUnits; // you could force a different start if you liked
+  Rstart = 0.00*LengthUnits; // you could force a different start if you liked
 
   // stepsize for RK4 integration and radial bins
   CGM_data.R_inner = Rstart;
@@ -2083,7 +2091,7 @@ double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass){
     double vcirc2, vcirc2_max;
     double Tgrav, Tgrav_therm;
     
-    M = GalaxySimulationGalaxyMass * SolarMass;  // halo total mass in CGS
+    M = 1.25444e12 * SolarMass;  // halo total mass in CGS
     C = GalaxySimulationDMConcentration;  // concentration parameter for NFW halo
     r_vir = POW(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
     r_max = 2.163 * r_vir/C;
@@ -2436,6 +2444,7 @@ int ReadParticlesFromFile(PINT *Number, int *Type, FLOAT *Position[],
     FLOAT x, y, z;
     float vx, vy, vz;
     double mass;
+    double total_mass = 0.0; 
 
     float DensityUnits=1, LengthUnits=1, VelocityUnits=1, TimeUnits=1,
       TemperatureUnits=1;
@@ -2467,7 +2476,10 @@ int ReadParticlesFromFile(PINT *Number, int *Type, FLOAT *Position[],
       Mass[c] = mass * 1e9 * SolarMass / MassUnits / dx / dx / dx;
       Type[c] = particle_type;
       Number[c] = c++;
+      total_mass += mass*1e9; 
     }
+
+    std::cout << fname << " " << total_mass << std::endl; 
 
     fclose(fptr);
 
