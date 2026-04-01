@@ -898,7 +898,10 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   largest_rad = sqrt(3*0.25) * LengthUnits;//periodic wrap means this should be true. unless you changed the box size in code units. 
   struct CGMdata CGM_data(8162);
   halo_init(CGM_data, this, binned_mass, -1.0);
-
+  double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
+  float rho_crit = 1.8788e-29*0.49; 
+  float R200 = pow(3.0/(4.0*3.13159) * binned_mass[99]*MassUnitsDouble/(200.0*rho_crit), 1./3.);
+  std::cout << "R200 " << R200 << std::endl;  
   //begin second pass over grid
   for (k = 0; k < GridDimension[2]; k++)
     for (j = 0; j < GridDimension[1]; j++)
@@ -943,9 +946,13 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 		     POW(fabs(ypos), 2) +
 		     POW(fabs(zpos), 2) );
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
-	density = HaloGasDensity(r_sph, CGM_data)/DensityUnits + BaryonField[DensNum][n];
-	temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
-	BaryonField[MassEnclosedNum][n] = HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
+	//add halo if we're in the right spot 
+	if(r_sph*LengthUnits < R200){
+		temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
+		density += HaloGasDensity(r_sph, CGM_data); 
+	}
+	else temperature = InitialTemperature; //background box temp if outside the CGM   
+	BaryonField[MassEnclosedNum][n] = HaloGasDensity(r_sph, CGM_data); //debug field  
 	if (BaryonField[isDiskNum][n]){
 	    temperature = DiskTemperature;//set disk temp as specified by parameter file
 	    density = BaryonField[DensNum][n]; //reset density in disk so it is just disk density w/o gas halo  
@@ -1689,7 +1696,8 @@ float HaloGasDensity(FLOAT R, struct CGMdata& CGM_data){
     this_radius_cgs = R*LengthUnits;  // radius in CGS
     index = int((this_radius_cgs-CGM_data.R_inner)/CGM_data.dr + 1.0e-3);  // index in array of CGM values
     if(index<0) index=0;  // check our indices
-    if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
+    //if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
+    if(index >= CGM_data.nbins) return 0.0; 
     return CGM_data.n_rad[index]*mu*mh;  // return physical density
 
   } else if(GalaxySimulationGasHalo == 8){
@@ -1794,9 +1802,11 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
 
   int index;
   
-  M = 1.25444e12 * SolarMass;  // halo total mass in CGS
-  
+  double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
+  M = binned_mass[99] * MassUnitsDouble;  // halo total mass in CGS
+   
   R200 = pow(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
+  std::cout << "R200 halo_init " << R200 << std::endl;  
   if (Rstop < 0)
     Rstop = fabs(Rstop)*R200;
   CGM_data.R_outer = Rstop;// integrate out to the virial radius of halo
@@ -2041,8 +2051,8 @@ double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass){
     double M, C, r_vir, r_max, rho_crit = 1.8788e-29*0.49;
     double vcirc2, vcirc2_max;
     double Tgrav, Tgrav_therm;
-    
-    M = 1.25444e12 * SolarMass;  // halo total mass in CGS
+    double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
+    M = binned_mass[99]*MassUnitsDouble;  // total mass in CGS
     C = GalaxySimulationDMConcentration;  // concentration parameter for NFW halo
     r_vir = POW(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
     r_max = 2.163 * r_vir/C;
