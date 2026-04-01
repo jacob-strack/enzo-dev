@@ -900,7 +900,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   halo_init(CGM_data, this, binned_mass, -1.0);
   double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
   float rho_crit = 1.8788e-29*0.49; 
-  float R200 = pow(3.0/(4.0*3.13159) * binned_mass[99]*MassUnitsDouble/(200.0*rho_crit), 1./3.);
+  float R200 = pow(3.0/(4.0*3.14159) * binned_mass[99]*MassUnitsDouble/(200.0*rho_crit), 1./3.);
   std::cout << "R200 " << R200 << std::endl;  
   //begin second pass over grid
   for (k = 0; k < GridDimension[2]; k++)
