@@ -886,15 +886,6 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   int n = 0;
   double far_left, far_right, largest_rad;
   
-  far_left = DomainLeftEdge[0]-DiskPosition[0];
-  far_right = DomainRightEdge[0]-DiskPosition[0];
-  for (int i=1; i<GridRank; ++i) {
-    if (DomainLeftEdge[i]-DiskPosition[i] < far_left)
-      far_left = DomainLeftEdge[i]-DiskPosition[i];
-    if (DomainRightEdge[i]-DiskPosition[i] > far_right)
-      far_right = DomainRightEdge[i]-DiskPosition[i];
-  }
-
   largest_rad = sqrt(3*0.25) * LengthUnits;//periodic wrap means this should be true. unless you changed the box size in code units. 
   struct CGMdata CGM_data(8162);
   halo_init(CGM_data, this, binned_mass, -1.0);
@@ -946,16 +937,19 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 		     POW(fabs(ypos), 2) +
 		     POW(fabs(zpos), 2) );
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
-	//add halo if we're in the right spot 
+	density = 0.0; 
+	//add halo if we're in the right spot
 	if(r_sph*LengthUnits < R200){
 		temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
-		density += HaloGasDensity(r_sph, CGM_data); 
+		density += HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
+		BaryonField[MassEnclosedNum][n] = 1; //this became a debug field, to be deleted 
 	}
-	else temperature = InitialTemperature; //background box temp if outside the CGM   
-	BaryonField[MassEnclosedNum][n] = HaloGasDensity(r_sph, CGM_data); //debug field  
+	else{ 
+		temperature = InitialTemperature; //background box temp if outside the CGM   
+		BaryonField[MassEnclosedNum][n] = 0; 
+	}
 	if (BaryonField[isDiskNum][n]){
 	    temperature = DiskTemperature;//set disk temp as specified by parameter file
-	    density = BaryonField[DensNum][n]; //reset density in disk so it is just disk density w/o gas halo  
 	}
 	if (UseMetallicityField) {
 	  BaryonField[MetalNum][n] = initial_metallicity 
@@ -994,7 +988,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
     }
 
     //add the halo density, it's already in code units
-    	BaryonField[0][n] = density;
+    	BaryonField[0][n] += density;
 
     /* Set energy (thermal and then total if necessary). */
 
@@ -1696,8 +1690,7 @@ float HaloGasDensity(FLOAT R, struct CGMdata& CGM_data){
     this_radius_cgs = R*LengthUnits;  // radius in CGS
     index = int((this_radius_cgs-CGM_data.R_inner)/CGM_data.dr + 1.0e-3);  // index in array of CGM values
     if(index<0) index=0;  // check our indices
-    //if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
-    if(index >= CGM_data.nbins) return 0.0; 
+    if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
     return CGM_data.n_rad[index]*mu*mh;  // return physical density
 
   } else if(GalaxySimulationGasHalo == 8){
@@ -1906,7 +1899,6 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     dr = -1.0*CGM_data.dr;
     this_radius = R200;
     this_ent = halo_S_of_r(this_radius, Grid, binned_mass); // in erg*cm^2
-
     rmax = 2.163*R200/GalaxySimulationDMConcentration;
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass,rmax)/rmax;
     this_press = mu_ratio*POW(0.25*mu*mh*vcirc2_max/POW(this_ent, 1./Gamma),
