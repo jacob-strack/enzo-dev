@@ -410,7 +410,6 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
   }
 
   largest_rad = sqrt(3) * (far_right - far_left) / 2.0 * LengthUnits;
-  std::cout << "largest_rad " << largest_rad/LengthUnits << std::endl; 
   /* compute size of fields */
   size = 1;
   for (dim = 0; dim < GridRank; dim++)
@@ -432,6 +431,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
   FLOAT halo_vmag, disk_vel[MAX_DIMENSION], Velocity[MAX_DIMENSION];
   FLOAT temperature, disk_temp, init_temp, initial_metallicity;
   FLOAT r_sph, x, y = 0, z = 0;
+  FLOAT this_x, this_y, this_z; 
   int n = 0, iter;
   double mean = 0.0; 
   double stdev = 1.0; 
@@ -467,7 +467,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	  z = CellLeftEdge[2][k] + 0.5*CellWidth[2][k] - DiskPosition[2];
         double max_pos = 0.5; //this assumes that the disk is at the same coord in x,y,z. change if it's not. 	
 	double min_pos = -0.5; 
-	if(x > max_pos)
+	/*if(x > max_pos)
 		x = 1 - x; 
 	if(x < min_pos)
 		x = 1 + x; 
@@ -482,8 +482,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 		  z = 1 - z; 
 	  if(z < min_pos)
 		  z = 1 + z; 
-	}
-
+	}*/
 
 	for (dim = 0; dim < MAX_DIMENSION; dim++){
 	  Velocity[dim] = 0;
@@ -501,8 +500,6 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	  //POW(fabs(y-DiskPosition[1]), 2) );
 	
 
-	//density = HaloGasDensity(r_sph, CGM_data)/DensityUnits;
-	//temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
 	FLOAT xpos, ypos, zpos, rsph, zheight, rcyl, theta; 
 	float CellMass;
 	FLOAT rp_hat[3];
@@ -514,11 +511,6 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	     dim++) {
 
 	  /* Compute position. */
-
-	  xpos = x-DiskPosition[0]-(dim == 1 ? 0.5*CellWidth[0][0] : 0.0);
-	  ypos = y-DiskPosition[1]-(dim == 2 ? 0.5*CellWidth[1][0] : 0.0);
-	  zpos = z-DiskPosition[2]-(dim == 3 ? 0.5*CellWidth[2][0] : 0.0);
-	  
 	  xpos = x-(dim == 1 ? 0.5*CellWidth[0][0] : 0.0);
 	  ypos = y-(dim == 2 ? 0.5*CellWidth[1][0] : 0.0);
 	  zpos = z-(dim == 3 ? 0.5*CellWidth[2][0] : 0.0);
@@ -544,7 +536,6 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	  rp_hat[0] = rp_hat[0]/rcyl;
 	  rp_hat[1] = rp_hat[1]/rcyl;
 	  rp_hat[2] = rp_hat[2]/rcyl;
-      
 
 	  /* If requested, calculate velocity for CGM halo.
 	   * Will be replaced wtih disk velocity later if appropriate */
@@ -633,7 +624,6 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	    //
 	    // calculate velocity
 	    //
-
 	    if (PointSourceGravity > 0 )
 	      DiskVelocityMag = gasvel(rcyl, DiskDensity, ExpansionFactor,
 				       GalaxyMass, ScaleHeightR,
@@ -645,7 +635,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 							    zheight*LengthUnits)
 		    /VelocityUnits;
         else{
-            DiskVelocityMag = InterpolateVcircTable(r_sph*LengthUnits, VCircRadius, VCircVelocity)/VelocityUnits;
+            DiskVelocityMag = InterpolateVcircTable(r_sph*LengthUnits, VCircRadius, VCircVelocity)/VelocityUnits; 
         }
         
 	    if (PointSourceGravity*DiskGravity != FALSE ) 
@@ -725,12 +715,12 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	y = ((ParticlePosition[1][p] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones; 
 	z = ((ParticlePosition[2][p] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones;
         if(ParticlePosition[0][p] < GridLeftEdge[0] || ParticlePosition[1][p] < GridLeftEdge[1] || ParticlePosition[2][p] < GridLeftEdge[2] || ParticlePosition[0][p] > GridRightEdge[0] || ParticlePosition[1][p] > GridRightEdge[1] || ParticlePosition[2][p] > GridRightEdge[2]){
+		std::cout << "SKIPPING MASS DEPOSITION FOR THIS PARTICLE" << std::endl;
 		continue; 
 	}
 	ind = (z * GridDimension[1] + y) * GridDimension[0] + x; 
 	density = ParticleMass[p]*CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]; //code mass  
 	float xpos, ypos, zpos;
-	std::cout.flush();	
     	xpos = CellLeftEdge[0][x] + 0.5*CellWidth[0][x] - DiskPosition[0];
 	ypos = CellLeftEdge[1][y] + 0.5*CellWidth[1][y] - DiskPosition[1];
 	zpos = CellLeftEdge[2][z] + 0.5*CellWidth[2][z] - DiskPosition[2];
@@ -894,41 +884,6 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   //halo init needs to get called after all the mass is placed
   //so that we can tell what the actual m_enclosed is at a given r 
   int n = 0;
-  for (k = 0; k < GridDimension[2]; k++)
-    for (j = 0; j < GridDimension[1]; j++)
-      for (i = 0; i < GridDimension[0]; i++, n++) {
-	/* Compute position */
-
-	x = CellLeftEdge[0][i] + 0.5*CellWidth[0][i];
-	if (GridRank > 1)
-	  y = CellLeftEdge[1][j] + 0.5*CellWidth[1][j];
-	if (GridRank > 2)
-	  z = CellLeftEdge[2][k] + 0.5*CellWidth[2][k];
-	
-	/* Find distance from center. */
-	double xpos = x - DiskPosition[0]; 
-	if(xpos > 0.5)
-		xpos = 1 - xpos; 
-	if(xpos < -0.5) 
-		xpos = 1 + xpos; 
-	double ypos = y - DiskPosition[1]; 
-	if(ypos > 0.5)
-		ypos = 1 - ypos; 
-	if(ypos < -0.5) 
-		ypos = 1 + ypos; 
-	double zpos = z - DiskPosition[2]; 
-	if(zpos > 0.5)
-		zpos = 1 - zpos; 
-	if(zpos < -0.5) 
-		zpos = 1 + zpos; 
-	r_sph = sqrt(POW(fabs(xpos), 2) +
-		     POW(fabs(ypos), 2) +
-		     POW(fabs(zpos), 2) );
-	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
-	double delta_r = 1.0 / 100; //code units
-	int mass_enclosed_index = int(r_sph / delta_r);	
-	BaryonField[MassEnclosedNum][n] = halo_g_of_r(r_sph * LengthUnits);
-      } 
   double far_left, far_right, largest_rad;
   
   far_left = DomainLeftEdge[0]-DiskPosition[0];
@@ -942,12 +897,9 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 
   largest_rad = sqrt(3*0.25) * LengthUnits;//periodic wrap means this should be true. unless you changed the box size in code units. 
   struct CGMdata CGM_data(8162);
-  float debug_Rstop = 0.5 * LengthUnits;  
-  std::cout << "r_stop " << largest_rad << std::endl; 
-  halo_init(CGM_data, this, binned_mass, largest_rad);
+  halo_init(CGM_data, this, binned_mass, -1.0);
 
   //begin second pass over grid
-  n = 0; 
   for (k = 0; k < GridDimension[2]; k++)
     for (j = 0; j < GridDimension[1]; j++)
       for (i = 0; i < GridDimension[0]; i++, n++) {
@@ -991,9 +943,9 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 		     POW(fabs(ypos), 2) +
 		     POW(fabs(zpos), 2) );
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
-	std::cout << "r_sph " << r_sph << std::endl;	
 	density = HaloGasDensity(r_sph, CGM_data)/DensityUnits + BaryonField[DensNum][n];
 	temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
+	BaryonField[MassEnclosedNum][n] = HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
 	if (BaryonField[isDiskNum][n]){
 	    temperature = DiskTemperature;//set disk temp as specified by parameter file
 	    density = BaryonField[DensNum][n]; //reset density in disk so it is just disk density w/o gas halo  
@@ -2000,7 +1952,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
 
     r0 = log10(this_radius);
     y0 = 2.0 * log10( T_floor / this_temp );
-    //assert (y0 < 0.0);
+    assert (y0 < 0.0);
     y_offset = log10(this_temp) - y0/2.0;
     k = fabs(4.0/y0 * deriv);
 
@@ -2011,23 +1963,23 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     
     dlP_dlr = (log10(this_press) - log10(prev_press))
             / (log10(this_radius) - log10(this_radius-dr));
-    //assert (dlP_dlr < 0.0);
+    assert (dlP_dlr < 0.0);
     
     while(this_radius <= CGM_data.R_outer){
-      //this_dPdr = this_press/this_radius * dlP_dlr;
-      k1 = halo_dP_dr(this_radius,          this_press,             Grid, binned_mass);
-      k2 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k1, Grid, binned_mass);
-      k3 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k2, Grid, binned_mass);
-      k4 = halo_dP_dr(this_radius + dr,     this_press + dr*k3,     Grid, binned_mass);
+      this_dPdr = this_press/this_radius * dlP_dlr;
+      //k1 = halo_dP_dr(this_radius,          this_press,             Grid, binned_mass);
+      //k2 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k1, Grid, binned_mass);
+      //k3 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k2, Grid, binned_mass);
+      //k4 = halo_dP_dr(this_radius + dr,     this_press + dr*k3,     Grid, binned_mass);
       // update radius, pressure, entropy
       this_radius += dr;  // new radius
-      this_press += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); // P @ new radius
+      //this_press += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); // P @ new radius
       this_ent = halo_S_of_r(this_radius, Grid, binned_mass); // entropy @ new radius
       //std::cout << "outward integration pressure " << this_press << std::endl;
       // update density and radius
-      //this_dens = -2.0 * this_dPdr/(1.22*mh*halo_mod_g_of_r(this_radius, binned_mass)); // n_e = n_i
-      //this_temp = POW(10, sigmoid(log10(this_radius), r0, k, y0, y_offset));
-      //this_press = POW(10, dlP_dlr*log10(this_radius/R200) + log10(press_vir));
+      this_dens = -2.0 * this_dPdr/(1.22*mh*halo_mod_g_of_r(this_radius, binned_mass)); // n_e = n_i
+      this_temp = POW(10, sigmoid(log10(this_radius), r0, k, y0, y_offset));
+      this_press = POW(10, dlP_dlr*log10(this_radius/R200) + log10(press_vir));
       // store everything in the struct
       index = int((this_radius - CGM_data.R_inner)/dr + 1.0e-3);    
       if (index < CGM_data.nbins) {
