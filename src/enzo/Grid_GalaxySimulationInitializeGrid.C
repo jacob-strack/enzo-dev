@@ -218,7 +218,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
   float DiskDensity, DiskVelocityMag;
   int CRNum, DensNum;
   int MassEnclosedNum;
-  int isDiskNum; 
+  int isDiskNum, DebugNum; 
   int MassEnclosedSet = 0;  
   /* global-scope variables for disk potential functions (would be better if not global) */
 
@@ -337,7 +337,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
   }
     FieldType[MassEnclosedNum = NumberOfBaryonFields++] = MassEnclosed;
     FieldType[isDiskNum = NumberOfBaryonFields++] = isDisk; 
-    //FieldType[gNum = NumberOfBaryonFields++] = gField;
+    FieldType[DebugNum = NumberOfBaryonFields++] = DebugField;
   if (UseMetallicityField)
     FieldType[MetalNum = NumberOfBaryonFields++] = Metallicity; /* fake it with metals */
   if (StarMakerTypeIaSNe)
@@ -695,7 +695,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
   }
   
   //now deposit particle masses
-  if(level == 0 && bin_mass){
+  if(level==0 && bin_mass){
   double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
   n = 0; 
   density = 0;
@@ -711,12 +711,12 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	}
 	if(ParticleType[p] != PARTICLE_TYPE_DARK_MATTER)
 		total_init_star_mass += ParticleMass[p]*CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]/SolarMass*MassUnitsDouble; 
-	x = ((ParticlePosition[0][p] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
-	y = ((ParticlePosition[1][p] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones; 
-	z = ((ParticlePosition[2][p] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones;
-        if(ParticlePosition[0][p] < GridLeftEdge[0] || ParticlePosition[1][p] < GridLeftEdge[1] || ParticlePosition[2][p] < GridLeftEdge[2] || ParticlePosition[0][p] > GridRightEdge[0] || ParticlePosition[1][p] > GridRightEdge[1] || ParticlePosition[2][p] > GridRightEdge[2]){
-		std::cout << "SKIPPING MASS DEPOSITION FOR THIS PARTICLE" << std::endl;
-		continue; 
+	x = int((ParticlePosition[0][p] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
+	y = int((ParticlePosition[1][p] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones; 
+	z = int((ParticlePosition[2][p] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones;
+        if((ParticlePosition[0][p] < GridLeftEdge[0]) || (ParticlePosition[1][p] < GridLeftEdge[1]) || (ParticlePosition[2][p] < GridLeftEdge[2]) || (ParticlePosition[0][p] > GridRightEdge[0]) || (ParticlePosition[1][p] > GridRightEdge[1]) || (ParticlePosition[2][p] > GridRightEdge[2])){
+		std::cout << "no" << std::endl;
+		//continue;
 	}
 	ind = (z * GridDimension[1] + y) * GridDimension[0] + x; 
 	density = ParticleMass[p]*CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]; //code mass  
@@ -742,11 +742,11 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	  if(zpos < min_pos)
 		  zpos = 1 + zpos; 
 	}
-    r_sph = sqrt(POW(fabs(xpos), 2) +
+    	r_sph = sqrt(POW(fabs(xpos), 2) +
 		     POW(fabs(ypos), 2) +
 		     POW(fabs(zpos), 2) );
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
-  	BaryonField[MassEnclosedNum][ind] += density;
+  	BaryonField[MassEnclosedNum][ind] = ParticlePosition[0][p];
 	double delta_r = 1.0 / 100; //code units
     	int ind_r = int(r_sph / delta_r);
 	binned_mass[ind_r] += density; 	
@@ -810,7 +810,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   int CMNum, OMNum, CINum, OINum, OHINum, COINum, CHINum, CH2INum, C2INum, HCOINum, H2OINum, O2INum, CO_TOTALINum, H2O_TOTALINum, CIINum, OIINum, HOCIINum, HCOIINum, H3IINum, CHIINum, CH2IINum, COIINum, CH3IINum, OHIINum, H2OIINum, H3OIINum, O2IINum;  
   int CRNum, DensNum;
   int TENum, GENum, Vel1Num, Vel2Num, Vel3Num;  
-  int MassEnclosedNum, isDiskNum;
+  int MassEnclosedNum, isDiskNum, DebugNum;
   float density, disk_dens;
   FLOAT halo_vmag, disk_vel[MAX_DIMENSION], Velocity[MAX_DIMENSION];
   FLOAT temperature, disk_temp, init_temp, initial_metallicity;
@@ -880,7 +880,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   O2IINum = FindField(O2IIDensity, FieldType, NumberOfBaryonFields);
   MassEnclosedNum = FindField(MassEnclosed, FieldType, NumberOfBaryonFields);   
   isDiskNum = FindField(isDisk, FieldType, NumberOfBaryonFields);   
-  //std::cout << "MassEnclosedNumb " << MassEnclosedNum << std::endl;
+  DebugNum = FindField(DebugField, FieldType, NumberOfBaryonFields); 
   //halo init needs to get called after all the mass is placed
   //so that we can tell what the actual m_enclosed is at a given r 
   int n = 0;
@@ -892,7 +892,6 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
   float rho_crit = 1.8788e-29*0.49; 
   float R200 = pow(3.0/(4.0*3.14159) * binned_mass[99]*MassUnitsDouble/(200.0*rho_crit), 1./3.);
-  std::cout << "R200 " << R200 << std::endl;  
   //begin second pass over grid
   for (k = 0; k < GridDimension[2]; k++)
     for (j = 0; j < GridDimension[1]; j++)
@@ -942,11 +941,9 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	if(r_sph*LengthUnits < R200){
 		temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
 		density += HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
-		BaryonField[MassEnclosedNum][n] = 1; //this became a debug field, to be deleted 
 	}
 	else{ 
 		temperature = InitialTemperature; //background box temp if outside the CGM   
-		BaryonField[MassEnclosedNum][n] = 0; 
 	}
 	if (BaryonField[isDiskNum][n]){
 	    temperature = DiskTemperature;//set disk temp as specified by parameter file
@@ -1799,7 +1796,6 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
   M = binned_mass[99] * MassUnitsDouble;  // halo total mass in CGS
    
   R200 = pow(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
-  std::cout << "R200 halo_init " << R200 << std::endl;  
   if (Rstop < 0)
     Rstop = fabs(Rstop)*R200;
   CGM_data.R_outer = Rstop;// integrate out to the virial radius of halo
@@ -1903,6 +1899,9 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass,rmax)/rmax;
     this_press = mu_ratio*POW(0.25*mu*mh*vcirc2_max/POW(this_ent, 1./Gamma),
 		     Gamma/(Gamma-1.));
+    float UniformDensity = 1e-30; //cgs
+    float UniformTemperature = 1000; //K 
+    this_press = UniformDensity*kboltz*UniformTemperature; //backround pressure 
     // set the bin that we start at (otherwise it doesn't get set!)
     index = int((this_radius - CGM_data.R_inner)/(-1.0*dr)  + 1.0e-3);
     CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma); // n_e ~ n_i
@@ -1940,6 +1939,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass, rmax)/rmax;
     this_press = mu_ratio*POW(0.25*mu*mh*vcirc2_max/POW(this_ent, 1./Gamma),
 		     Gamma/(Gamma-1.));
+    this_press = UniformDensity*kboltz*UniformTemperature; //backround pressure 
 
     // Construct sigmoid to transition temperature to a constant
     double this_temp, this_dens;
@@ -1954,7 +1954,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
 
     r0 = log10(this_radius);
     y0 = 2.0 * log10( T_floor / this_temp );
-    assert (y0 < 0.0);
+    //assert (y0 < 0.0);
     y_offset = log10(this_temp) - y0/2.0;
     k = fabs(4.0/y0 * deriv);
 
@@ -1965,7 +1965,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     
     dlP_dlr = (log10(this_press) - log10(prev_press))
             / (log10(this_radius) - log10(this_radius-dr));
-    assert (dlP_dlr < 0.0);
+    //assert (dlP_dlr < 0.0);
     
     while(this_radius <= CGM_data.R_outer){
       this_dPdr = this_press/this_radius * dlP_dlr;
@@ -2181,7 +2181,6 @@ double halo_dn_dr(double r, double n){
 double halo_dP_dr(double r, double P, grid* Grid, FLOAT *binned_mass) {
     double ret =  -1.0 * halo_mod_g_of_r(r, binned_mass) * 1.22 * mh * POW( P/(1.1/mu) / halo_S_of_r(r,Grid, binned_mass),
 						    1./Gamma );
-    std::cout << "r " << r/LengthUnits << " P " << P << " S " << halo_S_of_r(r,Grid,binned_mass) << std::endl; 
     if(halo_mod_g_of_r(r, binned_mass) < 0)
 	    ENZO_FAIL("negative g"); 
     if(ret > 0)

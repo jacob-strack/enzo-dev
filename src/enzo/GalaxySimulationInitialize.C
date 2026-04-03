@@ -119,6 +119,7 @@ int GalaxySimulationInitialize(FILE *fptr, FILE *Outfptr,
   char *O2IIName = "O2IIDensity";
   char *MassEnclosedName = "MassEnclosed"; 
   char *isDiskName = "isDisk";
+  char *DebugName = "DebugField";
   char *BxName      = "Bx";
   char *ByName      = "By";
   char *BzName      = "Bz";
@@ -839,7 +840,8 @@ if(Enzo_Version == 2){
  }
 }
    DataLabel[count++] = MassEnclosedName; 
-   DataLabel[count++] = isDiskName; 
+   DataLabel[count++] = isDiskName;
+   DataLabel[count++] = DebugName; 
  if(GalaxySimulationUseMetallicityField)
    DataLabel[count++] = MetalName;
  if (StarMakerTypeIaSNe)
