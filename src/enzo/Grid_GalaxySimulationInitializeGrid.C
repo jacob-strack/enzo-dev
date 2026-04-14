@@ -547,6 +547,8 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	      * POW(r_sph/RotationScaleRadius, 
 		    RotationPowerLawIndex);
 
+	    //halo_vmag = InterpolateVcircTable(r_sph*LengthUnits, VCircRadius, VCircVelocity)/VelocityUnits; 
+
 	    if (r_sph <= RotationScaleRadius)
 	      halo_vmag = RotationScaleVelocity;
 
@@ -602,7 +604,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	      }
 
 	    DiskDensity = (GasMass * SolarMass
-			   / (8.0*pi*ScaleHeightz*Mpc*POW(ScaleHeightR*Mpc,2.0)))
+			   / (4.0*pi*ScaleHeightz*Mpc*POW(ScaleHeightR*Mpc,2.0)))
 	      / DensityUnits;   //Code units (rho_0) 
 	    CellMass = gauss_mass(rcyl*LengthUnits, zheight*LengthUnits,
 				  xpos*LengthUnits, ypos*LengthUnits,
@@ -667,9 +669,9 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	      initial_metallicity *= GalaxySimulationDiskMetallicityEnhancementFactor;
           
 	    /* Replace default/CGM velocity with disk velocity */
-	    Velocity[0] = disk_vel[0];
-	    Velocity[1] = disk_vel[1];
-	    Velocity[2] = disk_vel[2];
+	    //Velocity[0] = disk_vel[0];
+	    //Velocity[1] = disk_vel[1];
+	    //Velocity[2] = disk_vel[2];
 	    BaryonField[isDiskNum][n] = 1; //flag we are in the disk for InitializeGridb 
 	  }
 
@@ -690,7 +692,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
       } //end: first pass over grid
 	
   //if on the root grid, init particles now 
-  if ( DiskGravity + PointSourceGravity == FALSE && level == 0){
+  if ( DiskGravity + PointSourceGravity == FALSE && level == 0 && bin_mass){
       InitializeParticles(this, DiskPosition);
   }
   
@@ -715,8 +717,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	y = int((ParticlePosition[1][p] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones; 
 	z = int((ParticlePosition[2][p] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones;
         if((ParticlePosition[0][p] < GridLeftEdge[0]) || (ParticlePosition[1][p] < GridLeftEdge[1]) || (ParticlePosition[2][p] < GridLeftEdge[2]) || (ParticlePosition[0][p] > GridRightEdge[0]) || (ParticlePosition[1][p] > GridRightEdge[1]) || (ParticlePosition[2][p] > GridRightEdge[2])){
-		std::cout << "no" << std::endl;
-		//continue;
+		continue;
 	}
 	ind = (z * GridDimension[1] + y) * GridDimension[0] + x; 
 	density = ParticleMass[p]*CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]; //code mass  
@@ -746,7 +747,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 		     POW(fabs(ypos), 2) +
 		     POW(fabs(zpos), 2) );
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
-  	BaryonField[MassEnclosedNum][ind] = ParticlePosition[0][p];
+  	//BaryonField[MassEnclosedNum][ind] = ParticlePosition[0][p];
 	double delta_r = 1.0 / 100; //code units
     	int ind_r = int(r_sph / delta_r);
 	binned_mass[ind_r] += density; 	
@@ -937,13 +938,20 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 		     POW(fabs(zpos), 2) );
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
 	density = 0.0; 
+	float delta_r = 1.0 / 100; 
+	BaryonField[MassEnclosedNum][n] = halo_mod_g_of_r(r_sph, binned_mass); 
 	//add halo if we're in the right spot
 	if(r_sph*LengthUnits < R200){
 		temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
-		density += HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
+		if(r_sph > 0.01)
+			density += HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
 	}
 	else{ 
-		temperature = InitialTemperature; //background box temp if outside the CGM   
+		temperature = InitialTemperature; //background box temp if outside the CGM  
+		//no halo rotation if outside halo 
+		BaryonField[Vel1Num][n] = 0.0;  
+		BaryonField[Vel2Num][n] = 0.0;  
+		BaryonField[Vel3Num][n] = 0.0;  
 	}
 	if (BaryonField[isDiskNum][n]){
 	    temperature = DiskTemperature;//set disk temp as specified by parameter file
@@ -1172,8 +1180,8 @@ float gauss_mass(FLOAT r, FLOAT z, FLOAT xpos, FLOAT ypos, FLOAT zpos, FLOAT inv
                     zcoord = fabs(zpos+EvaluationPoints[k]*cellwidth/2.0);
                     kludge2 = 
                         cellwidth/2.0 * Weights[k] * 
-                        PEXP(-rcoord/ScaleHeightR) *
-                        PEXP(-fabs(zcoord)/ScaleHeightz);
+                        PEXP(-rrot/ScaleHeightR) *
+                        PEXP(-fabs(zrot)/ScaleHeightz); //replaced rcoord and zcoord with rrot and zrot 
                     yResult[j] +=kludge2;
 
 		}
@@ -2278,14 +2286,31 @@ double halo_mod_DMmass_at_r(float* binned_mass, double r){
     for(int i = 0; i < NumberOfParticles; i++){
 	   if(ParticleType[i] != PARTICLE_TYPE_DARK_MATTER)
 		   continue; //if it's not dark matter we don't care yet 
-	   if(ParticlePosition[0][i] < GridLeftEdge[0] || ParticlePosition[0][i] > GridRightEdge[0] || ParticlePosition[1][i] < GridLeftEdge[1] || ParticlePosition[1][i] > GridRightEdge[1] || ParticlePosition[2][i] < GridLeftEdge[2] || ParticlePosition[2][i] > GridRightEdge[2])
-		   continue; //particle off grid
+	    if(ParticlePosition[0][i] < 0){
+		ParticlePosition[0][i] += 1.0; 
+	    } 
+	    if(ParticlePosition[0][i] > 1.0){
+		ParticlePosition[0][i] = 1.0 - ParticlePosition[0][i]; 
+	    }
+	    if(ParticlePosition[1][i] < 0){
+		ParticlePosition[1][i] += 1.0; 
+	    } 
+	    if(ParticlePosition[1][i] > 1.0){
+		ParticlePosition[1][i] = 1.0 - ParticlePosition[1][i]; 
+	    }
+	    if(ParticlePosition[2][i] < 0){
+		ParticlePosition[2][i] += 1.0; 
+	    } 
+	    if(ParticlePosition[2][i] > 1.0){
+		ParticlePosition[2][i] = 1.0 - ParticlePosition[2][i]; 
+	    }
 	    //Get the correct index in total density field from particle's position 
 	    int ind; 
 	    x = ((ParticlePosition[0][i] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
 	    y = ((ParticlePosition[1][i] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones;
 	    z = ((ParticlePosition[2][i] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones; 
 	    ind = (z * GridDimension[1] + y) * GridDimension[0] + x;
+	    std::cout << "xyz " << x << " " << y << " " << z << " " << "pp " << ParticlePosition[0][i] << " " << ParticlePosition[1][i] << " " << ParticlePosition[2][i] << " " << "ind " << ind << " size " << GridDimension[0]*GridDimension[1]*GridDimension[2] << " " << GridLeftEdge[0] << " " << GridLeftEdge[1] << " " << GridLeftEdge[2] << " " << this->GridLevel << " " << std::endl;
 	    //add mass of dark matter particle uniformly over cell
 	    dens_tot[ind] += (ParticleMass[i] * SolarMass / MassUnits) / (CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]); 
 	    ParticleAttribute[0][i] = -1.0; //Birthtime negative makes flagging agora particles easy
@@ -2295,8 +2320,18 @@ double halo_mod_DMmass_at_r(float* binned_mass, double r){
     for(int ind = 0; ind < this->NumberOfParticles; ind++){
 	    if(ParticleType[ind] == PARTICLE_TYPE_DARK_MATTER)
 		    continue; //now we only care if it's an actual star particle
-	   if(ParticlePosition[0][ind] < GridLeftEdge[0] || ParticlePosition[0][ind] > GridRightEdge[0] || ParticlePosition[1][ind] < GridLeftEdge[1] || ParticlePosition[1][ind] > GridRightEdge[1] || ParticlePosition[2][ind] < GridLeftEdge[2] || ParticlePosition[2][ind] > GridRightEdge[2])
-		   continue; //particle off grid
+	    if(ParticlePosition[0][ind] < 0) 
+		    ParticlePosition[0][ind] += 1.0; 
+	    if(ParticlePosition[0][ind] > 1.0)
+		    ParticlePosition[0][ind] = 1.0 - ParticlePosition[0][ind]; 
+	    if(ParticlePosition[1][ind] < 0) 
+		    ParticlePosition[1][ind] += 1.0; 
+	    if(ParticlePosition[1][ind] > 1.0)
+		    ParticlePosition[1][ind] = 1.0 - ParticlePosition[1][ind]; 
+	    if(ParticlePosition[2][ind] < 0) 
+		    ParticlePosition[2][ind] += 1.0; 
+	    if(ParticlePosition[2][ind] > 1.0)
+		    ParticlePosition[2][ind] = 1.0 - ParticlePosition[2][ind]; 
 	    //get index in grid where star particle is located 
 	    x = ((ParticlePosition[0][ind] - GridLeftEdge[0]) / CellWidth[0][0]) + NumberOfGhostZones; 
 	    y = ((ParticlePosition[1][ind] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones;
