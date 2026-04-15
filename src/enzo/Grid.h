@@ -3400,6 +3400,7 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 
   // used if UseMagneticSupernovaFeedback is turned on
   int AddMagneticSupernovaeToList();
+  int AddInitialMagneticSupernovaeToList();
   //List of SuperNova objects that each grid needs to keep track of
   std::vector<SuperNova> MagneticSupernovaList;
 };

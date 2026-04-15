@@ -669,9 +669,9 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	      initial_metallicity *= GalaxySimulationDiskMetallicityEnhancementFactor;
           
 	    /* Replace default/CGM velocity with disk velocity */
-	    //Velocity[0] = disk_vel[0];
-	    //Velocity[1] = disk_vel[1];
-	    //Velocity[2] = disk_vel[2];
+	    Velocity[0] = disk_vel[0];
+	    Velocity[1] = disk_vel[1];
+	    Velocity[2] = disk_vel[2];
 	    BaryonField[isDiskNum][n] = 1; //flag we are in the disk for InitializeGridb 
 	  }
 
@@ -1029,6 +1029,12 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 			}
 	  	}
 	      	break;
+	  case 2: 
+		{
+	        if(UseMagneticSupernovaFeedback && level==MaximumRefinementLevel)
+			this->AddInitialMagneticSupernovaeToList(); 	
+		}
+		break;
           default:
 	    ENZO_FAIL("undefined value of GalaxySimulationInitialBfieldTopology");
 	  }
