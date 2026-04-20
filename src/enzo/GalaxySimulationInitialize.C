@@ -810,6 +810,7 @@ if(Enzo_Version == 2){
      DataLabel[count++] = DIIName;
      DataLabel[count++] = HDIName;
    }
+   if (use_krome){
    DataLabel[count++] = CMName;  
    DataLabel[count++] = OMName; 
    DataLabel[count++] = CIName; 
@@ -837,6 +838,7 @@ if(Enzo_Version == 2){
    DataLabel[count++] = H2OIIName; 
    DataLabel[count++] = H3OIIName; 
    DataLabel[count++] = O2IIName;
+   }
  }
 }
    DataLabel[count++] = MassEnclosedName; 

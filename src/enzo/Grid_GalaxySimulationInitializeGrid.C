@@ -306,7 +306,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
       FieldType[DIINum  = NumberOfBaryonFields++] = DIIDensity;
       FieldType[HDINum  = NumberOfBaryonFields++] = HDIDensity;
     }
-    
+    if (use_krome){    
     FieldType[CMNum = NumberOfBaryonFields++] = CMDensity;
     FieldType[OMNum = NumberOfBaryonFields++] = OMDensity;
     FieldType[CINum = NumberOfBaryonFields++] = CIDensity; 
@@ -334,6 +334,7 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
     FieldType[H2OIINum = NumberOfBaryonFields++] = H2OIIDensity; 
     FieldType[H3OIINum = NumberOfBaryonFields++] = H3OIIDensity; 
     FieldType[O2IINum = NumberOfBaryonFields++] = O2IIDensity;
+    }
   }
     FieldType[MassEnclosedNum = NumberOfBaryonFields++] = MassEnclosed;
     FieldType[isDiskNum = NumberOfBaryonFields++] = isDisk; 
@@ -851,7 +852,8 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   DINum = FindField(DIDensity, FieldType, NumberOfBaryonFields); 
   DIINum = FindField(DIIDensity, FieldType, NumberOfBaryonFields); 
   HDINum = FindField(HDIDensity, FieldType, NumberOfBaryonFields);
-  PhiNum = FindField(PhiField, FieldType, NumberOfBaryonFields); 
+  PhiNum = FindField(PhiField, FieldType, NumberOfBaryonFields);
+  if(use_krome){ 
   CMNum = FindField(CMDensity, FieldType, NumberOfBaryonFields); 
   OMNum = FindField(OMDensity, FieldType, NumberOfBaryonFields); 
   CINum = FindField(CIDensity, FieldType, NumberOfBaryonFields); 
@@ -879,6 +881,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   H2OIINum = FindField(H2OIIDensity, FieldType, NumberOfBaryonFields); 
   H3OIINum = FindField(H3OIIDensity, FieldType, NumberOfBaryonFields);
   O2IINum = FindField(O2IIDensity, FieldType, NumberOfBaryonFields);
+  }
   MassEnclosedNum = FindField(MassEnclosed, FieldType, NumberOfBaryonFields);   
   isDiskNum = FindField(isDisk, FieldType, NumberOfBaryonFields);   
   DebugNum = FindField(DebugField, FieldType, NumberOfBaryonFields); 
@@ -971,21 +974,6 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
     //new chem densities; init to 0 they get populated with time evolution for now 
     if(CRModel)
     	BaryonField[CMNum][n] = 0.0*density; 
-    if(MultiSpecies){
-    BaryonField[OMNum][n] = 0.0*density; 
-    BaryonField[HCOINum][n] = 0.0; 
-    BaryonField[CO_TOTALINum][n] = 0.0; 
-    BaryonField[H2O_TOTALINum][n] = 0.0; 
-    BaryonField[HOCIINum][n] = 0.0; 
-    BaryonField[H3IINum][n] = 0.0; 
-    BaryonField[CHIINum][n] = 0.0; 
-    BaryonField[CH2IINum][n] = 0.0; 
-    BaryonField[COIINum][n] = 0.0; 
-    BaryonField[OHIINum][n] = 0.0; 
-    BaryonField[H2OIINum][n] = 0.0; 
-    BaryonField[H3OIINum][n] = 0.0; 
-    BaryonField[O2IINum][n] = 0.0; 
-    }
     for(dim = 0; dim < 3; dim++){
 	BaryonField[Vel1Num][n] += UniformVelocity[dim];
 	BaryonField[Vel2Num][n] += UniformVelocity[dim];
@@ -1030,10 +1018,10 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	  	}
 	      	break;
 	  case 2: 
-		{
-	        if(UseMagneticSupernovaFeedback && level==MaximumRefinementLevel)
-			this->AddInitialMagneticSupernovaeToList(); 	
-		}
+	//	{
+	  //      if(UseMagneticSupernovaFeedback && level==MaximumRefinementLevel)
+	//		this->AddInitialMagneticSupernovaeToList(); 	
+	//	}
 		break;
           default:
 	    ENZO_FAIL("undefined value of GalaxySimulationInitialBfieldTopology");
