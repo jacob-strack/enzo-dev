@@ -229,11 +229,8 @@ int RadiativeTransferInitialize(char *ParameterFile,
     for (i = 0; i < FieldsToAdd; i++)
       for (j = 0; j < OldNumberOfBaryonFields; j++)
 	if (TypesToAdd[i] == ExistingTypes[j]) {
-		std::cout << "fields to add " << i << " " << j << std::endl; 
-	  for (k = i; k < FieldsToAdd; k++){
-		  std::cout << "adding " << k << " " << FieldsToAdd << std::endl;
+	  for (k = i; k < FieldsToAdd; k++)
 	    TypesToAdd[k] = TypesToAdd[k+1];
-	  }
 	  i--;
 	  break;
 	} // ENDIF matching type

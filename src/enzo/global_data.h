@@ -873,6 +873,8 @@ EXTERN float EOSCriticalDensity;
 EXTERN float EOSGamma;
 EXTERN float C_h;
 EXTERN float C_p;
+EXTERN float C_hFactor; 
+EXTERN float C_hCeiling; 
 EXTERN float DivBDampingLength;
 EXTERN int UseConstantAcceleration;
 EXTERN float ConstantAcceleration[3];

@@ -807,6 +807,8 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   EOSGamma		     = 1.667;
   Mu			     = 0.6;
   DivBDampingLength          = 1.;
+  C_hFactor		     = 1.; 
+  C_hCeiling		     = 1.05; 
   UseCUDA		     = 0;
   UseFloor		     = 0;
   UseViscosity		     = 0;

@@ -59,7 +59,7 @@ int ComputeDednerWaveSpeeds(TopGridData *MetaData, LevelHierarchyEntry *LevelArr
   //      lmax = 0; // <- Pengs version had lmax = 6
 
   // using this for a cosmology run ... 
-  lmax = MaximumRefinementLevel;
+  //lmax = MaximumRefinementLevel;
   FLOAT dx0, dy0, dz0, h_min;
   
   dx0 = (DomainRightEdge[0] - DomainLeftEdge[0]) / MetaData->TopGridDims[0];
@@ -68,9 +68,12 @@ int ComputeDednerWaveSpeeds(TopGridData *MetaData, LevelHierarchyEntry *LevelArr
   dz0 = (MetaData->TopGridRank > 2) ? 
     (DomainRightEdge[2] - DomainLeftEdge[2]) / MetaData->TopGridDims[2] : 1e8;
   h_min = my_MIN(dx0, dy0, dz0);
-  h_min /= pow(RefineBy, lmax);
-  C_h = 10*0.3*MetaData->CourantSafetyNumber*(h_min/dt0);//added 2 when checking numerical artifacts at low wave speeds
-  //  C_h = min( C_h, 1e6/VelocityUnits); // never faster than __ cm/s (for very small dt0 a problems)
+  //h_min /= pow(RefineBy, lmax); //not doing cosmology run
+  C_h = C_hFactor*MetaData->CourantSafetyNumber*(h_min/dt0);//C_pFactor in parameter file to get near unity. Maybe smarter to adjust RootGridCourantSafetyNumber instead. 
+  if(C_h > C_hCeiling)
+	  std::cout << "WARNING: C_h above Ceiling  " << C_h << std::endl; 
+  C_h = min(C_h, C_hCeiling); // never faster than __ code_velocity (for very small dt0 problems)
+  std::cout << "level " << lmax << " Attempted C_h " << C_h << std::endl;
   if (EOSType == 3)  // for isothermal runs just use the constant sound speed
     {
 	C_h = EOSSoundSpeed;
@@ -82,7 +85,7 @@ int ComputeDednerWaveSpeeds(TopGridData *MetaData, LevelHierarchyEntry *LevelArr
     printf("isothermal \n"); 
 }
 
-  C_p = 10*sqrt(0.18*DivBDampingLength*C_h);//took away constant when checking numerical artifacts at low speeds
+  C_p = sqrt(0.18*DivBDampingLength*C_h);
 
   return SUCCESS;
 }

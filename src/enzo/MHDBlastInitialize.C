@@ -115,7 +115,7 @@ int MHDBlastInitialize(FILE *fptr, FILE *Outfptr, HierarchyEntry &TopGrid,
   char *ByName = "By";
   char *BzName = "Bz";
   char *PhiName = "Phi";
-  
+  char *PhipName = "Phip";  
   
 
   // General control variable
@@ -172,6 +172,8 @@ int MHDBlastInitialize(FILE *fptr, FILE *Outfptr, HierarchyEntry &TopGrid,
     ret += sscanf(line, "MHDBlastDA = %"PSYM, &DensityA);
     ret += sscanf(line, "MHDBlastDB = %"PSYM, &DensityB);
 
+    ret += sscanf(line, "C_hFactor = %"PSYM, &C_hFactor);
+    
     ret += sscanf(line, "MHDBlastBA = %"PSYM" %"PSYM" %"PSYM, BA, BA+1, BA+2);
     ret += sscanf(line, "MHDBlastBB = %"PSYM" %"PSYM" %"PSYM, BB, BB+1, BB+2);
 
@@ -436,6 +438,10 @@ int MHDBlastInitialize(FILE *fptr, FILE *Outfptr, HierarchyEntry &TopGrid,
     DataLabel[i++] = PhiName;
     DataUnits[j++] = NULL;
   }
+  if(UsePoissonDivergenceCleaning){
+	  DataLabel[i++] = PhipName; 
+	  DataUnits[j++] = NULL; 
+}
 
 
   if(DualEnergyFormalism ){

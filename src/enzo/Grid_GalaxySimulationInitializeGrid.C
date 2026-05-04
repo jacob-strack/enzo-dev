@@ -1018,10 +1018,10 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	  	}
 	      	break;
 	  case 2: 
-	//	{
-	  //      if(UseMagneticSupernovaFeedback && level==MaximumRefinementLevel)
-	//		this->AddInitialMagneticSupernovaeToList(); 	
-	//	}
+		{
+	        if(UseMagneticSupernovaFeedback && level==MaximumRefinementLevel)
+			this->AddInitialMagneticSupernovaeToList(); 	
+		}
 		break;
           default:
 	    ENZO_FAIL("undefined value of GalaxySimulationInitialBfieldTopology");
