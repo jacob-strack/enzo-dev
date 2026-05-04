@@ -1162,6 +1162,11 @@ int WriteParameterFile(FILE *fptr, TopGridData &MetaData, char *name = NULL)
   fprintf(fptr, "ShearingVelocityDirection    = %"ISYM"\n",ShearingVelocityDirection);
   fprintf(fptr, "ShearingBoxProblemType    = %"ISYM"\n\n", ShearingBoxProblemType);
 
+
+  //Write Dedner wave speed parameters 
+  fprintf(fptr, "C_hCeiling = %"FSYM, C_hCeiling);
+  fprintf(fptr, "C_hFactor = %"FSYM, C_hFactor); 
+
   /* write data which defines the boundary conditions */
  
   fprintf(fptr, "LeftFaceBoundaryCondition  = ");

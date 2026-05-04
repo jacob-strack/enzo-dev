@@ -1396,7 +1396,11 @@ int ReadParameterFile(FILE *fptr, TopGridData &MetaData, float *Initialdt)
     ret += sscanf(line,"FeedbackRamp = %"ISYM, &FeedbackRamp);
     ret += sscanf(line,"FeedbackRampFinalTime = %"FSYM, &FeedbackRampFinalTime);
     ret += sscanf(line,"FeedbackRampPowerLawIndex = %"FSYM, &FeedbackRampPowerLawIndex);
+    
 
+    //Dedner wave speed parameters 
+    ret += sscanf(line, "C_hCeiling = %"FSYM, &C_hCeiling);
+    ret += sscanf(line, "C_hFactor = %"FSYM, &C_hFactor); 
     /* If the dummy char space was used, then make another. */
 
     if (*dummy != 0) {
