@@ -1164,8 +1164,8 @@ int WriteParameterFile(FILE *fptr, TopGridData &MetaData, char *name = NULL)
 
 
   //Write Dedner wave speed parameters 
-  fprintf(fptr, "C_hCeiling = %"FSYM, C_hCeiling);
-  fprintf(fptr, "C_hFactor = %"FSYM, C_hFactor); 
+  fprintf(fptr, "C_hCeiling = %"FSYM"\n", C_hCeiling);
+  fprintf(fptr, "C_hFactor = %"FSYM"\n", C_hFactor); 
 
   /* write data which defines the boundary conditions */
  
