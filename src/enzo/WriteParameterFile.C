@@ -537,6 +537,7 @@ int WriteParameterFile(FILE *fptr, TopGridData &MetaData, char *name = NULL)
   fprintf(fptr, "SGScoeffNLb                    = %"FSYM"\n", SGScoeffNLb);
   fprintf(fptr, "use_grackle                 = %"ISYM"\n", use_grackle);
   fprintf(fptr, "use_krome                 = %"ISYM"\n", use_krome);
+  fprintf(fptr, "use_krome_cooling                 = %"ISYM"\n", use_krome_cooling);
   fprintf(fptr, "RadiativeCooling               = %"ISYM"\n", RadiativeCooling);
   fprintf(fptr, "RadiativeCoolingModel          = %"ISYM"\n", RadiativeCoolingModel);
   fprintf(fptr, "GadgetEquilibriumCooling       = %"ISYM"\n", GadgetEquilibriumCooling);

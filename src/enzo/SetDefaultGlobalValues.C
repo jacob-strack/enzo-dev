@@ -544,6 +544,7 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
 
   use_grackle = FALSE;
   use_krome = FALSE; 
+  use_krome_cooling = FALSE; 
 
   OutputCoolingTime = FALSE;
   OutputTemperature = FALSE;

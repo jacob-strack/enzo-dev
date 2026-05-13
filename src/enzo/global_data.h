@@ -363,6 +363,7 @@ EXTERN int use_grackle;
 
 //Use krome for chem updates 
 EXTERN int use_krome; 
+EXTERN int use_krome_cooling; 
 
 /* Cloudy cooling parameters and data. */
 

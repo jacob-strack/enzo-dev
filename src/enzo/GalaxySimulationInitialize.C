@@ -360,7 +360,8 @@ dummy[0] = 0;
 	    ret += sscanf(line, "RiemannSolver = %"ISYM, &RiemannSolver);
 	    ret += sscanf(line, "ReconstructionMethod = %"ISYM, &ReconstructionMethod);
         ret += sscanf(line, "GalaxySimulationDebugHold = %"ISYM, &GalaxySimulationDebugHold);
-        ret += sscanf(line, "use_krome = %"ISYM, &use_krome);  
+        ret += sscanf(line, "use_krome = %"ISYM, &use_krome); 
+        ret += sscanf(line, "use_krome_cooling%"ISYM, &use_krome_cooling);
         ret += sscanf(line, "C_hFactor = %"FSYM, &C_hFactor);  
         ret += sscanf(line, "C_hCeiling = %"FSYM, &C_hCeiling);  
     /* if the line is suspicious, issue a warning */

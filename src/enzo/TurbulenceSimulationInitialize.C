@@ -233,6 +233,7 @@ int TurbulenceSimulationInitialize(FILE *fptr, FILE *Outfptr,
     ret += sscanf(line, "TurbulenceSimulationSubgridsAreStatic = %"ISYM,
                   &TurbulenceSimulationSubgridsAreStatic);
     ret += sscanf(line, "use_krome = %"ISYM, &use_krome);  
+    ret += sscanf(line, "use_krome_cooling = %"ISYM, &use_krome_cooling);  
     ret += sscanf(line, "TurbulenceSimulationEnzoVersion		       = %"ISYM, &Enzo_Version); //added int value to specify which version of enzo to use 
     if (sscanf(line, "TurbulenceSimulationGridLeftEdge[%"ISYM"]", &gridnum) > 0)
       ret += sscanf(line, "TurbulenceSimulationGridLeftEdge[%"ISYM"] = %"PSYM" %"PSYM" %"PSYM,
