@@ -468,6 +468,8 @@ dummy[0] = 0;
 
   double enclosed_mass = 0.0; 
   int dbfile = 0; 
+  if(GalaxySimulationDebugHold == 0) 
+      std::cout << "Entering Debug Hold. Touch file GO to continue." << std::endl;
   while(GalaxySimulationDebugHold && dbfile == 0){
 	FILE *file = fopen("GO", "r"); 
 	if(file != NULL){dbfile = 1;}
