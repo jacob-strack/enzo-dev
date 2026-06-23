@@ -364,6 +364,7 @@ dummy[0] = 0;
         ret += sscanf(line, "use_krome_cooling%"ISYM, &use_krome_cooling);
         ret += sscanf(line, "C_hFactor = %"FSYM, &C_hFactor);  
         ret += sscanf(line, "C_hCeiling = %"FSYM, &C_hCeiling);  
+        ret += sscanf(line, "fixed_C_h = %"FSYM, &fixed_C_h);  
     /* if the line is suspicious, issue a warning */
     if (ret == 0 && strstr(line, "=") && strstr(line, "GalaxySimulation") 
 	&& line[0] != '#' && !strstr(line,"RPSWind") && !strstr(line,"PreWind"))
@@ -468,7 +469,7 @@ dummy[0] = 0;
 
   double enclosed_mass = 0.0; 
   int dbfile = 0; 
-  if(GalaxySimulationDebugHold == 0) 
+  if(GalaxySimulationDebugHold == 1) 
       std::cout << "Entering Debug Hold. Touch file GO to continue." << std::endl;
   while(GalaxySimulationDebugHold && dbfile == 0){
 	FILE *file = fopen("GO", "r"); 
@@ -483,6 +484,15 @@ dummy[0] = 0;
   for(int ind = 0; ind < hist_size; ind++)
   	rec_mass_enc[ind] = 0.0; 
   
+  if ( DiskGravity + PointSourceGravity == FALSE && MyProcessorNumber == ROOT_PROCESSOR){
+    int nBulge, nDisk, nHalo, nParticles;
+    nBulge = nlines("bulge.dat");
+    nDisk = nlines("disk.dat");
+    nHalo = nlines("halo.dat");
+    nParticles = nBulge + nDisk + nHalo;
+    MetaData.NumberOfParticles = nParticles; 
+  }
+  
   //sum all the mass 
   MPI_Allreduce(binned_mass, rec_mass_enc, hist_size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD); 
 
@@ -492,14 +502,6 @@ dummy[0] = 0;
 	  binned_mass[ind] = enclosed_mass;
   }
  
-  if ( DiskGravity + PointSourceGravity == FALSE && MyProcessorNumber == ROOT_PROCESSOR){
-    int nBulge, nDisk, nHalo, nParticles;
-    nBulge = nlines("bulge.dat");
-    nDisk = nlines("disk.dat");
-    nHalo = nlines("halo.dat");
-    nParticles = nBulge + nDisk + nHalo;
-    MetaData.NumberOfParticles = nParticles; 
-  }
   
   //second part of grid initializer, this is where most grids will get setup 
 CurrentGrid = &TopGrid;

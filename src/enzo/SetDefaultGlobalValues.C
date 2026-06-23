@@ -810,6 +810,7 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   DivBDampingLength          = 1.;
   C_hFactor		     = 1.; 
   C_hCeiling		     = 1.05; 
+  fixed_C_h          = -1.0; 
   UseCUDA		     = 0;
   UseFloor		     = 0;
   UseViscosity		     = 0;

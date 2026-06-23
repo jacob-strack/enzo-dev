@@ -84,6 +84,8 @@ int ComputeDednerWaveSpeeds(TopGridData *MetaData, LevelHierarchyEntry *LevelArr
     C_h = EOSSoundSpeed;
     printf("isothermal \n"); 
 }
+ if(fixed_C_h > 0.0) 
+    C_h = fixed_C_h; 
 
   C_p = sqrt(0.18*DivBDampingLength*C_h);
 
