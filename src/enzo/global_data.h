@@ -876,6 +876,7 @@ EXTERN float C_h;
 EXTERN float C_p;
 EXTERN float C_hFactor; 
 EXTERN float C_hCeiling;
+EXTERN float C_hFloor; 
 EXTERN float fixed_C_h; 
 EXTERN float DivBDampingLength;
 EXTERN int UseConstantAcceleration;

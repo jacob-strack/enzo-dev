@@ -1401,6 +1401,7 @@ int ReadParameterFile(FILE *fptr, TopGridData &MetaData, float *Initialdt)
 
     //Dedner wave speed parameters 
     ret += sscanf(line, "C_hCeiling = %"FSYM, &C_hCeiling);
+    ret += sscanf(line, "C_hFloor = %"FSYM, &C_hFloor);
     ret += sscanf(line, "C_hFactor = %"FSYM, &C_hFactor); 
     ret += sscanf(line, "fixed_C_h = %"FSYM, &fixed_C_h); 
     /* If the dummy char space was used, then make another. */

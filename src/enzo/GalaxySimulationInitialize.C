@@ -364,6 +364,7 @@ dummy[0] = 0;
         ret += sscanf(line, "use_krome_cooling%"ISYM, &use_krome_cooling);
         ret += sscanf(line, "C_hFactor = %"FSYM, &C_hFactor);  
         ret += sscanf(line, "C_hCeiling = %"FSYM, &C_hCeiling);  
+        ret += sscanf(line, "C_hFloor = %"FSYM, &C_hFloor);  
         ret += sscanf(line, "fixed_C_h = %"FSYM, &fixed_C_h);  
     /* if the line is suspicious, issue a warning */
     if (ret == 0 && strstr(line, "=") && strstr(line, "GalaxySimulation") 

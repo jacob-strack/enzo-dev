@@ -73,6 +73,7 @@ int ComputeDednerWaveSpeeds(TopGridData *MetaData, LevelHierarchyEntry *LevelArr
   if(C_h > C_hCeiling)
 	  std::cout << "WARNING: C_h above Ceiling  " << C_h << std::endl; 
   C_h = min(C_h, C_hCeiling); // never faster than __ code_velocity (for very small dt0 problems)
+  C_h = max(C_h, C_hFloor); //never slower than __ code_velocity
   std::cout << "level " << lmax << " Attempted C_h " << C_h << std::endl;
   if (EOSType == 3)  // for isothermal runs just use the constant sound speed
     {
