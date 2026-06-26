@@ -70,8 +70,8 @@ int ComputeDednerWaveSpeeds(TopGridData *MetaData, LevelHierarchyEntry *LevelArr
   h_min = my_MIN(dx0, dy0, dz0);
   //h_min /= pow(RefineBy, lmax); //not doing cosmology run
   C_h = C_hFactor*MetaData->CourantSafetyNumber*(h_min/dt0);//C_pFactor in parameter file to get near unity. Maybe smarter to adjust RootGridCourantSafetyNumber instead. 
-  if(C_h > C_hCeiling)
-	  std::cout << "WARNING: C_h above Ceiling  " << C_h << std::endl; 
+  if(C_h > C_hCeiling && fixed_C_h == 0.0)
+	  std::cout << "WARNING: C_h above Ceiling  " << C_h << " Ceiling: " << C_hCeiling << std::endl; 
   C_h = min(C_h, C_hCeiling); // never faster than __ code_velocity (for very small dt0 problems)
   C_h = max(C_h, C_hFloor); //never slower than __ code_velocity
   //std::cout << "level " << lmax << " Attempted C_h " << C_h << std::endl;
