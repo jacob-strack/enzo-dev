@@ -89,7 +89,8 @@ int ComputeDednerWaveSpeeds(TopGridData *MetaData, LevelHierarchyEntry *LevelArr
 }
  if(fixed_C_h > 0.0) 
     C_h = fixed_C_h; 
-
+ if(print_C_h) 
+    std::cout << "C_h " << C_h << std::endl; 
   C_p = sqrt(0.18*DivBDampingLength*C_h);
 
   return SUCCESS;
