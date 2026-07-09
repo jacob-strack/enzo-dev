@@ -127,11 +127,12 @@ int IdentifyNewSubgridsBySignature(ProtoSubgrid *SubgridList[],
 	
 	    if ((dim = Subgrid->ReturnNthLongestDimension(i)) < 0)
 	      break;
-	
-	    if (Subgrid->ComputeSecondDerivative(dim, TempInt,
-						 &GridEnds[dim*2]) == FAIL) {
-	      ENZO_FAIL("Error in ProtoSubgrid->ComputeSecondDerivative.\n");
-	    }
+	    
+        //out for now looking for div B buildup 
+	    //if (Subgrid->ComputeSecondDerivative(dim, TempInt,
+		//				 &GridEnds[dim*2]) == FAIL) {
+	      //ENZO_FAIL("Error in ProtoSubgrid->ComputeSecondDerivative.\n");
+	    //}
 
 	    int MinimumNewGridWidth;
 	    MinimumNewGridWidth = min(GridEnds[dim*2][1]-GridEnds[dim*2][0],
