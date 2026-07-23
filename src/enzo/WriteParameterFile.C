@@ -1169,7 +1169,10 @@ int WriteParameterFile(FILE *fptr, TopGridData &MetaData, char *name = NULL)
   fprintf(fptr, "C_hFloor = %"FSYM"\n", C_hFloor);
   fprintf(fptr, "C_hFactor = %"FSYM"\n", C_hFactor); 
   fprintf(fptr, "fixed_C_h = %"FSYM"\n", fixed_C_h); 
+  fprintf(fptr, "print_C_h = %"ISYM"\n", print_C_h); 
 
+
+  fprintf(fptr, "SecondDerivativeFlagging = %"ISYM"\n", SecondDerivativeFlagging); 
   /* write data which defines the boundary conditions */
  
   fprintf(fptr, "LeftFaceBoundaryCondition  = ");

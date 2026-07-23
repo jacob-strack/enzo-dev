@@ -117,7 +117,7 @@ int IdentifyNewSubgridsBySignature(ProtoSubgrid *SubgridList[],
 	dim = Subgrid->ReturnNthLongestDimension(0);
 	Subgrid->LargeAxisRatioCheck(StrongestDim, GridEnds, CriticalGridRatio);
 
-	if (StrongestDim == -1) {
+	if (StrongestDim == -1 and SecondDerivativeFlagging) {
  
 	  /* Now Compute the zero crossings in the second derivaties of all the
 	     signatures. */
@@ -129,10 +129,10 @@ int IdentifyNewSubgridsBySignature(ProtoSubgrid *SubgridList[],
 	      break;
 	    
         //out for now looking for div B buildup 
-	    //if (Subgrid->ComputeSecondDerivative(dim, TempInt,
-		//				 &GridEnds[dim*2]) == FAIL) {
-	      //ENZO_FAIL("Error in ProtoSubgrid->ComputeSecondDerivative.\n");
-	    //}
+	    if (Subgrid->ComputeSecondDerivative(dim, TempInt,
+						 &GridEnds[dim*2]) == FAIL) {
+	      ENZO_FAIL("Error in ProtoSubgrid->ComputeSecondDerivative.\n");
+	    }
 
 	    int MinimumNewGridWidth;
 	    MinimumNewGridWidth = min(GridEnds[dim*2][1]-GridEnds[dim*2][0],

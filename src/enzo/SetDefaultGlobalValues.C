@@ -205,6 +205,7 @@ int SetDefaultGlobalValues(TopGridData &MetaData)
   MetallicityRefinementMinMetallicity = 1.0e-5;
   MetallicityRefinementMinDensity = FLOAT_UNDEFINED;
   FluxCorrection            = TRUE;
+  SecondDerivativeFlagging  = TRUE; 
 
   UseCoolingTimestep = FALSE;
   CoolingTimestepSafetyFactor = 0.1;

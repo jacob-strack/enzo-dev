@@ -366,6 +366,8 @@ dummy[0] = 0;
         ret += sscanf(line, "C_hCeiling = %"FSYM, &C_hCeiling);  
         ret += sscanf(line, "C_hFloor = %"FSYM, &C_hFloor);  
         ret += sscanf(line, "fixed_C_h = %"FSYM, &fixed_C_h);  
+        ret += sscanf(line, "print_C_h = %"ISYM, &print_C_h);  
+        ret += sscanf(line, "SecondDerivativeFlagging = %"ISYM, &SecondDerivativeFlagging);  
     /* if the line is suspicious, issue a warning */
     if (ret == 0 && strstr(line, "=") && strstr(line, "GalaxySimulation") 
 	&& line[0] != '#' && !strstr(line,"RPSWind") && !strstr(line,"PreWind"))
@@ -493,7 +495,8 @@ dummy[0] = 0;
     nParticles = nBulge + nDisk + nHalo;
     MetaData.NumberOfParticles = nParticles; 
   }
-  
+  if(debug) 
+      std::cout << "past read and first grid init" << std::endl; 
   //sum all the mass 
   MPI_Allreduce(binned_mass, rec_mass_enc, hist_size, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD); 
 

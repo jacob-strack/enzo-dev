@@ -48,6 +48,7 @@ EXTERN int PreviousMaxTask;
 EXTERN int LoadBalancingMinLevel;
 EXTERN int LoadBalancingMaxLevel;
 EXTERN int Enzo_Version;
+EXTERN int SecondDerivativeFlagging; 
 /* FileDirectedOutput checks for file existence: 
    stopNow (writes, stops),   outputNow, subgridcycleCount */
 EXTERN int FileDirectedOutput;

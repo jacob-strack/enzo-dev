@@ -1404,8 +1404,10 @@ int ReadParameterFile(FILE *fptr, TopGridData &MetaData, float *Initialdt)
     ret += sscanf(line, "C_hFloor = %"FSYM, &C_hFloor);
     ret += sscanf(line, "C_hFactor = %"FSYM, &C_hFactor); 
     ret += sscanf(line, "fixed_C_h = %"FSYM, &fixed_C_h); 
+    ret += sscanf(line, "print_C_h = %"ISYM, &print_C_h); 
     /* If the dummy char space was used, then make another. */
 
+    ret += sscanf(line, "SecondDerivativeFlagging = %"ISYM, &SecondDerivativeFlagging); 
     if (*dummy != 0) {
       dummy = new char[MAX_LINE_LENGTH];
       dummy[0] = 0;
