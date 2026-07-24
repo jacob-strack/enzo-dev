@@ -723,11 +723,15 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	ind = (z * GridDimension[1] + y) * GridDimension[0] + x; 
 	density = ParticleMass[p]*CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]; //code mass  
 	float xpos, ypos, zpos;
-    	xpos = CellLeftEdge[0][x] + 0.5*CellWidth[0][x] - DiskPosition[0];
-	ypos = CellLeftEdge[1][y] + 0.5*CellWidth[1][y] - DiskPosition[1];
-	zpos = CellLeftEdge[2][z] + 0.5*CellWidth[2][z] - DiskPosition[2];
-        double max_pos = 0.5; //this assumes that the disk is at the same coord in x,y,z. change if it's not. 	
-	double min_pos = -0.5; 
+    //why did i make this like this??
+    //xpos = CellLeftEdge[0][x] + 0.5*CellWidth[0][x] - DiskPosition[0];
+	//ypos = CellLeftEdge[1][y] + 0.5*CellWidth[1][y] - DiskPosition[1];
+	//zpos = CellLeftEdge[2][z] + 0.5*CellWidth[2][z] - DiskPosition[2];
+    xpos = ParticlePosition[0][p] - DiskPosition[0];
+	ypos = ParticlePosition[0][p] - DiskPosition[1];
+	zpos = ParticlePosition[2][p] - DiskPosition[2];
+    double max_pos = 1.0; //this assumes that the disk is at the same coord in x,y,z. change if it's not. 	
+	double min_pos = 0.0; 
 	if(xpos > max_pos)
 		xpos = 1 - xpos; 
 	if(xpos < min_pos)
@@ -744,13 +748,12 @@ int grid::GalaxySimulationInitializeGrida(FLOAT DiskRadius,
 	  if(zpos < min_pos)
 		  zpos = 1 + zpos; 
 	}
-    	r_sph = sqrt(POW(fabs(xpos), 2) +
-		     POW(fabs(ypos), 2) +
-		     POW(fabs(zpos), 2) );
-	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
+	//r_sph = max(r_sph, 0.1*CellWidth[0][0]);
+    r_sph = sqrt(POW(fabs(xpos), 2) + POW(fabs(ypos),2) + POW(fabs(zpos),2)); 
+    //r_sph = sqrt(POW(fabs(ParticlePosition[0][p] - 0.25), 2) + POW(fabs(ParticlePosition[1][p]-0.25), 2) + POW(fabs(ParticlePosition[2][p]-0.25), 2)); 
   	//BaryonField[MassEnclosedNum][ind] = ParticlePosition[0][p];
 	double delta_r = 1.0 / 100; //code units
-    	int ind_r = int(r_sph / delta_r);
+    int ind_r = int(r_sph / delta_r);
 	binned_mass[ind_r] += density; 	
   	}
   std::cout << "total num dm particles: " << total_dm_particles << std::endl;
@@ -805,6 +808,8 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	   int bin_mass 
           )
 {
+    if(debug) 
+        std::cout << "start init grid b" << std::endl; 
   /* declarations */
   int dim, i, j, k, m, field, disk, size, MetalNum, MetalIaNum, vel;
   int DeNum, HINum, HIINum, HeINum, HeIINum, HeIIINum, HMNum, H2INum,
@@ -889,10 +894,13 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   //so that we can tell what the actual m_enclosed is at a given r 
   int n = 0;
   double far_left, far_right, largest_rad;
-  
+  if(debug) 
+      std::cout << "begin halo init" << std::endl; 
   largest_rad = sqrt(3*0.25) * LengthUnits;//periodic wrap means this should be true. unless you changed the box size in code units. 
   struct CGMdata CGM_data(8162);
-  halo_init(CGM_data, this, binned_mass, -1.0);
+  halo_init(CGM_data, this, binned_mass, largest_rad);
+  if(debug) 
+      std::cout << "halo init complete" << std::endl; 
   double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
   float rho_crit = 1.8788e-29*0.49; 
   float R200 = pow(3.0/(4.0*3.14159) * binned_mass[99]*MassUnitsDouble/(200.0*rho_crit), 1./3.);
@@ -942,7 +950,8 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
 	density = 0.0; 
 	float delta_r = 1.0 / 100; 
-	BaryonField[MassEnclosedNum][n] = halo_mod_g_of_r(r_sph, binned_mass); 
+	//BaryonField[MassEnclosedNum][n] = halo_mod_g_of_r(r_sph, binned_mass); 
+	BaryonField[MassEnclosedNum][n] = r_sph; 
 	//add halo if we're in the right spot
 	if(r_sph*LengthUnits < R200){
 		temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
@@ -1064,6 +1073,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	
       } // end loop over grids
 
+  std::cout << "Initialization Done" << std::endl; 
   return SUCCESS;
 
 } // end Grid::GalaxySimulationInitializeGrid
@@ -1123,6 +1133,8 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad){
 		return ans*MassUnitsDouble; 	
 	}
 	if(next_r_bin >= 100){
+        if(debug)
+            std::cout << "rbin too big!" << std::endl; 
 		prev_menc = binned_mass[bin_index - 1];
 	    	ans = (binned_mass[bin_index] - prev_menc) / delta_r * (rad - prev_r_bin) + prev_menc; 
 		return ans*MassUnitsDouble; 	
@@ -2053,7 +2065,16 @@ double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass){
     
     vcirc2 = GravConst * MassEnclosed_r(binned_mass, r) / r;
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass, r_max) / r_max;
-    
+    if(debug) 
+        std::cout << "MassEnclosed @ rmax " << MassEnclosed_r(binned_mass, r_max) << std::endl; 
+    if(debug) 
+        std::cout << "MassEnclosed @ r " << MassEnclosed_r(binned_mass, r) << std::endl; 
+    if(debug){ 
+        std::cout << "binned mass " << std::endl; 
+        for(int i = 0; i < 100; i++) 
+            std::cout << binned_mass[i] << " ";
+        std::cout << std::endl; 
+    }
     Tgrav = mu*mh * vcirc2 / kboltz; // 2x gravitational "temperature"
     Tgrav_therm = Tgrav / TemperatureUnits / ((Gamma-1.0)*mu); // code
   
@@ -2105,24 +2126,30 @@ double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass){
     double n_h2ii = DensityUnits * h2ii / m_h2; 
 
     double m_d = 3.345e-24; 
-
-    double n_di = DensityUnits * di / m_d; 
-    double n_dii = DensityUnits * dii / m_d; 
-
-    double m_hd = 5.018e-24; 
-
-    double n_hd = DensityUnits * hdi / m_hd; 
+    double n_di, n_dii, n_hd; 
+    if(MultiSpecies > 2){ 
+        n_di = DensityUnits * di / m_d; 
+        n_dii = DensityUnits * dii / m_d; 
+        double m_hd = 5.018e-24; 
+        n_hd = DensityUnits * hdi / m_hd; 
+    }
 
     //double n_metal = DensityUnits * metal / (3*mh); 
 
-    double n_i = n_hii + n_heii + n_heiii + n_h2ii + n_dii + n_hm; 
-
-    double n = n_hi + n_hii + n_hm + n_hei + n_heii + n_heiii + n_h2i + n_h2ii + n_di + n_dii + n_hd + n_e; 
+    double n_i = n_hii + n_heii + n_heiii + n_h2ii + n_hm; 
+    if(MultiSpecies > 2) 
+        n_i += n_dii; 
+    double n = n_hi + n_hii + n_hm + n_hei + n_heii + n_heiii + n_h2i + n_h2ii  + n_e; 
+    if(MultiSpecies > 2) 
+        n += n_di + n_dii + n_hd;
     /* Calculate entropy S(r) in erg cm^2 */
     double S_precip = POW(2*mu*mh, 1./3.) * POW(r*Lambda*GalaxySimulationGasHaloRatio/3.0, 2./3.);
     //double S_precip = POW(2*mu*mh, 1./3.) * POW(20 * r * Lambda * n_i / (n * 3), 2./3.); 
     double S_nfw = 39. * vcirc2_max/1e10/4e4 * POW(r/r_vir, 1.1) / KEV_PER_ERG; // See Voit 19 Eqn 10 for assumptions
-
+    if(debug)
+        std::cout << "rmax " << r_max << " rmax/r_vir " << r_max/r_vir << " Lambda " << Lambda << "vcirc2max " << vcirc2_max << " bin " << (r_max/LengthUnits) / (1.0/100.0) << std::endl; 
+    if(debug)
+        std::cout << "S_p " << S_precip << " S_n " << S_nfw << std::endl; 
     // TODO blend with an entropy cap
     return (S_nfw + S_precip);
     
@@ -2188,7 +2215,9 @@ double halo_dP_dr(double r, double P, grid* Grid, FLOAT *binned_mass) {
     if(ret > 0)
         ENZO_FAIL("positive dp/dr"); 
     if(isnan(ret) && !isnan(P)){
-	std::cout << "NAN IN dP_dr" << std::endl; 
+	std::cout << "NAN IN dP_dr" << std::endl;
+    double delta_r = 1.0/100.0; 
+    std::cout << "r " << r << " r bin: " << int((r/LengthUnits)/delta_r) << std::endl;
 	std::cout << "P " << P << std::endl;
         std::cout << "POW " << POW(P/(1.1/mu) / halo_S_of_r(r,Grid,binned_mass), 1./Gamma) << std::endl;	
         std::cout << "halo s of r " << halo_S_of_r(r,Grid, binned_mass) << " r " << r << std::endl;
@@ -2273,14 +2302,15 @@ double halo_mod_DMmass_at_r(float* binned_mass, double r){
     float *dens_tot = new float[size]; 
     DensNum = FindField(Density, FieldType, NumberOfBaryonFields); 
     MetalNum = FindField(Metallicity, FieldType, NumberOfBaryonFields); 
-    SNColourNum = FindField(SNColour, FieldType, NumberOfBaryonFields); 
+    SNColourNum = FindField(SNColour, FieldType, NumberOfBaryonFields);
+    if(DensNum != -1){
     //first the total density is just the same as in BaryonField
     for(int i = 0; i < size; i++)
 	   dens_tot[i] = BaryonField[DensNum][i]; 
-    for(int i = 0; i < NumberOfParticles; i++){
+    for(int i = 0; i < this->NumberOfParticles; i++){
 	   if(ParticleType[i] != PARTICLE_TYPE_DARK_MATTER)
 		   continue; //if it's not dark matter we don't care yet 
-	    if(ParticlePosition[0][i] < 0){
+       if(ParticlePosition[0][i] < 0){
 		ParticlePosition[0][i] += 1.0; 
 	    } 
 	    if(ParticlePosition[0][i] > 1.0){
@@ -2304,13 +2334,15 @@ double halo_mod_DMmass_at_r(float* binned_mass, double r){
 	    y = ((ParticlePosition[1][i] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones;
 	    z = ((ParticlePosition[2][i] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones; 
 	    ind = (z * GridDimension[1] + y) * GridDimension[0] + x;
-	    std::cout << "xyz " << x << " " << y << " " << z << " " << "pp " << ParticlePosition[0][i] << " " << ParticlePosition[1][i] << " " << ParticlePosition[2][i] << " " << "ind " << ind << " size " << GridDimension[0]*GridDimension[1]*GridDimension[2] << " " << GridLeftEdge[0] << " " << GridLeftEdge[1] << " " << GridLeftEdge[2] << " " << this->GridLevel << " " << std::endl;
+        std::cout << "CHECK " << this->NumberOfParticles << " " << NumberOfParticles << std::endl;
+	    std::cout << "Set particle ind " << i << " xyz " << x << " " << y << " " << z << " " << "pp " << ParticlePosition[0][i] << " " << ParticlePosition[1][i] << " " << ParticlePosition[2][i] << " " << "ind " << ind << " size " << GridDimension[0]*GridDimension[1]*GridDimension[2] << " " << GridLeftEdge[0] << " " << GridLeftEdge[1] << " " << GridLeftEdge[2] << " " << GridRightEdge[0] << GridRightEdge[1] << GridRightEdge[2] << std::endl;
 	    //add mass of dark matter particle uniformly over cell
 	    dens_tot[ind] += (ParticleMass[i] * SolarMass / MassUnits) / (CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]); 
-	    ParticleAttribute[0][i] = -1.0; //Birthtime negative makes flagging agora particles easy
+        ParticleAttribute[0][i] = -1.0; //Birthtime negative makes flagging agora particles easy
 	    ParticleAttribute[1][i] = 9000*Myr_s; //just some big lifetime. probably a better way to handle this
 	    //leave metallicity undefined bc duh 
-    } 
+    }
+    }
     for(int ind = 0; ind < this->NumberOfParticles; ind++){
 	    if(ParticleType[ind] == PARTICLE_TYPE_DARK_MATTER)
 		    continue; //now we only care if it's an actual star particle
@@ -2375,7 +2407,6 @@ int InitializeParticles(grid *thisgrid, FLOAT *Center){ //, HierarchyEntry &TopG
     if(debug) fprintf(stderr, "InitializeParticles: Number of Halo Particles %"ISYM"\n", nHalo);
     nParticles = nBulge + nDisk + nHalo;
     if(debug) fprintf(stderr, "InitializeParticles: Total Number of Particles %"ISYM"\n", nParticles);
-
     // Initialize particle arrays
     PINT *Number = new PINT[nParticles];
     int *Type = new int[nParticles];
@@ -2388,6 +2419,9 @@ int InitializeParticles(grid *thisgrid, FLOAT *Center){ //, HierarchyEntry &TopG
     }
     float *Mass = new float[nParticles];
     float *Attribute[MAX_NUMBER_OF_PARTICLE_ATTRIBUTES];
+    std::cout << "Number of attributes " << NumberOfParticleAttributes << std::endl;
+    if(StarParticleCreation == 0)
+        NumberOfParticleAttributes = 3; //Needed for initial particles
     for (int i = 0; i < NumberOfParticleAttributes; i++)
     {
       Attribute[i] = new float[nParticles];
@@ -2406,7 +2440,7 @@ int InitializeParticles(grid *thisgrid, FLOAT *Center){ //, HierarchyEntry &TopG
     ReadParticlesFromFile(
       Number, Type, Position, Velocity, Mass,
       "halo.dat", PARTICLE_TYPE_DARK_MATTER, count, dx,Center);
-    printf("ID: %d count %d \n", thisgrid->GetGridID(), count); 
+    printf("ID: %d count %d \n", thisgrid->GetGridID(), count);
     thisgrid->SetNumberOfParticles(count);
     thisgrid->SetParticlePointers(Mass, Number, Type, Position,
 				  Velocity, Attribute);
@@ -2448,6 +2482,8 @@ int ReadParticlesFromFile(PINT *Number, int *Type, FLOAT *Position[],
       Position[0][c] = x * kpc_cm / LengthUnits + Center[0];
       Position[1][c] = y * kpc_cm / LengthUnits + Center[1];
       Position[2][c] = z * kpc_cm / LengthUnits + Center[2];
+      double r_sph = sqrt(Position[0][c]*Position[0][c] + Position[1][c]*Position[1][c] + Position[2][c]*Position[2][c]); 
+
 
       Velocity[0][c] = vx * km_cm / VelocityUnits;
       Velocity[1][c] = vy * km_cm / VelocityUnits;
