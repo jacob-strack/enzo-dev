@@ -153,6 +153,7 @@ double GalaxySimulationGasHaloScaleRadius,
 double sigmoid(double r, double r0, double k, double y0, double y_off);
 double halo_S_of_r(double r);
 double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass);
+double halo_S_of_r_old(double r, grid* Grid);
 double halo_dSdr(double r, double n);
 double halo_dn_dr(double r, double n);
 double halo_dP_dr(double r, double P, grid* Grid, FLOAT *binned_mass);
@@ -894,13 +895,23 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   //so that we can tell what the actual m_enclosed is at a given r 
   int n = 0;
   double far_left, far_right, largest_rad;
-  if(debug) 
-      std::cout << "begin halo init" << std::endl; 
-  largest_rad = sqrt(3*0.25) * LengthUnits;//periodic wrap means this should be true. unless you changed the box size in code units. 
+  
+  far_left = DomainLeftEdge[0];
+  far_right = DomainRightEdge[0];
+  
+  for (int i=1; i<GridRank; ++i) {
+    if (DomainLeftEdge[i] < far_left)
+      far_left = DomainLeftEdge[i];
+    if (DomainRightEdge[i] > far_right)
+      far_right = DomainRightEdge[i]; 
+  }
+                          
+  largest_rad = sqrt(3) * (far_right - far_left) / 2.0 * LengthUnits;
+
   struct CGMdata CGM_data(8162);
   halo_init(CGM_data, this, binned_mass, largest_rad);
   if(debug) 
-      std::cout << "halo init complete" << std::endl; 
+      std::cout << "halo init complete" << std::endl;
   double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
   float rho_crit = 1.8788e-29*0.49; 
   float R200 = pow(3.0/(4.0*3.14159) * binned_mass[99]*MassUnitsDouble/(200.0*rho_crit), 1./3.);
@@ -947,16 +958,14 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	r_sph = sqrt(POW(fabs(xpos), 2) +
 		     POW(fabs(ypos), 2) +
 		     POW(fabs(zpos), 2) );
-	r_sph = max(r_sph, 0.1*CellWidth[0][0]);
+	//r_sph = max(r_sph, 0.1*CellWidth[0][0]);
 	density = 0.0; 
 	float delta_r = 1.0 / 100; 
-	//BaryonField[MassEnclosedNum][n] = halo_mod_g_of_r(r_sph, binned_mass); 
-	BaryonField[MassEnclosedNum][n] = r_sph; 
+	//BaryonField[MassEnclosedNum][n] = MassEnclosed_r(binned_mass,r_sph*LengthUnits); 
 	//add halo if we're in the right spot
-	if(r_sph*LengthUnits < R200){
+	if(r_sph*LengthUnits <= R200){
 		temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
-		if(r_sph > 0.01)
-			density += HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
+		density += HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
 	}
 	else{ 
 		temperature = InitialTemperature; //background box temp if outside the CGM  
@@ -973,6 +982,7 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	    * CoolData.SolarMetalFractionByMass 
 	    * density;
 	}
+	BaryonField[MassEnclosedNum][n] = temperature; 
 
 	/* This should probably be scaled with density in some way to be
 	   a proper metallicity -- DWS (loop redundancy addressed by CEK) */
@@ -1371,7 +1381,6 @@ void setup_chem(float density, float temperature, int equilibrate,
     if (dens_indx == EquilibriumTable.dim_size-1 ||
 	temp_indx == EquilibriumTable.dim_size-1)
       interpolate = false;
-
     if (interpolate) {
       HIdest = density*bilinear_interp(density, temperature, 
   EquilibriumTable.density[dens_indx],
@@ -1497,6 +1506,7 @@ void setup_chem(float density, float temperature, int equilibrate,
       }
     } // end interpolate
     else { // don't interpolate; density and/or temp at edge of table
+      //std::cout << "WARNING: ON EDGE OF EQUILIBRIUM TABLE" << std::endl;
       HIdest =  EquilibriumTable.HI[EquilibriumTable.dim_size * temp_indx + dens_indx];
 
       HIIdest = EquilibriumTable.HII[EquilibriumTable.dim_size * temp_indx + dens_indx];
@@ -1765,6 +1775,9 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     index = int((this_radius_cgs-CGM_data.R_inner)/CGM_data.dr+1.0e-3);  // index in array of CGM values
     if(index<0) index=0;  // check our indices
     if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
+    if(CGM_data.T_rad[index] < 10){
+	    std::cout << "very low temp " << index << " " << CGM_data.T_rad[index] << " " << R << std::endl;
+    }
     return CGM_data.T_rad[index];  // return temperature in Kelvin
 
   } else if(GalaxySimulationGasHalo == 8){
@@ -1808,7 +1821,9 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
   
   double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
   M = binned_mass[99] * MassUnitsDouble;  // halo total mass in CGS
-   
+  double old_M = GalaxySimulationGalaxyMass * SolarMass; 
+  std::cout << "mass compare " << M << " " << old_M << std::endl;
+  double old_R200 = pow(3.0/(4.0*3.14159)*old_M/(200.*rho_crit),1./3.);  // virial radius in CGS
   R200 = pow(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
   if (Rstop < 0)
     Rstop = fabs(Rstop)*R200;
@@ -1915,7 +1930,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
 		     Gamma/(Gamma-1.));
     float UniformDensity = 1e-30; //cgs
     float UniformTemperature = 1000; //K 
-    this_press = UniformDensity*kboltz*UniformTemperature; //backround pressure 
+    //this_press = UniformDensity*kboltz*UniformTemperature; //backround pressure 
     // set the bin that we start at (otherwise it doesn't get set!)
     index = int((this_radius - CGM_data.R_inner)/(-1.0*dr)  + 1.0e-3);
     CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma); // n_e ~ n_i
@@ -1938,23 +1953,28 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
       this_press += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); // P @ new radius
       this_ent = halo_S_of_r(this_radius, Grid, binned_mass); // entropy @ new radius
       // store density and temperature in the struct
+      //std::cout << "press " << this_radius << " " << this_press << std::endl; 
       index = int((this_radius - CGM_data.R_inner)/(-1.0*dr) + 1.0e-3);
       CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma);
       CGM_data.T_rad[index] = POW(POW(this_press/mu_ratio, Gamma-1.) * this_ent, 1./Gamma) / kboltz;
       CGM_data.rad[index] = this_radius;
     }
 
-    std::cout << "inward integration completed" << std::endl;  
+    //std::cout << "inward integration completed" << std::endl;  
     // Reset to boundary state
     dr = CGM_data.dr;
     this_radius = R200;
     this_ent = halo_S_of_r(this_radius, Grid, binned_mass); // in erg*cm^2
+    double other_ent = halo_S_of_r_old(old_R200,Grid); 
+    //std::cout << "ent_compare r " << this_radius << " other " << other_ent << " this " << this_ent << std::endl;
     rmax = 2.163*R200/GalaxySimulationDMConcentration;
+    double old_rmax = 2.163*old_R200/GalaxySimulationDMConcentration;
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass, rmax)/rmax;
+    double old_vcirc2_max = GravConst * NFWDarkMatterMassEnclosed(old_rmax) / old_rmax; 
     this_press = mu_ratio*POW(0.25*mu*mh*vcirc2_max/POW(this_ent, 1./Gamma),
 		     Gamma/(Gamma-1.));
-    this_press = UniformDensity*kboltz*UniformTemperature; //backround pressure 
-
+    //this_press = UniformDensity*kboltz*UniformTemperature; //backround pressure 
+    double old_press = mu_ratio*POW(0.25*mu*mh*old_vcirc2_max/POW(other_ent, 1./Gamma), Gamma/(Gamma - 1.));
     // Construct sigmoid to transition temperature to a constant
     double this_temp, this_dens;
     double deriv, r0, y0, y_offset, k;
@@ -1962,13 +1982,14 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     index = int((this_radius - CGM_data.R_inner)/(1.0*dr) + 1.0e-3);
     this_dens = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma);
     this_temp = POW( POW(this_press/mu_ratio, Gamma-1.) * this_ent, 1./Gamma) / kboltz;
-
+    double old_temp = POW(POW(old_press/mu_ratio, Gamma-1.) * other_ent, 1./Gamma) / kboltz;
+    //std::cout << "temp_compare r " << this_temp << " " << old_temp << std::endl; 
     deriv = (log10(this_temp) - log10(CGM_data.T_rad[index-1]))
           / (log10(this_radius) - log10(this_radius-dr));
 
     r0 = log10(this_radius);
     y0 = 2.0 * log10( T_floor / this_temp );
-    //assert (y0 < 0.0);
+    assert (y0 < 0.0);
     y_offset = log10(this_temp) - y0/2.0;
     k = fabs(4.0/y0 * deriv);
 
@@ -1979,29 +2000,27 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     
     dlP_dlr = (log10(this_press) - log10(prev_press))
             / (log10(this_radius) - log10(this_radius-dr));
-    //assert (dlP_dlr < 0.0);
+    assert (dlP_dlr < 0.0);
     
     while(this_radius <= CGM_data.R_outer){
-      this_dPdr = this_press/this_radius * dlP_dlr;
-      //k1 = halo_dP_dr(this_radius,          this_press,             Grid, binned_mass);
-      //k2 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k1, Grid, binned_mass);
-      //k3 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k2, Grid, binned_mass);
-      //k4 = halo_dP_dr(this_radius + dr,     this_press + dr*k3,     Grid, binned_mass);
+      //this_dPdr = this_press/this_radius * dlP_dlr;
+      k1 = halo_dP_dr(this_radius,          this_press,             Grid, binned_mass);
+      k2 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k1, Grid, binned_mass);
+      k3 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k2, Grid, binned_mass);
+      k4 = halo_dP_dr(this_radius + dr,     this_press + dr*k3,     Grid, binned_mass);
       // update radius, pressure, entropy
       this_radius += dr;  // new radius
-      //this_press += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); // P @ new radius
+      this_press += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); // P @ new radius
       this_ent = halo_S_of_r(this_radius, Grid, binned_mass); // entropy @ new radius
-      //std::cout << "outward integration pressure " << this_press << std::endl;
       // update density and radius
-      this_dens = -2.0 * this_dPdr/(1.22*mh*halo_mod_g_of_r(this_radius, binned_mass)); // n_e = n_i
-      this_temp = POW(10, sigmoid(log10(this_radius), r0, k, y0, y_offset));
-      this_press = POW(10, dlP_dlr*log10(this_radius/R200) + log10(press_vir));
+      //this_dens = -2.0 * this_dPdr/(1.22*mh*halo_mod_g_of_r(this_radius, binned_mass)); // n_e = n_i
+      //this_temp = POW(10, sigmoid(log10(this_radius), r0, k, y0, y_offset));
+      //this_press = POW(10, dlP_dlr*log10(this_radius/R200) + log10(press_vir));
       // store everything in the struct
       index = int((this_radius - CGM_data.R_inner)/dr + 1.0e-3);    
       if (index < CGM_data.nbins) {
 	CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma);
 	CGM_data.T_rad[index] = POW(POW(this_press/mu_ratio, Gamma-1.) * this_ent, 1./Gamma) / kboltz;
-	CGM_data.T_rad[index] = this_temp; 
 	CGM_data.rad[index] = this_radius;
       }
       else
@@ -2065,16 +2084,6 @@ double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass){
     
     vcirc2 = GravConst * MassEnclosed_r(binned_mass, r) / r;
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass, r_max) / r_max;
-    if(debug) 
-        std::cout << "MassEnclosed @ rmax " << MassEnclosed_r(binned_mass, r_max) << std::endl; 
-    if(debug) 
-        std::cout << "MassEnclosed @ r " << MassEnclosed_r(binned_mass, r) << std::endl; 
-    if(debug){ 
-        std::cout << "binned mass " << std::endl; 
-        for(int i = 0; i < 100; i++) 
-            std::cout << binned_mass[i] << " ";
-        std::cout << std::endl; 
-    }
     Tgrav = mu*mh * vcirc2 / kboltz; // 2x gravitational "temperature"
     Tgrav_therm = Tgrav / TemperatureUnits / ((Gamma-1.0)*mu); // code
   
@@ -2092,7 +2101,7 @@ double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass){
     // temporarily disable UV background; makes S(r) trend downward at large r instead of upward
     // because of low Tgrav
     int saved_UVB = grackle_data->UVbackground;
-    //grackle_data->UVbackground = 0;
+    grackle_data->UVbackground = 0;
     Grid->GrackleCustomCoolRate(1, &dim, &Lambda,
 				&dens, &Tgrav_therm,
 				&vx, &vy, &vz,
@@ -2146,10 +2155,6 @@ double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass){
     double S_precip = POW(2*mu*mh, 1./3.) * POW(r*Lambda*GalaxySimulationGasHaloRatio/3.0, 2./3.);
     //double S_precip = POW(2*mu*mh, 1./3.) * POW(20 * r * Lambda * n_i / (n * 3), 2./3.); 
     double S_nfw = 39. * vcirc2_max/1e10/4e4 * POW(r/r_vir, 1.1) / KEV_PER_ERG; // See Voit 19 Eqn 10 for assumptions
-    if(debug)
-        std::cout << "rmax " << r_max << " rmax/r_vir " << r_max/r_vir << " Lambda " << Lambda << "vcirc2max " << vcirc2_max << " bin " << (r_max/LengthUnits) / (1.0/100.0) << std::endl; 
-    if(debug)
-        std::cout << "S_p " << S_precip << " S_n " << S_nfw << std::endl; 
     // TODO blend with an entropy cap
     return (S_nfw + S_precip);
     
@@ -2158,7 +2163,64 @@ double halo_S_of_r(double r, grid* Grid, FLOAT *binned_mass){
   }  
     
 }
+/* More complex entropy profile from Voit 2019 that requires calculation of the cooling function.
+   This one returns entropy in erg cm^2 instead of K cm^2 */
+double halo_S_of_r_old(double r, grid* Grid){
+  if (GalaxySimulationGasHalo == 6){
 
+    double M, C, r_vir, r_max, rho_crit = 1.8788e-29*0.49;
+    double vcirc2, vcirc2_max;
+    double Tgrav, Tgrav_therm;
+
+    M = GalaxySimulationGalaxyMass * SolarMass;  // halo total mass in CGS
+    C = GalaxySimulationDMConcentration;  // concentration parameter for NFW halo
+    r_vir = POW(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
+    r_max = 2.163 * r_vir/C;
+
+    vcirc2 = GravConst * halo_mod_DMmass_at_r(r) / r;
+    vcirc2_max = GravConst * halo_mod_DMmass_at_r(r_max) / r_max;
+
+    Tgrav = mu*mh * vcirc2 / kboltz; // 2x gravitational "temperature"
+    Tgrav_therm = Tgrav / TemperatureUnits / ((Gamma-1.0)*mu); // code
+
+    /* Calculate the cooling function Lambda using Grackle */
+    double Lambda;
+    double dens = mh/DensityUnits; // code
+    double vx=0, vy=0, vz=0;
+    double hi, hii, hei, heii, heiii, de, hm, h2i, h2ii, di, dii, hdi, metal; // species
+    int dim=1;
+
+    // setup_chem has densities in code, temperature in K
+    setup_chem(dens, Tgrav, EquilibrateChem, de, hi, hii, hei, heii, heiii, hm, h2i, h2ii, di, dii, hdi);
+    metal = GalaxySimulationGasHaloMetallicity * CoolData.SolarMetalFractionByMass * dens;
+
+    // temporarily disable UV background; makes S(r) trend downward at large r instead of upward
+    // because of low Tgrav
+    int saved_UVB = grackle_data->UVbackground;
+    grackle_data->UVbackground = 0;
+    Grid->GrackleCustomCoolRate(1, &dim, &Lambda,
+                                &dens, &Tgrav_therm,
+                                &vx, &vy, &vz,
+                                &hi, &hii,
+                                &hei, &heii, &heiii,
+                                &de,
+                                &hm, &h2i, &h2ii,
+                                &di, &dii, &hdi,
+                                &metal);
+    grackle_data->UVbackground = saved_UVB;
+
+    // to cgs
+    Lambda = fabs(Lambda) * POW(mh,2) * POW(LengthUnits,2) / ( POW(TimeUnits,3) * DensityUnits);
+
+    /* Calculate entropy S(r) in erg cm^2 */
+    double S_precip = POW(2*mu*mh, 1./3.) * POW(r*Lambda*GalaxySimulationGasHaloRatio/3.0, 2./3.);
+    double S_nfw = 39. * vcirc2_max/1e10/4e4 * POW(r/r_vir, 1.1) / KEV_PER_ERG; // See Voit 19 Eqn 10 for assumptions
+
+    // TODO blend with an entropy cap
+
+    return (S_nfw + S_precip);
+
+  }}
 /* dEntropy/dr as a function of radius for the user-specified CGM types that require numerical
    integration. 
 
@@ -2334,8 +2396,6 @@ double halo_mod_DMmass_at_r(float* binned_mass, double r){
 	    y = ((ParticlePosition[1][i] - GridLeftEdge[1]) / CellWidth[1][0]) + NumberOfGhostZones;
 	    z = ((ParticlePosition[2][i] - GridLeftEdge[2]) / CellWidth[2][0]) + NumberOfGhostZones; 
 	    ind = (z * GridDimension[1] + y) * GridDimension[0] + x;
-        std::cout << "CHECK " << this->NumberOfParticles << " " << NumberOfParticles << std::endl;
-	    std::cout << "Set particle ind " << i << " xyz " << x << " " << y << " " << z << " " << "pp " << ParticlePosition[0][i] << " " << ParticlePosition[1][i] << " " << ParticlePosition[2][i] << " " << "ind " << ind << " size " << GridDimension[0]*GridDimension[1]*GridDimension[2] << " " << GridLeftEdge[0] << " " << GridLeftEdge[1] << " " << GridLeftEdge[2] << " " << GridRightEdge[0] << GridRightEdge[1] << GridRightEdge[2] << std::endl;
 	    //add mass of dark matter particle uniformly over cell
 	    dens_tot[ind] += (ParticleMass[i] * SolarMass / MassUnits) / (CellWidth[0][0]*CellWidth[1][0]*CellWidth[2][0]); 
         ParticleAttribute[0][i] = -1.0; //Birthtime negative makes flagging agora particles easy
