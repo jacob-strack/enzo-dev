@@ -909,6 +909,8 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   largest_rad = sqrt(3) * (far_right - far_left) / 2.0 * LengthUnits;
 
   struct CGMdata CGM_data(8162);
+  if(debug)
+	std::cout << "begin halo init" << std::endl;
   halo_init(CGM_data, this, binned_mass, largest_rad);
   if(debug) 
       std::cout << "halo init complete" << std::endl;
@@ -919,7 +921,6 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
   for (k = 0; k < GridDimension[2]; k++)
     for (j = 0; j < GridDimension[1]; j++)
       for (i = 0; i < GridDimension[0]; i++, n++) {
-	
 	  if (UseMetallicityField) {
 	  /* Set a background metallicity value that will scale with density.
 	     If the cell is in the disk, this wifll be increased by a factor
@@ -960,10 +961,11 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 		     POW(fabs(zpos), 2) );
 	//r_sph = max(r_sph, 0.1*CellWidth[0][0]);
 	density = 0.0; 
-	float delta_r = 1.0 / 100; 
+	float delta_r = 1.0 / 100;
+        float Rstart = 0.01; 	
 	//BaryonField[MassEnclosedNum][n] = MassEnclosed_r(binned_mass,r_sph*LengthUnits); 
 	//add halo if we're in the right spot
-	if(r_sph*LengthUnits <= R200){
+	if(r_sph*LengthUnits <= R200 && r_sph > Rstart){
 		temperature = disk_temp = init_temp = HaloGasTemperature(r_sph, CGM_data);
 		density += HaloGasDensity(r_sph, CGM_data)/DensityUnits; 
 	}
@@ -983,7 +985,6 @@ int grid::GalaxySimulationInitializeGridb(FLOAT DiskRadius,
 	    * density;
 	}
 	BaryonField[MassEnclosedNum][n] = temperature; 
-
 	/* This should probably be scaled with density in some way to be
 	   a proper metallicity -- DWS (loop redundancy addressed by CEK) */
 	if (StarMakerTypeIaSNe)
@@ -1506,7 +1507,8 @@ void setup_chem(float density, float temperature, int equilibrate,
       }
     } // end interpolate
     else { // don't interpolate; density and/or temp at edge of table
-      //std::cout << "WARNING: ON EDGE OF EQUILIBRIUM TABLE" << std::endl;
+      std::cout << "WARNING: ON EDGE OF EQUILIBRIUM TABLE" << std::endl;
+      std::cout << "temp index " << temp_indx << " dens index " << dens_indx << std::endl;
       HIdest =  EquilibriumTable.HI[EquilibriumTable.dim_size * temp_indx + dens_indx];
 
       HIIdest = EquilibriumTable.HII[EquilibriumTable.dim_size * temp_indx + dens_indx];
@@ -1775,9 +1777,6 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     index = int((this_radius_cgs-CGM_data.R_inner)/CGM_data.dr+1.0e-3);  // index in array of CGM values
     if(index<0) index=0;  // check our indices
     if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
-    if(CGM_data.T_rad[index] < 10){
-	    std::cout << "very low temp " << index << " " << CGM_data.T_rad[index] << " " << R << std::endl;
-    }
     return CGM_data.T_rad[index];  // return temperature in Kelvin
 
   } else if(GalaxySimulationGasHalo == 8){
@@ -1930,7 +1929,6 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
 		     Gamma/(Gamma-1.));
     float UniformDensity = 1e-30; //cgs
     float UniformTemperature = 1000; //K 
-    //this_press = UniformDensity*kboltz*UniformTemperature; //backround pressure 
     // set the bin that we start at (otherwise it doesn't get set!)
     index = int((this_radius - CGM_data.R_inner)/(-1.0*dr)  + 1.0e-3);
     CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma); // n_e ~ n_i
@@ -1960,21 +1958,15 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
       CGM_data.rad[index] = this_radius;
     }
 
-    //std::cout << "inward integration completed" << std::endl;  
+    std::cout << "inward integration completed" << std::endl;  
     // Reset to boundary state
     dr = CGM_data.dr;
     this_radius = R200;
     this_ent = halo_S_of_r(this_radius, Grid, binned_mass); // in erg*cm^2
-    double other_ent = halo_S_of_r_old(old_R200,Grid); 
-    //std::cout << "ent_compare r " << this_radius << " other " << other_ent << " this " << this_ent << std::endl;
     rmax = 2.163*R200/GalaxySimulationDMConcentration;
-    double old_rmax = 2.163*old_R200/GalaxySimulationDMConcentration;
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass, rmax)/rmax;
-    double old_vcirc2_max = GravConst * NFWDarkMatterMassEnclosed(old_rmax) / old_rmax; 
     this_press = mu_ratio*POW(0.25*mu*mh*vcirc2_max/POW(this_ent, 1./Gamma),
 		     Gamma/(Gamma-1.));
-    //this_press = UniformDensity*kboltz*UniformTemperature; //backround pressure 
-    double old_press = mu_ratio*POW(0.25*mu*mh*old_vcirc2_max/POW(other_ent, 1./Gamma), Gamma/(Gamma - 1.));
     // Construct sigmoid to transition temperature to a constant
     double this_temp, this_dens;
     double deriv, r0, y0, y_offset, k;
@@ -1982,8 +1974,6 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     index = int((this_radius - CGM_data.R_inner)/(1.0*dr) + 1.0e-3);
     this_dens = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma);
     this_temp = POW( POW(this_press/mu_ratio, Gamma-1.) * this_ent, 1./Gamma) / kboltz;
-    double old_temp = POW(POW(old_press/mu_ratio, Gamma-1.) * other_ent, 1./Gamma) / kboltz;
-    //std::cout << "temp_compare r " << this_temp << " " << old_temp << std::endl; 
     deriv = (log10(this_temp) - log10(CGM_data.T_rad[index-1]))
           / (log10(this_radius) - log10(this_radius-dr));
 
@@ -2003,6 +1993,7 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data){
     assert (dlP_dlr < 0.0);
     
     while(this_radius <= CGM_data.R_outer){
+      std::cout << "outward integration " << this_radius << " " << CGM_data.R_outer << std::endl;
       //this_dPdr = this_press/this_radius * dlP_dlr;
       k1 = halo_dP_dr(this_radius,          this_press,             Grid, binned_mass);
       k2 = halo_dP_dr(this_radius + 0.5*dr, this_press + 0.5*dr*k1, Grid, binned_mass);
