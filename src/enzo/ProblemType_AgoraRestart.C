@@ -350,6 +350,7 @@ public:
     //fill CGM data here to be used to add halo later. Adding here means one integration for entire domain. 
     struct CGMdata CGM_data(8192);
     halo_init(CGM_data, thisgrid, MetaData, binned_mass, 6, 10); 
+
     if(AgoraRestartGasHalo) 
     	this->InitializeGridb(TopGrid.GridData, TopGrid, MetaData, binned_mass, CGM_data);
 
@@ -535,8 +536,6 @@ public:
   } // InitializeSimulation
 
   int InitializeGrida(grid *thisgrid_orig, HierarchyEntry &TopGrid, TopGridData &MetaData){
-    if(debug)
-      printf("Entering AgoraRestart InitializeGrida\n");
 
     AgoraRestartGrid *thisgrid =
       static_cast<AgoraRestartGrid *>(thisgrid_orig);
@@ -566,7 +565,7 @@ public:
       ENZO_FAIL("");
     }
 
-    if (TestProblemData.MultiSpecies)
+    if (MultiSpecies)
       if (thisgrid->IdentifySpeciesFields(
 	    DeNum, HINum, HIINum, HeINum, HeIINum, HeIIINum,
 	    HMNum, H2INum, H2IINum, DINum, DIINum, HDINum) == FAIL)
@@ -598,7 +597,7 @@ public:
 
     /* Find the mean molecular weight */
 
-    if (TestProblemData.MultiSpecies == FALSE)
+    if (MultiSpecies == FALSE)
       mu = Mu;
     else
     {
@@ -689,7 +688,6 @@ public:
 	  else // Ok, we're in the disk
 	  {
 	    thisgrid->BaryonField[DensNum][index] = DiskDensity;
-	    thisgrid->BaryonField[DensNum][index] = 1e-31/DensityUnits; //HaloDensity; //a low background density
 	    vcirc = this->InterpolateVcircTable(xy_radius);
 	    
 
@@ -736,7 +734,7 @@ public:
               ENZO_FAIL("Thought we would find a SNII field but did not.");
           }
       }
-      if(1){ //init chem the way GalaxySimulation does with EquilibriumTable. 
+      if(0){ //init chem the way GalaxySimulation does with EquilibriumTable. 
 	     //trying to be consistent with what is done in S(r) for gas halo. 
 	  int EquilibrateChem = 1;
 
@@ -765,7 +763,7 @@ public:
 
       }
 
-	  if(TestProblemData.MultiSpecies && 0)
+	  if(TestProblemData.MultiSpecies)
 	  {
 	    thisgrid->BaryonField[HINum][index] = TestProblemData.HI_Fraction *
 	      TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
@@ -1437,8 +1435,8 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
     int dim=1;
 
     // setup_chem has densities in code, temperature in K
-    setup_chem(dens, Tgrav, 1, de, hi, hii, hei, heii, heiii, hm, h2i, h2ii, di, dii, hdi);
-    metal = 1e-6 * 0.02041 * dens;
+    //setup_chem(dens, Tgrav, 1, de, hi, hii, hei, heii, heiii, hm, h2i, h2ii, di, dii, hdi);
+    //metal = 1e-6 * 0.02041 * dens;
 
     // temporarily disable UV background; makes S(r) trend downward at large r instead of upward
     // because of low Tgrav
@@ -1464,7 +1462,7 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
     double n_hi = DensityUnits * hi / mh; 
     double n_hii = DensityUnits * hii / mh; 
     double n_hm = DensityUnits * hm / mh; 
- 
+     
     double m_he = 6.64e-24; 
 
     double n_hei = DensityUnits * hei / m_he; 
