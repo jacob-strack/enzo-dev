@@ -1631,6 +1631,13 @@ iveParticles;};
          return PARTICLE_TYPE_STAR;
      return PARTICLE_TYPE_DARK_MATTER;
    }
+   void ReturnParticlePosition(int index, float *ppos){
+	   for(int i = 0; i < 3; i++) 
+		   ppos[i] = ParticlePosition[i][index]; 
+   }
+  int ReturnParticleMass(int index){
+	return ParticleMass[index]; 
+  }
 
 /* Particles: return particle information in structure array */
 
@@ -2423,6 +2430,46 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
 				     FLOAT GalaxySimulationCR = 0.0, 
                  int SetBaryons = 0, int bin_mass = 0
 				);
+  int GalaxySimulationInitializeGrid(
+				     double DiskRadius,
+				     double GalaxyMass,
+				     double GasMass,
+				     FLOAT DiskPosition[MAX_DIMENSION], 
+				     double ScaleHeightz,
+				     double ScaleHeightR, 
+				     double GalaxyTruncationRadius,
+                 double DiskDensityCap,
+				     double DMConcentration,
+				     double DiskTemperature,
+                 int    DiskPressureBalance,
+				     double InitialTemperature,
+				     double UniformDensity,
+				     int   EquilibrateChem,
+				     int   GasHalo,
+				     double GasHaloScaleRadius,
+				     double GasHaloDensity,
+				     double GasHaloDensity2,
+				     double GasTemperature,
+				     double GasAlpha,
+				     double GasZeta,
+				     double GasZeta2,
+				     double GasCoreEntropy,
+				     double GasHaloRatio,
+				     double GasMetallicity,
+				     int   UseHaloRotation,
+				     double RotationScaleVelocity,
+				     double RotationScaleRadius,
+				     double RotationPowerLawIndex,
+				     double DiskMetallicityEnhancementFactor,
+				     double AngularMomentum[MAX_DIMENSION],
+				     double UniformVelocity[MAX_DIMENSION], 
+				     int UseMetallicityField, 
+				     FLOAT GalaxySimulationInflowTime,
+				     double GalaxySimulationInflowDensity,
+				     int level,
+				     double GalaxySimulationCR = 0.0
+                 );
+
   /* Single Star Test Problem initialize grid */
   /* Free expansion test */
   int FreeExpansionInitializeGrid(int FreeExpansionFullBox,
@@ -2697,6 +2744,8 @@ int zEulerSweep(int j, int NumberOfSubgrids, fluxes *SubgridFluxes[],
   /* Create flat arrays of active particle data */
 
   void GetActiveParticlePosition(FLOAT *ActiveParticlePosition[]);
+
+  float GetParticlePosition(int dim, int index); //dumb function to access particle positions for split galaxy init
 
   /* Get the active particle mass as a flat array (1D) */
 
