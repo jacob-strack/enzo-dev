@@ -288,7 +288,6 @@ public:
     
     if(AgoraRestartGasHalo)
 	    std::cout << "Gas Halo ON" << std::endl;
-    
     // Read in circular velocity table
 
     this->ReadInVcircData();
@@ -344,13 +343,14 @@ public:
 	binned_mass[i] = total_mass_enc; 
     }
     
-    ReadEquilibriumTable("equilibrium_table_60_030-Zsun.h5", MetaData.Time);
     this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData); //setup baryons. needed for CGM setup
 
     //fill CGM data here to be used to add halo later. Adding here means one integration for entire domain. 
     struct CGMdata CGM_data(8192);
     halo_init(CGM_data, thisgrid, MetaData, binned_mass, 6, 10); 
-
+    for(int i = 0; i < 1000; i++){
+	std::cout << "CGM test " << CGM_data.rad[i] << " " << CGM_data.n_rad[i] << std::endl;
+    }
     if(AgoraRestartGasHalo) 
     	this->InitializeGridb(TopGrid.GridData, TopGrid, MetaData, binned_mass, CGM_data);
 
@@ -403,27 +403,6 @@ public:
     }
 
 
-  // If we used the Equilibrium Table, delete it
-  if (1){
-    if (MultiSpecies) {
-      delete [] EquilibriumTable.HI;
-      delete [] EquilibriumTable.HII;
-      delete [] EquilibriumTable.HeI;
-      delete [] EquilibriumTable.HeII;
-      delete [] EquilibriumTable.HeIII;
-      delete [] EquilibriumTable.de;
-      if (MultiSpecies > 1) {
-        delete [] EquilibriumTable.HM;
-        delete [] EquilibriumTable.H2I;
-        delete [] EquilibriumTable.H2II;
-      }
-      if (MultiSpecies > 2) {
-        delete [] EquilibriumTable.DI;
-        delete [] EquilibriumTable.DII;
-        delete [] EquilibriumTable.HDI;
-      }
-    }
-  }
 
     /* set up field names and units */
     int count = 0;
@@ -887,24 +866,11 @@ public:
       MetalNum = 0;
 
     //this function will esentially just lay down the halo. everything else should be taken care of by now.
-    float ScaleLength         = .0343218;
-    float ScaleHeight         = .00343218;
-    float DiskMass            = 42.9661;
-    float GasFraction         = 0.2;
-    float DiskTemperature     = 1e4;
-    float DiskMetallicity     = 0.0;
-    float HaloMass            = 0.10000;
-    float HaloTemperature     = DiskTemperature;
-    float HaloMetallicity     = 0.0;
-    float RhoZero = DiskMass * GasFraction / (4.*pi) /
-      (POW((ScaleLength),2)*(ScaleHeight));
-    float BoxVolume = 1.;
+    float RhoZero, DiskGasEnergy, DiskDensity, HaloGasEnergy, HaloDensity,
+      BoxVolume, vcirc, mu;
+    BoxVolume = 1.0;  
     for (int dim = 0; dim < TopGrid.GridData->GetGridRank(); dim++)
       BoxVolume *= (DomainRightEdge[dim] - DomainLeftEdge[dim]);
-    float HaloDensity = HaloMass / BoxVolume;
-    float DiskDensity = DiskMass / BoxVolume;
-    float HaloGasEnergy = HaloTemperature / Mu / (Gamma - 1) /
-      TemperatureUnits;
     int i,j,k,index = 0; 
     int size; 
     FLOAT x, y, z, radius, xy_radius, cellwidth;
@@ -913,6 +879,45 @@ public:
     for (int dim = 0; dim < thisgrid->GridRank; dim++)
       size *= thisgrid->GridDimension[dim];
     cellwidth = thisgrid->CellWidth[0][0];
+    /* Find the mean molecular weight */
+
+    if (MultiSpecies == FALSE)
+      mu = Mu;
+    else
+    {
+      // Atomic hydrogen
+      mu = TestProblemData.HydrogenFractionByMass *
+	(TestProblemData.HI_Fraction + 2.0*TestProblemData.HII_Fraction);
+
+      // Helium
+      mu += TestProblemData.HeliumFractionByMass / 4.0 *
+	(TestProblemData.HeI_Fraction + 2.0*TestProblemData.HeII_Fraction +
+	 3.0*TestProblemData.HeIII_Fraction);
+
+      // Molecular hydrogen, ignore Deuterium
+      if (TestProblemData.MultiSpecies > 1)
+	mu += TestProblemData.HydrogenFractionByMass / 2.0 *
+	  (TestProblemData.H2I_Fraction + 2.0*TestProblemData.H2II_Fraction);
+
+      // Metals
+      if (TestProblemData.UseMetallicityField)
+	mu += TestProblemData.MetalFractionByMass / 16.0;
+
+      mu = POW(mu, -1);
+
+    }
+
+   /* Find global physical properties */
+   RhoZero = this->DiskMass * this->GasFraction / (4.*pi) /
+     (POW((this->ScaleLength),2)*(this->ScaleHeight));
+
+   HaloGasEnergy = this->HaloTemperature / mu / (Gamma - 1) /
+     TemperatureUnits;
+
+   HaloDensity = this->HaloMass / BoxVolume;
+
+   DiskGasEnergy = this->DiskTemperature / mu / (Gamma - 1) /
+     TemperatureUnits;
     for (k = 0; k < thisgrid->GridDimension[2]; k++)
     {
       for (j = 0; j < thisgrid->GridDimension[1]; j++)
@@ -943,11 +948,6 @@ public:
 	  if(HaloTemperaturePrecip < 0.0) continue; //we're above the stop radius, so nothing to do for CGM 
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1) /
       TemperatureUnits;
-	  float HaloGasEnergy = HaloTemperature / Mu / (Gamma - 1) /
-      TemperatureUnits;
-	  //lay down the gas halo
-          DiskDensity = gauss_mass(RhoZero, x/LengthUnits, y/LengthUnits,
-				   z/LengthUnits, cellwidth) / POW(cellwidth, 3); 
 	  if ( (HaloDensity*HaloTemperature > DiskDensity*DiskTemperature) )
 		  {
 		    thisgrid->BaryonField[DensNum][index] = HaloDensityPrecip;
@@ -958,6 +958,65 @@ public:
 		    if (TestProblemData.UseMetallicityField)
 		      thisgrid->BaryonField[MetalNum][index] = thisgrid->BaryonField[DensNum][index] *
 			TestProblemData.MetalFractionByMass * HaloMetallicity; 
+	  if(TestProblemData.MultiSpecies)
+	  {
+	    thisgrid->BaryonField[HINum][index] = TestProblemData.HI_Fraction *
+	      TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    thisgrid->BaryonField[HIINum][index] = TestProblemData.HII_Fraction *
+	      TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    thisgrid->BaryonField[HeINum][index] = TestProblemData.HeI_Fraction *
+	      TestProblemData.HeliumFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    thisgrid->BaryonField[HeIINum][index] = TestProblemData.HeII_Fraction *
+	      TestProblemData.HeliumFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    thisgrid->BaryonField[HeIIINum][index] = TestProblemData.HeIII_Fraction *
+	      TestProblemData.HeliumFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    if(TestProblemData.MultiSpecies > 1){
+	      thisgrid->BaryonField[HMNum][index] = TestProblemData.HM_Fraction *
+		TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	      thisgrid->BaryonField[H2INum][index] = 2 * TestProblemData.H2I_Fraction *
+		TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	      thisgrid->BaryonField[H2IINum][index] = 2 * TestProblemData.H2II_Fraction *
+		TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+	    }
+
+	    if (TestProblemData.MultiSpecies > 1)
+	      thisgrid->BaryonField[HIINum][index] -=
+		(thisgrid->BaryonField[HMNum][index] + thisgrid->BaryonField[H2IINum][index]
+		 + thisgrid->BaryonField[H2INum][index]);
+
+	    // Electron "density" (remember, this is a factor of m_p/m_e scaled
+	    // from the 'normal' density for convenience) is calculated by
+	    // summing up all of the ionized species.  The factors of 0.25 and
+	    // 0.5 in front of HeII and HeIII are to fix the fact that we're
+	    // calculating mass density, not number density (because the
+	    // thisgrid->BaryonField values are 4x as heavy for helium for a single
+	    // electron)
+	    thisgrid->BaryonField[DeNum][index] = thisgrid->BaryonField[HIINum][index] +
+	      0.25*thisgrid->BaryonField[HeIINum][index] +
+	      0.5*thisgrid->BaryonField[HeIIINum][index];
+
+	    if (TestProblemData.MultiSpecies > 1)
+	      thisgrid->BaryonField[DeNum][index] += 0.5*thisgrid->BaryonField[H2IINum][index] -
+		thisgrid->BaryonField[HMNum][index];
+
+	    // Set deuterium species (assumed to be a negligible fraction of the
+	    // total, so not counted in the conservation)
+	    if(TestProblemData.MultiSpecies > 2){
+	      thisgrid->BaryonField[DINum ][index] =
+		CoolData.DeuteriumToHydrogenRatio * thisgrid->BaryonField[HINum][index];
+	      thisgrid->BaryonField[DIINum][index] =
+		CoolData.DeuteriumToHydrogenRatio * thisgrid->BaryonField[HIINum][index];
+	      thisgrid->BaryonField[HDINum][index] = 0.75 *
+		CoolData.DeuteriumToHydrogenRatio * thisgrid->BaryonField[H2INum][index];
+	    }
+	  } // if(TestProblemData.MultiSpecies)
 		  }
 	}
       }
@@ -1261,7 +1320,7 @@ namespace {
     Rstop = fabs(Rstop)*R200;
   CGM_data.R_outer = Rstop;// integrate out to the virial radius of halo
 
-  Rstart = 0.01*LengthUnits; // you could force a different start if you liked
+  Rstart = 0.00*LengthUnits; // you could force a different start if you liked
 
   // stepsize for RK4 integration and radial bins
   CGM_data.R_inner = Rstart;
@@ -1384,6 +1443,7 @@ namespace {
 double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopGridData &MetaData) {
     double ret =  -1.0 * halo_mod_g_of_r(r, binned_mass,Grid) * 1.22 * mh * POW( P/(1.1/Mu) / halo_S_of_r_Agora(r,Grid, binned_mass,MetaData),
 						    1./Gamma );
+    std::cout << "g(r) " << r << " " << halo_mod_g_of_r(r,binned_mass,Grid) << std::endl;	
     if(halo_mod_g_of_r(r, binned_mass,Grid) < 0){
 	    std::cout << halo_mod_g_of_r(r, binned_mass, Grid) << std::endl;
 	    ENZO_FAIL("negative g"); 
