@@ -343,20 +343,14 @@ public:
 	total_mass_enc += binned_mass[i]; 
 	binned_mass[i] = total_mass_enc; 
     }
-    std::cout << "binned mass test prc " << MyProcessorNumber << std::endl;
-    for(int i = 0; i < 100; i++)
-        std::cout << i << " " << binned_mass[i] << std::endl;
     
-    this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData); //setup baryons. needed for CGM setup
+    this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData,binned_mass); //setup baryons. needed for CGM setup
 
     //fill CGM data here to be used to add halo later. Adding here means one integration for entire domain. 
-    struct CGMdata CGM_data(8192);
-    halo_init(CGM_data, thisgrid, MetaData, binned_mass, 6, 10); 
-    for(int i = 0; i < 8192; i++){
-	std::cout << "CGM test " << CGM_data.rad[i] << " " << CGM_data.n_rad[i] << std::endl;
-    }
+    //struct CGMdata CGM_data(8192);
+    //halo_init(CGM_data, thisgrid, MetaData, binned_mass, 6, 10); 
     if(AgoraRestartGasHalo) 
-    	this->InitializeGridb(TopGrid.GridData, TopGrid, MetaData, binned_mass, CGM_data);
+    	this->InitializeGridb(TopGrid.GridData, TopGrid, MetaData, binned_mass);
 
     /* Convert minimum initial overdensity for refinement to mass
        (unless MinimumMass itself was actually set). */
@@ -391,12 +385,12 @@ public:
 	  break;
 	LevelHierarchyEntry *Temp = LevelArray[level+1];
 	while (Temp != NULL) {
-	  if (this->InitializeGrida(Temp->GridData, TopGrid, MetaData) == FAIL)
+	  if (this->InitializeGrida(Temp->GridData, TopGrid, MetaData, binned_mass) == FAIL)
 	  {
 	    ENZO_FAIL("Error in AgoraRestart->InitializeGrida");
 	  }
 	  if(AgoraRestartGasHalo){
-		  if (this->InitializeGridb(Temp->GridData, TopGrid, MetaData, binned_mass, CGM_data) == FAIL)
+		  if (this->InitializeGridb(Temp->GridData, TopGrid, MetaData, binned_mass) == FAIL)
 		  {
 		    ENZO_FAIL("Error in AgoraRestart->InitializeGridb");
 		  }
@@ -518,7 +512,7 @@ public:
 
   } // InitializeSimulation
 
-  int InitializeGrida(grid *thisgrid_orig, HierarchyEntry &TopGrid, TopGridData &MetaData){
+  int InitializeGrida(grid *thisgrid_orig, HierarchyEntry &TopGrid, TopGridData &MetaData, float* binned_mass){
 
     AgoraRestartGrid *thisgrid =
       static_cast<AgoraRestartGrid *>(thisgrid_orig);
@@ -561,6 +555,9 @@ public:
       MetallicityField = TRUE;
     else
       MetalNum = 0;
+    
+    //struct CGMdata CGM_data(8192);
+    //halo_init(CGM_data, this, MetaData, binned_mass, 6, 10); 
 
     int dim, i, j, k, size, index=0;
     float RhoZero, DiskGasEnergy, DiskDensity, HaloGasEnergy, HaloDensity,
@@ -653,7 +650,6 @@ public:
 				   z/LengthUnits, cellwidth) / POW(cellwidth, 3);
 	  if ((HaloDensity*HaloTemperature > DiskDensity*DiskTemperature))
 	  {
-        std::cout << "test " << HaloDensity << " " << this->HaloTemperature << " " << DiskDensity << " " << this->DiskTemperature << std::endl;
 	    thisgrid->BaryonField[DensNum][index] = HaloDensity; //1e-31/DensityUnits; //HaloDensity; //a low background density
 	    thisgrid->BaryonField[TENum][index] = HaloGasEnergy;
 	    if (DualEnergyFormalism)
@@ -830,7 +826,7 @@ public:
   }
 
   int InitializeGridb(grid *thisgrid_orig, HierarchyEntry &TopGrid,
-		     TopGridData &MetaData, float* binned_mass, struct CGMdata& CGM_data)
+     TopGridData &MetaData, float* binned_mass)
   {
     AgoraRestartGrid *thisgrid =
       static_cast<AgoraRestartGrid *>(thisgrid_orig);
@@ -869,6 +865,9 @@ public:
       MetallicityField = TRUE;
     else
       MetalNum = 0;
+    
+    struct CGMdata CGM_data(8192);
+    halo_init(CGM_data, thisgrid, MetaData, binned_mass, 6, 10); 
 
     //this function will esentially just lay down the halo. everything else should be taken care of by now.
     float RhoZero, DiskGasEnergy, DiskDensity, HaloGasEnergy, HaloDensity,
@@ -942,7 +941,6 @@ public:
 	  y -= this->CenterPosition[1]*LengthUnits;
 	  z -= this->CenterPosition[2]*LengthUnits;
 
-      std::cout << "zpos test " << this->CenterPosition[2]*LengthUnits << std::endl; 
 
 	  radius = sqrt(POW(x, 2) +
 			POW(y, 2) +
@@ -955,16 +953,12 @@ public:
 	  float HaloDensityPrecip = HaloGasDensity(radius, CGM_data, thisgrid);
 	  float HaloTemperaturePrecip = HaloGasTemperature(radius, CGM_data, thisgrid);
       float temperature = HaloTemperaturePrecip; 
-      std::cout << "halo temperature precip " << HaloTemperaturePrecip << std::endl;
 	  if(HaloTemperaturePrecip < 0.0) continue; //we're above the stop radius, so nothing to do for CGM 
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1) /
       TemperatureUnits;
-      std::cout << "test2 " << HaloDensity << " " << this->HaloTemperature << " " << DiskDensity << " " << this->DiskTemperature << std::endl;
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) )
 		  {
 		    thisgrid->BaryonField[DensNum][index] = HaloDensityPrecip;
-            std::cout << "x y z rad " << x << " " << y << " " << z << " " << radius << std::endl; 
-            std::cout << "this dens " << HaloDensityPrecip << std::endl;
 		    thisgrid->BaryonField[TENum][index] -= HaloGasEnergy; //get rid of energy from overwritten placeholder density
 		    thisgrid->BaryonField[TENum][index] += HaloGasEnergyPrecip;//but DO NOT get rid of the magnetic energy
 		    if (DualEnergyFormalism)
@@ -1539,8 +1533,8 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
       DINum, DIINum, HDINum;
     /* Compute size of this grid */
     int size = 1;
-    for (dim = 0; dim < 3; dim++)
-      size *= Grid->GetGridDimension(dim);
+    for (int d = 0; d < 3; d++)
+      size *= Grid->GetGridDimension(d);
 
     if (Grid->IdentifySpeciesFields(
 	    DeNum, HINum, HIINum, HeINum, HeIINum, HeIIINum,
@@ -1548,8 +1542,8 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
 	ENZO_FAIL("Error in grid->IdentifySpeciesFields.");
     // setup_chem has densities in code, temperature in K
     setup_chem(dens, Tgrav, 1, de, hi, hii, hei, heii, heiii, hm, h2i, h2ii, di, dii, hdi);
-    metal = 1e-6 * 0.01295 * dens;
-
+    metal = 1e-6 * CoolData.SolarMetalFractionByMass * dens;
+    //metal = 0.3 * CoolData.SolarMetalFractionByMass * dens;
     // temporarily disable UV background; makes S(r) trend downward at large r instead of upward
     // because of low Tgrav
     int saved_UVB = grackle_data->UVbackground;
@@ -1565,7 +1559,6 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
 				&metal);
     grackle_data->UVbackground = saved_UVB;
 
-    std::cout << "lambda1 " << Lambda << std::endl;
     // to cgs
     Lambda = fabs(Lambda) * POW(mh,2) * POW(LengthUnits,2) / ( POW(TimeUnits,3) * DensityUnits);
     double GasHaloRatio = 10;  
@@ -1608,7 +1601,6 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
     double S_precip = POW(2*Mu*mh, 1./3.) * POW(r*Lambda*GasHaloRatio/3.0, 2./3.);
     //double S_precip = POW(2*mu*mh, 1./3.) * POW(20 * r * Lambda * n_i / (n * 3), 2./3.); 
     double S_nfw = 39. * vcirc2_max/1e10/4e4 * POW(r/r_vir, 1.1) / KEV_PER_ERG; // See Voit 19 Eqn 10 for assumptions
-    std::cout << "S_p " << S_precip << " S_n " << S_nfw << " Lambda " << Lambda << std::endl;
     // TODO blend with an entropy cap
     if(S_precip > 1.0) 
         ENZO_FAIL("big S_p");
@@ -1697,8 +1689,6 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data, grid* Grid){
     index = int((this_radius_cgs-CGM_data.R_inner)/CGM_data.dr+1.0e-3);  // index in array of CGM values
     if(index<0) index=0;  // check our indices
     //if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
-    if(index >= CGM_data.nbins)
-        std::cout << R << " " << CGM_data.R_outer << std::endl;
     if(index >= CGM_data.nbins) return -1.0; //outside CGM, return negative temperature for easy flagging 
     return CGM_data.T_rad[index] / TemperatureUnits;  // return temperature in code units
   
