@@ -32,6 +32,8 @@
 
 #define VCIRC_TABLE_LENGTH 10000
 #define KEV_PER_ERG (6.242e8)
+#define CM_PER_KM (1.0e5)
+#define CM_PER_KPC (3.0856e21)
 
 /* struct to carry around data required for circumgalactic media
    if we need to generate radial profiles of halo quantities via
@@ -79,6 +81,10 @@ void setup_chem(float density, float temperature, int equilibrate,
 		float& HMdest, float& H2Idest, float& H2IIdest,
 		float& DIdest, float& DIIdest, float& HDIdest);
 int ReadEquilibriumTable(char * name, FLOAT Time);
+void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, double* gas_bulge_temperature, double gas_bulge_Rstop, FLOAT* binned_mass, grid* Grid);
+double gas_bulge_rho_of_r(double* gas_bulge_density, double r); 
+double gas_bulge_P_of_r(double* gas_bulge_pressure, double r); 
+double gas_bulge_T_of_r(double* gas_bulge_temperature, double r); 
 
 
 int nlines(const char* fname) {
@@ -655,11 +661,33 @@ public:
 	    if (DualEnergyFormalism)
 	      thisgrid->BaryonField[GENum][index] = HaloGasEnergy;
 	    temperature = HaloTemperature; //I guess? this is a background temperature for here. It can't be the pNFW halo model yet bc I need this temperature for chem init. 
-
-
+		
 	    thisgrid->BaryonField[Vel1Num][index] = 0; //no halo rotation
 	    thisgrid->BaryonField[Vel2Num][index] = 0;
 	    thisgrid->BaryonField[Vel3Num][index] = 0;
+	    if(0){
+		float RotationScaleVelocity = 180.0; //km/s 
+		float RotationScaleRadius = 10.0; //kpc 
+		float RotationPowerLawIndex = -0.5;  
+		RotationScaleVelocity *= CM_PER_KM; // km/s to cm/s
+		RotationScaleVelocity /= LengthUnits/TimeUnits; // cm/s to code length/code time
+		RotationScaleRadius *= CM_PER_KPC;  // kpc to cm
+		RotationScaleRadius /= LengthUnits;  // cm to code length
+		float AngularMomentum[3] = {0.0, 0.0, 1.0}; //code units 
+		float rp_hat[3]; 
+		rp_hat[0] = (x/LengthUnits) - (z/LengthUnits)*AngularMomentum[0]; 
+		rp_hat[1] = (y/LengthUnits) - (z/LengthUnits)*AngularMomentum[1]; 
+		rp_hat[2] = (z/LengthUnits) - (z/LengthUnits)*AngularMomentum[2]; 
+	    	float theta = acos(z / radius); 
+		float halo_vmag = RotationScaleVelocity * POW(radius / RotationScaleRadius, RotationPowerLawIndex); 
+		if((radius / LengthUnits) <= RotationScaleRadius)
+			halo_vmag = RotationScaleVelocity; 
+		halo_vmag *= sin(theta)*sin(theta);
+	        //set halo rotation velocity	
+		thisgrid->BaryonField[Vel1Num][index] = halo_vmag * (AngularMomentum[1]*rp_hat[2] - AngularMomentum[2]*rp_hat[1]); 
+		thisgrid->BaryonField[Vel2Num][index] = halo_vmag * (AngularMomentum[2]*rp_hat[0] - AngularMomentum[0]*rp_hat[2]); 
+		thisgrid->BaryonField[Vel3Num][index] = halo_vmag * (AngularMomentum[0]*rp_hat[1] - AngularMomentum[1]*rp_hat[0]); 
+  	    }
 
 	    if (TestProblemData.UseMetallicityField)
 	      thisgrid->BaryonField[MetalNum][index] = thisgrid->BaryonField[DensNum][index] *
@@ -922,6 +950,19 @@ public:
 
    DiskGasEnergy = this->DiskTemperature / mu / (Gamma - 1) /
      TemperatureUnits;
+
+   //gas bulge setup 
+   float gas_bulge_density[100]; 
+   float gas_bulge_pressure[100]; 
+   float gas_bulge_temperature[100]; 
+   for(int i = 0; i < 100; i++){ 
+	gas_bulge_density[i] = 0.0; 
+	gas_bulge_pressure[i] = 0.0; 
+	gas_bulge_temperature[i] = 0.0; 
+   } 
+   float gas_bulge_Rstop = 0.022; //code approx 30 kpc 
+   gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, gas_bulge_Rstop, binned_mass, thisgrid); 
+
     for (k = 0; k < thisgrid->GridDimension[2]; k++)
     {
       for (j = 0; j < thisgrid->GridDimension[1]; j++)
@@ -952,6 +993,8 @@ public:
 				   z/LengthUnits, cellwidth) / POW(cellwidth, 3);
 	  float HaloDensityPrecip = HaloGasDensity(radius, CGM_data, thisgrid);
 	  float HaloTemperaturePrecip = HaloGasTemperature(radius, CGM_data, thisgrid);
+	  float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits) / DensityUnits; 
+	  float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits); 
       float temperature = HaloTemperaturePrecip; 
 	  if(HaloTemperaturePrecip < 0.0) continue; //we're above the stop radius, so nothing to do for CGM 
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1) /
@@ -966,6 +1009,12 @@ public:
 		    if (TestProblemData.UseMetallicityField)
 		      thisgrid->BaryonField[MetalNum][index] = thisgrid->BaryonField[DensNum][index] *
 			TestProblemData.MetalFractionByMass * HaloMetallicity; 
+		    if(GasBulgeDensity > 0.0 && 0){ //gas bulge toggle 
+			   thisgrid->BaryonField[DensNum][index] = GasBulgeDensity; 
+			   //thisgrid->BaryonField[TENum][index] -= HaloGasEnergyPrecip; 
+			   //thisgrid->BaryonField[TENum][index] += GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits;
+			   
+		    } 
 	  if(TestProblemData.MultiSpecies)
 	  {
 	    thisgrid->BaryonField[HINum][index] = TestProblemData.HI_Fraction *
@@ -1356,7 +1405,7 @@ namespace {
     Rstop = fabs(Rstop)*R200;
   CGM_data.R_outer = Rstop;// integrate out to the virial radius of halo
 
-  Rstart = 0.000*LengthUnits; // you could force a different start if you liked
+  Rstart = 0.00*LengthUnits; // you could force a different start if you liked
 
   // stepsize for RK4 integration and radial bins
   CGM_data.R_inner = Rstart;
@@ -1378,7 +1427,7 @@ namespace {
     rmax = 2.163*R200/C;
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass,rmax,Grid)/rmax;
     this_press = mu_ratio*POW(0.25*Mu*mh*vcirc2_max/POW(this_ent, 1./Gamma),
-		     Gamma/(Gamma-1.));
+		     Gamma/(Gamma-1.)) / 100;
     // set the bin that we start at (otherwise it doesn't get set!)
     index = int((this_radius - CGM_data.R_inner)/(-1.0*dr)  + 1.0e-3);
     CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma); // n_e ~ n_i
@@ -1415,7 +1464,7 @@ namespace {
     rmax = 2.163*R200/C;
     vcirc2_max = GravConst * MassEnclosed_r(binned_mass, rmax, Grid)/rmax;
     this_press = mu_ratio*POW(0.25*Mu*mh*vcirc2_max/POW(this_ent, 1./Gamma),
-		     Gamma/(Gamma-1.));
+		     Gamma/(Gamma-1.)) / 100;
     // Construct sigmoid to transition temperature to a constant
     double this_temp, this_dens;
     double deriv, r0, y0, y_offset, k;
@@ -1479,9 +1528,7 @@ namespace {
 double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopGridData &MetaData) {
     double ret =  -1.0 * halo_mod_g_of_r(r, binned_mass,Grid) * 1.22 * mh * POW( P/(1.1/Mu) / halo_S_of_r_Agora(r,Grid, binned_mass,MetaData),
 						    1./Gamma );
-    std::cout << "g(r) " << r << " " << halo_mod_g_of_r(r,binned_mass,Grid) << std::endl;	
     if(halo_mod_g_of_r(r, binned_mass,Grid) < 0){
-	    std::cout << halo_mod_g_of_r(r, binned_mass, Grid) << std::endl;
 	    ENZO_FAIL("negative g"); 
     }
     if(ret > 0)
@@ -1665,7 +1712,7 @@ float HaloGasDensity(FLOAT R, struct CGMdata& CGM_data, grid* Grid){
     }
     this_radius_cgs = R;  // radius in CGS
     index = int((this_radius_cgs-CGM_data.R_inner)/CGM_data.dr + 1.0e-3);  // index in array of CGM values
-    if(index<0) index=0;  // check our indices
+    if(index<0) return 0.0;  // check our indices
     //if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
     if(index >= CGM_data.nbins) return 0.0; //outside of CGM
     return CGM_data.n_rad[index]*Mu*mh / DensityUnits;  // return physical density in code units
@@ -1687,10 +1734,90 @@ float HaloGasTemperature(FLOAT R, struct CGMdata& CGM_data, grid* Grid){
     int index;
     this_radius_cgs = R; // radius in CGS
     index = int((this_radius_cgs-CGM_data.R_inner)/CGM_data.dr+1.0e-3);  // index in array of CGM values
-    if(index<0) index=0;  // check our indices
+    if(index < 0) return -1.0; 
+    //if(index<0) index=0;  // check our indices
     //if(index>=CGM_data.nbins) index=CGM_data.nbins-1;
     if(index >= CGM_data.nbins) return -1.0; //outside CGM, return negative temperature for easy flagging 
     return CGM_data.T_rad[index] / TemperatureUnits;  // return temperature in code units
   
 }
 
+double gas_bulge_dens(double x, double y, double z, double rho_0, double LengthUnits){
+	double x_0 = 0.68; //kpc 
+	double y_0 = 0.28; //kpc 
+	double z_0 = 0.26; //kpc 
+	double r = sqrt((x/x_0)*(x/x_0) + (y/y_0)*(y/y_0) + (z/z_0)*(z/z_0));
+	double ret = rho_0*exp(-1 * r);  
+	return ret; 
+}	
+
+double gas_bulge_dP_dr(double r, double this_density, grid* Grid, FLOAT* binned_mass){
+	return -1.0 * halo_mod_g_of_r(r, binned_mass, Grid) * this_density; 
+}
+
+void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, double* gas_bulge_temperature, double gas_bulge_Rstop, FLOAT* binned_mass, grid* Grid){
+	double gas_bulge_rho_0 = Mu * mh * 1e-6; // g/cm^3 
+	double LengthUnits = 4.04446e24; 
+	int num_bins = 100; 
+	double r_0 = 2*gas_bulge_Rstop * LengthUnits; //scale radius for later
+	double dr = (gas_bulge_Rstop / num_bins) * LengthUnits; 
+	for(int i = 0; i < num_bins; i++){ 
+		gas_bulge_density[i] = gas_bulge_rho_0 * exp(-1.0 * (i + 0.5) * dr / r_0); 
+	}
+	//now go through and get the pressure using hydrostatic equilibrium and the DM mass to calculate g(r) 
+	double this_radius = dr; 
+	double this_pressure = 0.0;
+	while(this_radius < gas_bulge_Rstop*LengthUnits){
+		double k1, k2, k3, k4; //RK4 integration 
+		int index = int(this_radius / dr);
+	        float this_density = gas_bulge_density[index]; 	
+		k1 = gas_bulge_dP_dr(this_radius,          this_density,             Grid, binned_mass);
+		k2 = gas_bulge_dP_dr(this_radius + 0.5*dr, this_density + 0.5*dr*k1, Grid, binned_mass);
+		k3 = gas_bulge_dP_dr(this_radius + 0.5*dr, this_density + 0.5*dr*k2, Grid, binned_mass);
+		k4 = gas_bulge_dP_dr(this_radius + dr,     this_density + dr*k3,     Grid, binned_mass);
+		this_radius += dr;
+	        std::cout << "this_density " << this_density << std::endl;	
+		std::cout << "ks " << k1 << " " << k2 << " " << k3 << " " << k4 << std::endl;
+		index = int(this_radius / dr);
+		std::cout << "prev_p " << this_pressure << std::endl; 
+      		this_pressure += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); 
+		std::cout << "new_p " << this_pressure << std::endl; 
+		std::cout << "Gas Bulge set index " << index << std::endl;
+		if(index < num_bins){
+			gas_bulge_pressure[index] = this_pressure; 
+			gas_bulge_temperature[index] = (this_pressure / (this_density * kboltz)); 
+			std::cout << "set index " << index << std::endl; 
+			std::cout << "density " << this_density << std::endl; 
+			std::cout << "pressure " << this_pressure << std::endl;
+			std::cout << "temp " << gas_bulge_temperature[index] << std::endl;	
+		}
+	}
+	
+}
+
+double gas_bulge_rho_of_r(double* gas_bulge_density, double r){ 
+	int num_bins = 100; 
+	float dr = 0.022 / num_bins; 
+	int index = int(r / dr); 
+	if(index > num_bins || index < 0)
+		return 0.0; 
+	return gas_bulge_density[index]; 
+}
+
+double gas_bulge_P_of_r(double* gas_bulge_pressure, double r){ 
+	int num_bins = 100; 
+	float dr = 0.022 / num_bins; 
+	int index = int(r / dr); 
+	if(index > num_bins || index < 0)
+		return 0.0; 
+	return gas_bulge_pressure[index]; 
+}
+
+double gas_bulge_T_of_r(double* gas_bulge_temperature, double r){ 
+	int num_bins = 100; 
+	float dr = 0.022 / num_bins; 
+	int index = int(r / dr); 
+	if(index > num_bins || index < 0)
+		return 0.0; 
+	return gas_bulge_temperature[index]; 
+}
