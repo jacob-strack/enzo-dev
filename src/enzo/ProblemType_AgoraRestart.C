@@ -320,8 +320,9 @@ public:
    
     ReadEquilibriumTable("equilibrium_table_60_030-Zsun.h5", TopGrid.GridData->ReturnTime());
     //bin mass for hydrostatic halo 
-    float binned_mass[100]; 
-    for(int ind = 0; ind < 100; ind++)
+    int num_bins = 10000;
+    float binned_mass[num_bins]; 
+    for(int ind = 0; ind < num_bins; ind++)
 	    binned_mass[ind] = 0.0; 
     
     AgoraRestartGrid *thisgrid =
@@ -337,15 +338,15 @@ public:
 	float ParticleMass = TopGrid.GridData->ReturnParticleMass(p);
 	float p_dens = ParticleMass*TopGrid.GridData->GetCellWidth(0,0)*TopGrid.GridData->GetCellWidth(1,0)*TopGrid.GridData->GetCellWidth(2,0); //code mass 
 	float r_sph = sqrt(POW(fabs(x),2) + POW(fabs(y),2) + POW(fabs(z),2)); 
-	float delta_r = sqrt(3.0) / 100; 
-	int ind_r = int(r_sph / delta_r); //code_length
-	if(ind_r >= 100)
+	float delta_r = log10(sqrt(3.0) / num_bins); 
+	int ind_r = int(log10(r_sph) / delta_r); //code_length
+	if(ind_r >= num_bins)
 		ENZO_FAIL("Bad index"); 	
 	binned_mass[ind_r] += p_dens; 
     }
     //Now make binned_mass a cumulative sum in radius 
     float total_mass_enc = 0.0;
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < num_bins; i++){
 	total_mass_enc += binned_mass[i]; 
 	binned_mass[i] = total_mass_enc; 
     }
@@ -997,8 +998,7 @@ public:
 	  float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits); 
       float temperature = HaloTemperaturePrecip; 
 	  if(HaloTemperaturePrecip < 0.0) continue; //we're above the stop radius, so nothing to do for CGM 
-	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1) /
-      TemperatureUnits;
+	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1);
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) )
 		  {
 		    thisgrid->BaryonField[DensNum][index] = HaloDensityPrecip;
@@ -1399,7 +1399,7 @@ namespace {
   int index;
   
   double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
-  M = binned_mass[99] * MassUnitsDouble;  // DM halo total mass in CGS
+  M = binned_mass[9999] * MassUnitsDouble;  // DM halo total mass in CGS
   R200 = pow(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
   if (Rstop < 0)
     Rstop = fabs(Rstop)*R200;
@@ -1560,7 +1560,7 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
       ENZO_FAIL("Error in GetUnits.");
     }
     double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
-    M = binned_mass[99]*MassUnitsDouble;  // total mass in CGS
+    M = binned_mass[9999]*MassUnitsDouble;  // total mass in CGS
     C = 10;  // concentration parameter for NFW halo
     r_vir = POW(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
     r_max = 2.163 * r_vir/C;
@@ -1660,35 +1660,36 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	    float DensityUnits=1, LengthUnits=1, VelocityUnits=1, TimeUnits=1,
 	      TemperatureUnits=1;
 	    double MassUnits=1;
+	    int num_bins = 10000; 
 
 	    if (GetUnits(&DensityUnits, &LengthUnits, &TemperatureUnits,
 			 &TimeUnits, &VelocityUnits, &MassUnits, Grid->ReturnTime()) == FAIL) {
 	      ENZO_FAIL("Error in GetUnits.");
 	    }
     	double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
-	double delta_r = sqrt(3.0) / 100; 
+	double delta_r = log10(sqrt(3.0) / num_bins); 
 	double prev_menc = 0.0;
 	double next_menc = 0.0; 
 	double ans; 
 	rad /= LengthUnits; //to code
-	int bin_index = rad / delta_r;
-	double this_r_bin = delta_r * (bin_index + 0.5); 
-	double prev_r_bin = delta_r * ((bin_index - 1) + 0.5); 
-	double next_r_bin = delta_r * ((bin_index + 1) + 0.5); 
+	int bin_index = log10(rad) / delta_r;
+	double this_r_bin = pow(10,delta_r * (bin_index + 0.5)); 
+	double prev_r_bin = pow(10,delta_r * ((bin_index - 1) + 0.5)); 
+	double next_r_bin = pow(10,delta_r * ((bin_index + 1) + 0.5)); 
 	if(prev_r_bin < 0){
-		ans = binned_mass[bin_index] / delta_r * (rad); 
+		ans = binned_mass[bin_index] / pow(10, delta_r) * (rad); 
 		return ans*MassUnitsDouble; 	
 	}
-	if(next_r_bin >= 100){
+	if(next_r_bin >= num_bins){
         if(debug)
             std::cout << "rbin too big!" << std::endl; 
 		prev_menc = binned_mass[bin_index - 1];
-	    	ans = (binned_mass[bin_index] - prev_menc) / delta_r * (rad - prev_r_bin) + prev_menc; 
+	    	ans = (binned_mass[bin_index] - prev_menc) / pow(10,delta_r) * (rad - prev_r_bin) + prev_menc; 
 		return ans*MassUnitsDouble; 	
 	}
 	prev_menc = binned_mass[bin_index - 1]; 
 	next_menc = binned_mass[bin_index + 1]; 
-	ans = 0.5 * (((binned_mass[bin_index] - prev_menc) / (delta_r) * (rad - prev_r_bin) + prev_menc) + ((next_menc - binned_mass[bin_index]) / delta_r * (next_r_bin - rad) + binned_mass[bin_index])); 
+	ans = 0.5 * (((binned_mass[bin_index] - prev_menc) / (pow(10,delta_r)) * (rad - prev_r_bin) + prev_menc) + ((next_menc - binned_mass[bin_index]) / pow(10,delta_r) * (next_r_bin - rad) + binned_mass[bin_index])); 
 	return ans*MassUnitsDouble; //cgs 
 }
 double halo_mod_g_of_r(double r, FLOAT *binned_mass, grid* Grid){
