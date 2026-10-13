@@ -338,7 +338,7 @@ public:
 	float ParticleMass = TopGrid.GridData->ReturnParticleMass(p);
 	float p_dens = ParticleMass*TopGrid.GridData->GetCellWidth(0,0)*TopGrid.GridData->GetCellWidth(1,0)*TopGrid.GridData->GetCellWidth(2,0); //code mass 
 	float r_sph = sqrt(POW(fabs(x),2) + POW(fabs(y),2) + POW(fabs(z),2)); 
-	float delta_r = log10(sqrt(3.0) / num_bins); 
+	float delta_r = log10(sqrt(3.0)) / num_bins; 
 	int ind_r = int(log10(r_sph) / delta_r); //code_length
 	if(ind_r >= num_bins)
 		ENZO_FAIL("Bad index"); 	
@@ -1667,7 +1667,7 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	      ENZO_FAIL("Error in GetUnits.");
 	    }
     	double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
-	double delta_r = log10(sqrt(3.0) / num_bins); 
+	double delta_r = log10(sqrt(3.0)) / num_bins; 
 	double prev_menc = 0.0;
 	double next_menc = 0.0; 
 	double ans; 
