@@ -328,9 +328,11 @@ public:
     AgoraRestartGrid *thisgrid =
       static_cast<AgoraRestartGrid *>(TopGrid.GridData);
     // loop through the particles and deposit mass 
+    std::cout << "cell width " << TopGrid.GridData->GetCellWidth(0,0) << std::endl;
     for(int p = 0; p < MetaData.NumberOfParticles; p++){
    	float x,y,z;
 	float ppos[3]; 
+	float min_value = 1e-8; //TopGrid.GridData->GetCellWidth(0,0) / 2; 
 	thisgrid->ReturnParticlePosition(p,ppos); 
 	x = ppos[0] - CenterPosition[0];
 	y = ppos[1] - CenterPosition[1];
@@ -338,10 +340,12 @@ public:
 	float ParticleMass = TopGrid.GridData->ReturnParticleMass(p);
 	float p_dens = ParticleMass*TopGrid.GridData->GetCellWidth(0,0)*TopGrid.GridData->GetCellWidth(1,0)*TopGrid.GridData->GetCellWidth(2,0); //code mass 
 	float r_sph = sqrt(POW(fabs(x),2) + POW(fabs(y),2) + POW(fabs(z),2)); 
-	float delta_r = log10(sqrt(3.0)) / num_bins; 
-	int ind_r = int(log10(r_sph) / delta_r); //code_length
+	float delta_r = (log10(sqrt(3.0)) - log10(min_value)) / num_bins; 
+	int ind_r = int((log10(r_sph) - log10(min_value)) / delta_r); //code_length
 	if(ind_r >= num_bins)
-		ENZO_FAIL("Bad index"); 	
+		ENZO_FAIL("Bad index");
+	if(ind_r < 0) 
+		ENZO_FAIL("Negative Index");	
 	binned_mass[ind_r] += p_dens; 
     }
     //Now make binned_mass a cumulative sum in radius 
@@ -349,6 +353,7 @@ public:
     for(int i = 0; i < num_bins; i++){
 	total_mass_enc += binned_mass[i]; 
 	binned_mass[i] = total_mass_enc; 
+	std::cout << "binned mass i " << i << " " << total_mass_enc << std::endl;
     }
     
     this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData,binned_mass); //setup baryons. needed for CGM setup
@@ -1529,6 +1534,7 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
     double ret =  -1.0 * halo_mod_g_of_r(r, binned_mass,Grid) * 1.22 * mh * POW( P/(1.1/Mu) / halo_S_of_r_Agora(r,Grid, binned_mass,MetaData),
 						    1./Gamma );
     if(halo_mod_g_of_r(r, binned_mass,Grid) < 0){
+	    std::cout << "r " << r << "g " << halo_mod_g_of_r(r, binned_mass, Grid) << std::endl;
 	    ENZO_FAIL("negative g"); 
     }
     if(ret > 0)
@@ -1660,6 +1666,7 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	    float DensityUnits=1, LengthUnits=1, VelocityUnits=1, TimeUnits=1,
 	      TemperatureUnits=1;
 	    double MassUnits=1;
+	    float min_value = 1e-8;
 	    int num_bins = 10000; 
 
 	    if (GetUnits(&DensityUnits, &LengthUnits, &TemperatureUnits,
@@ -1667,15 +1674,16 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	      ENZO_FAIL("Error in GetUnits.");
 	    }
     	double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
-	double delta_r = log10(sqrt(3.0)) / num_bins; 
+	double delta_r = (log10(sqrt(3.0)) - log10(min_value)) / num_bins; 
 	double prev_menc = 0.0;
 	double next_menc = 0.0; 
 	double ans; 
 	rad /= LengthUnits; //to code
-	int bin_index = log10(rad) / delta_r;
+	int bin_index = (log10(rad) - log10(min_value)) / delta_r;
 	double this_r_bin = pow(10,delta_r) * (bin_index + 0.5); 
 	double prev_r_bin = pow(10,delta_r) * ((bin_index - 1) + 0.5); 
 	double next_r_bin = pow(10,delta_r) * ((bin_index + 1) + 0.5); 
+	std::cout << "mass enclosed rad " << rad << " index " << bin_index << std::endl;
 	if(prev_r_bin < 0){
 		ans = binned_mass[bin_index] / pow(10, delta_r) * (rad); 
 		return ans*MassUnitsDouble; 	
@@ -1689,7 +1697,9 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	}
 	prev_menc = binned_mass[bin_index - 1]; 
 	next_menc = binned_mass[bin_index + 1]; 
-	ans = 0.5 * (((binned_mass[bin_index] - prev_menc) / (pow(10,delta_r)) * (rad - prev_r_bin) + prev_menc) + ((next_menc - binned_mass[bin_index]) / pow(10,delta_r) * (next_r_bin - rad) + binned_mass[bin_index])); 
+	ans = 0.5 * ((((binned_mass[bin_index] - prev_menc) / (pow(10,delta_r)) * (rad - prev_r_bin)) + prev_menc) + (((next_menc - binned_mass[bin_index]) / pow(10,delta_r) * (next_r_bin - rad)) + binned_mass[bin_index])); 
+	ans = binned_mass[bin_index]; 
+	std::cout << "return from massenclosed " << ans*MassUnitsDouble << std::endl;
 	return ans*MassUnitsDouble; //cgs 
 }
 double halo_mod_g_of_r(double r, FLOAT *binned_mass, grid* Grid){
