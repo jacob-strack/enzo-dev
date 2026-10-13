@@ -1673,9 +1673,9 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	double ans; 
 	rad /= LengthUnits; //to code
 	int bin_index = log10(rad) / delta_r;
-	double this_r_bin = pow(10,delta_r * (bin_index + 0.5)); 
-	double prev_r_bin = pow(10,delta_r * ((bin_index - 1) + 0.5)); 
-	double next_r_bin = pow(10,delta_r * ((bin_index + 1) + 0.5)); 
+	double this_r_bin = pow(10,delta_r) * (bin_index + 0.5); 
+	double prev_r_bin = pow(10,delta_r) * ((bin_index - 1) + 0.5); 
+	double next_r_bin = pow(10,delta_r) * ((bin_index + 1) + 0.5); 
 	if(prev_r_bin < 0){
 		ans = binned_mass[bin_index] / pow(10, delta_r) * (rad); 
 		return ans*MassUnitsDouble; 	
