@@ -332,7 +332,7 @@ public:
     for(int p = 0; p < MetaData.NumberOfParticles; p++){
    	float x,y,z;
 	float ppos[3]; 
-	float min_value = 1e-8; //TopGrid.GridData->GetCellWidth(0,0) / 2; 
+	float min_value = 5e-7; //TopGrid.GridData->GetCellWidth(0,0) / 2; 
 	thisgrid->ReturnParticlePosition(p,ppos); 
 	x = ppos[0] - CenterPosition[0];
 	y = ppos[1] - CenterPosition[1];
@@ -353,7 +353,7 @@ public:
     for(int i = 0; i < num_bins; i++){
 	total_mass_enc += binned_mass[i]; 
 	binned_mass[i] = total_mass_enc; 
-	std::cout << "binned mass i " << i << " " << total_mass_enc << std::endl;
+	std::cout << "binned mass i " << i << " " << total_mass_enc << " r " << 5e-7 * pow(10,i*((log10(sqrt(3.0)) - log10(5e-7))/num_bins)) << std::endl;
     }
     
     this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData,binned_mass); //setup baryons. needed for CGM setup
@@ -1016,8 +1016,8 @@ public:
 			TestProblemData.MetalFractionByMass * HaloMetallicity; 
 		    if(GasBulgeDensity > 0.0 && 0){ //gas bulge toggle 
 			   thisgrid->BaryonField[DensNum][index] = GasBulgeDensity; 
-			   //thisgrid->BaryonField[TENum][index] -= HaloGasEnergyPrecip; 
-			   //thisgrid->BaryonField[TENum][index] += GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits;
+			   thisgrid->BaryonField[TENum][index] -= HaloGasEnergyPrecip; 
+			   thisgrid->BaryonField[TENum][index] += GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits;
 			   
 		    } 
 	  if(TestProblemData.MultiSpecies)
@@ -1666,7 +1666,7 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	    float DensityUnits=1, LengthUnits=1, VelocityUnits=1, TimeUnits=1,
 	      TemperatureUnits=1;
 	    double MassUnits=1;
-	    float min_value = 1e-8;
+	    float min_value = 5e-7;
 	    int num_bins = 10000; 
 
 	    if (GetUnits(&DensityUnits, &LengthUnits, &TemperatureUnits,
@@ -1674,32 +1674,31 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	      ENZO_FAIL("Error in GetUnits.");
 	    }
     	double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
+	std::cout << "mass units check " << MassUnitsDouble << std::endl;
 	double delta_r = (log10(sqrt(3.0)) - log10(min_value)) / num_bins; 
 	double prev_menc = 0.0;
 	double next_menc = 0.0; 
 	double ans; 
 	rad /= LengthUnits; //to code
 	int bin_index = (log10(rad) - log10(min_value)) / delta_r;
-	double this_r_bin = pow(10,delta_r) * (bin_index + 0.5); 
-	double prev_r_bin = pow(10,delta_r) * ((bin_index - 1) + 0.5); 
-	double next_r_bin = pow(10,delta_r) * ((bin_index + 1) + 0.5); 
-	std::cout << "mass enclosed rad " << rad << " index " << bin_index << std::endl;
-	if(prev_r_bin < 0){
-		ans = binned_mass[bin_index] / pow(10, delta_r) * (rad); 
-		return ans*MassUnitsDouble; 	
+	double this_r_bin = pow(10,log10(min_value) + (bin_index + 0.5) * delta_r); 
+	double prev_r_bin = pow(10,log10(min_value) + (bin_index - 0.5) * delta_r); 
+	double next_r_bin = pow(10,log10(min_value) + (bin_index + 1.5) * delta_r); 
+	if(prev_r_bin < min_value){
+		//ans = binned_mass[bin_index] / pow(10, delta_r) * (rad); 
+		return binned_mass[0]*MassUnitsDouble; 	
 	}
-	if(next_r_bin >= num_bins){
+	if(next_r_bin >= sqrt(3.0)){
         if(debug)
             std::cout << "rbin too big!" << std::endl; 
 		prev_menc = binned_mass[bin_index - 1];
-	    	ans = (binned_mass[bin_index] - prev_menc) / pow(10,delta_r) * (rad - prev_r_bin) + prev_menc; 
-		return ans*MassUnitsDouble; 	
+	    	//ans = (binned_mass[bin_index] - prev_menc) / pow(10,delta_r) * (rad - prev_r_bin) + prev_menc; 
+		return binned_mass[num_bins - 1]*MassUnitsDouble; 	
 	}
 	prev_menc = binned_mass[bin_index - 1]; 
 	next_menc = binned_mass[bin_index + 1]; 
-	ans = 0.5 * ((((binned_mass[bin_index] - prev_menc) / (pow(10,delta_r)) * (rad - prev_r_bin)) + prev_menc) + (((next_menc - binned_mass[bin_index]) / pow(10,delta_r) * (next_r_bin - rad)) + binned_mass[bin_index])); 
+	//ans = 0.5 * ((((binned_mass[bin_index] - prev_menc) / (pow(10,delta_r)) * (rad - prev_r_bin)) + prev_menc) + (((next_menc - binned_mass[bin_index]) / pow(10,delta_r) * (next_r_bin - rad)) + binned_mass[bin_index])); 
 	ans = binned_mass[bin_index]; 
-	std::cout << "return from massenclosed " << ans*MassUnitsDouble << std::endl;
 	return ans*MassUnitsDouble; //cgs 
 }
 double halo_mod_g_of_r(double r, FLOAT *binned_mass, grid* Grid){
@@ -1762,46 +1761,65 @@ double gas_bulge_dens(double x, double y, double z, double rho_0, double LengthU
 	return ret; 
 }	
 
-double gas_bulge_dP_dr(double r, double this_density, grid* Grid, FLOAT* binned_mass){
-	return -1.0 * halo_mod_g_of_r(r, binned_mass, Grid) * this_density; 
+double gas_bulge_dP_dr(double r, double this_pressure, grid* Grid, FLOAT* binned_mass){
+	double res = -1.0 * halo_mod_g_of_r(r, binned_mass, Grid) * Mu * mh *this_pressure/(1.0e4 * kboltz); 
+	std::cout << "gas bulge g " << halo_mod_g_of_r(r, binned_mass,Grid) << std::endl;
+	std::cout << "gas bulge pressure " << this_pressure << std::endl;
+	double g = halo_mod_g_of_r(r, binned_mass, Grid);
+
+double A = g * Mu * mh / (1.0e4 * kboltz);
+
+std::cout << "r = " << r
+          << ", g = " << g
+          << ", A = " << A
+          << ", dlnP/dr = " << -A
+          << std::endl;
+	return res; 
 }
 
 void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, double* gas_bulge_temperature, double gas_bulge_Rstop, FLOAT* binned_mass, grid* Grid){
-	double gas_bulge_rho_0 = Mu * mh * 1e-6; // g/cm^3 
+	double gas_bulge_rho_0 = Mu * mh; // * 1e-6; // g/cm^3 
 	double LengthUnits = 4.04446e24; 
 	int num_bins = 100; 
-	double r_0 = 2*gas_bulge_Rstop * LengthUnits; //scale radius for later
+	double r_0 = 1 * gas_bulge_Rstop * LengthUnits; //scale radius for later
 	double dr = (gas_bulge_Rstop / num_bins) * LengthUnits; 
+	double T_gas_bulge = 1e4; 
 	for(int i = 0; i < num_bins; i++){ 
 		gas_bulge_density[i] = gas_bulge_rho_0 * exp(-1.0 * (i + 0.5) * dr / r_0); 
 	}
 	//now go through and get the pressure using hydrostatic equilibrium and the DM mass to calculate g(r) 
-	double this_radius = dr; 
-	double this_pressure = 0.0;
-	while(this_radius < gas_bulge_Rstop*LengthUnits){
+	double this_radius = dr * (num_bins - 0.5); 
+	double this_pressure = gas_bulge_density[num_bins - 1]*T_gas_bulge*kboltz / (Mu * mh); 
+	dr *= -1.0; 
+	int index = num_bins - 1;
+	while(index > -1){
 		double k1, k2, k3, k4; //RK4 integration 
-		int index = int(this_radius / dr);
+		if(index > num_bins - 1) 
+			index = num_bins - 1; 
 	        float this_density = gas_bulge_density[index]; 	
-		k1 = gas_bulge_dP_dr(this_radius,          this_density,             Grid, binned_mass);
-		k2 = gas_bulge_dP_dr(this_radius + 0.5*dr, this_density + 0.5*dr*k1, Grid, binned_mass);
-		k3 = gas_bulge_dP_dr(this_radius + 0.5*dr, this_density + 0.5*dr*k2, Grid, binned_mass);
-		k4 = gas_bulge_dP_dr(this_radius + dr,     this_density + dr*k3,     Grid, binned_mass);
-		this_radius += dr;
-	        std::cout << "this_density " << this_density << std::endl;	
-		std::cout << "ks " << k1 << " " << k2 << " " << k3 << " " << k4 << std::endl;
-		index = int(this_radius / dr);
-		std::cout << "prev_p " << this_pressure << std::endl; 
-      		this_pressure += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); 
-		std::cout << "new_p " << this_pressure << std::endl; 
-		std::cout << "Gas Bulge set index " << index << std::endl;
-		if(index < num_bins){
+		if(index < num_bins && index >= 0){
+			this_density = gas_bulge_density[index]; 
 			gas_bulge_pressure[index] = this_pressure; 
-			gas_bulge_temperature[index] = (this_pressure / (this_density * kboltz)); 
+			gas_bulge_temperature[index] = 1e4; //(this_pressure * Mu * mh / (this_density * kboltz)); 
 			std::cout << "set index " << index << std::endl; 
 			std::cout << "density " << this_density << std::endl; 
 			std::cout << "pressure " << this_pressure << std::endl;
 			std::cout << "temp " << gas_bulge_temperature[index] << std::endl;	
 		}
+		std::cout << "this_pressure " << this_pressure << std::endl;
+		std::cout << "this_radius " << this_radius/LengthUnits << std::endl; 
+		k1 = gas_bulge_dP_dr(this_radius,          this_pressure,             Grid, binned_mass);
+		k2 = gas_bulge_dP_dr(this_radius + 0.5*dr, this_pressure + 0.5*dr*k1, Grid, binned_mass);
+		k3 = gas_bulge_dP_dr(this_radius + 0.5*dr, this_pressure + 0.5*dr*k2, Grid, binned_mass);
+		k4 = gas_bulge_dP_dr(this_radius + dr,     this_pressure + dr*k3,     Grid, binned_mass);
+	        std::cout << "this_density " << this_density << std::endl;	
+		std::cout << "ks " << k1 << " " << k2 << " " << k3 << " " << k4 << std::endl;
+		std::cout << "prev_p " << this_pressure << std::endl; 
+      		this_pressure += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); 
+		std::cout << "new_p " << this_pressure << std::endl; 
+		std::cout << "Gas Bulge set index " << index << std::endl;
+		this_radius += dr;
+		index--; 
 	}
 	
 }
