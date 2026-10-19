@@ -82,9 +82,9 @@ void setup_chem(float density, float temperature, int equilibrate,
 		float& DIdest, float& DIIdest, float& HDIdest);
 int ReadEquilibriumTable(char * name, FLOAT Time);
 void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, double* gas_bulge_temperature, double gas_bulge_Rstop, FLOAT* binned_mass, grid* Grid);
-double gas_bulge_rho_of_r(double* gas_bulge_density, double r); 
-double gas_bulge_P_of_r(double* gas_bulge_pressure, double r); 
-double gas_bulge_T_of_r(double* gas_bulge_temperature, double r); 
+double gas_bulge_rho_of_r(double* gas_bulge_density, double r, double Rstop); 
+double gas_bulge_P_of_r(double* gas_bulge_pressure, double r, double Rstop); 
+double gas_bulge_T_of_r(double* gas_bulge_temperature, double r, double Rstop); 
 
 
 int nlines(const char* fname) {
@@ -980,7 +980,7 @@ public:
 	gas_bulge_pressure[i] = 0.0; 
 	gas_bulge_temperature[i] = 0.0; 
    } 
-   float gas_bulge_Rstop = 0.022; //code approx 30 kpc 
+   float gas_bulge_Rstop = 0.012; //code approx 15 kpc 
    gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, gas_bulge_Rstop, binned_mass, thisgrid); 
    */
     
@@ -1229,7 +1229,7 @@ public:
 	gas_bulge_pressure[i] = 0.0; 
 	gas_bulge_temperature[i] = 0.0; 
    } 
-   float gas_bulge_Rstop = 0.022; //code approx 30 kpc 
+   float gas_bulge_Rstop = 0.012; //code approx 15 kpc 
    gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, gas_bulge_Rstop, binned_mass, thisgrid); 
 
     for (k = 0; k < thisgrid->GridDimension[2]; k++)
@@ -1260,15 +1260,15 @@ public:
 			   POW(y, 2) );
 	  DiskDensity = gauss_mass(RhoZero, x/LengthUnits, y/LengthUnits,
 				   z/LengthUnits, cellwidth) / POW(cellwidth, 3);
-	  float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits) / DensityUnits; 
-	  float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits); 
+	  float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits,gas_bulge_Rstop ) / DensityUnits; 
+	  float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits, gas_bulge_Rstop); 
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) )
 		  {
 		    if(GasBulgeDensity > 0.0){ 
-			   thisgrid->BaryonField[DensNum][index] = GasBulgeDensity; 
-			   thisgrid->BaryonField[TENum][index] = GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits;
+			   thisgrid->BaryonField[DensNum][index] += GasBulgeDensity; 
+			   thisgrid->BaryonField[TENum][index] += GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits;
 			   if(DualEnergyFormalism)
-				   thisgrid->BaryonField[GENum][index] = GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits; 
+				   thisgrid->BaryonField[GENum][index] += GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits; 
 			   
 		    } 
 	  if(TestProblemData.MultiSpecies)
@@ -1989,7 +1989,7 @@ double gas_bulge_dP_dr(double r, double this_pressure, grid* Grid, FLOAT* binned
 }
 
 void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, double* gas_bulge_temperature, double gas_bulge_Rstop, FLOAT* binned_mass, grid* Grid){
-	double gas_bulge_rho_0 = Mu * mh; // g/cm^3 
+	double gas_bulge_rho_0 = Mu * mh * 1e-2; // g/cm^3 
 	double LengthUnits = 4.04446e24; 
 	int num_bins = 100; 
 	double r_0 = 1 * gas_bulge_Rstop * LengthUnits; //scale radius for later
@@ -2011,6 +2011,7 @@ void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, dou
 		if(index < num_bins && index >= 0){
 			this_density = gas_bulge_density[index]; 
 			gas_bulge_pressure[index] = this_pressure; 
+			std::cout << "pressure check " << this_pressure << std::endl; 
 			gas_bulge_temperature[index] = 1e6; //(this_pressure * Mu * mh / (this_density * kboltz)); 
 		}
 		k1 = gas_bulge_dP_dr(this_radius,          this_pressure,             Grid, binned_mass);
@@ -2024,9 +2025,9 @@ void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, dou
 	
 }
 
-double gas_bulge_rho_of_r(double* gas_bulge_density, double r){ 
+double gas_bulge_rho_of_r(double* gas_bulge_density, double r, double Rstop){ 
 	int num_bins = 100; 
-	float dr = 0.022 / num_bins; 
+	float dr = Rstop / num_bins; 
 	int index = int(r / dr); 
 	if(index >= num_bins || index < 0)
 		return 0.0; 
@@ -2035,18 +2036,18 @@ double gas_bulge_rho_of_r(double* gas_bulge_density, double r){
 	return gas_bulge_density[index]; 
 }
 
-double gas_bulge_P_of_r(double* gas_bulge_pressure, double r){ 
+double gas_bulge_P_of_r(double* gas_bulge_pressure, double r, double Rstop){ 
 	int num_bins = 100; 
-	float dr = 0.022 / num_bins; 
+	float dr = Rstop / num_bins; 
 	int index = int(r / dr); 
 	if(index >= num_bins || index < 0)
 		return 0.0; 
 	return gas_bulge_pressure[index]; 
 }
 
-double gas_bulge_T_of_r(double* gas_bulge_temperature, double r){ 
+double gas_bulge_T_of_r(double* gas_bulge_temperature, double r, double Rstop){ 
 	int num_bins = 100; 
-	float dr = 0.022 / num_bins; 
+	float dr = Rstop / num_bins; 
 	int index = int(r / dr); 
 	if(index >= num_bins || index < 0)
 		return 0.0; 
