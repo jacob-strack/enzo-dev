@@ -130,6 +130,7 @@ private:
   float VCircVelocity[VCIRC_TABLE_LENGTH];
   int RefineAtStart;
   int AgoraRestartGasHalo = 1; 
+  int AgoraRestartGasBulge = 1; 
   float AgoraRestartGasHaloRatio = 10.;
   float AgoraRestartDMConcentration = 10.; 
 
@@ -223,6 +224,7 @@ public:
     // set this from global data (kind of a hack)
     TestProblemData.MultiSpecies = MultiSpecies;
     int AgoraRestartGasHalo = 0; 
+    int AgoraRestartGasBulge = 0;
     /* read input from file */
     while (fgets(line, MAX_LINE_LENGTH, fptr) != NULL)
     {
@@ -281,6 +283,8 @@ public:
 		    &TestProblemData.UseMetallicityField);
       ret += sscanf(line, "AgoraRestartGasHalo  = %"ISYM,
 		    &AgoraRestartGasHalo);
+      ret += sscanf(line, "AgoraRestartGasBulge  = %"ISYM,
+		    &AgoraRestartGasBulge);
 
 
       if (ret == 0 && strstr(line, "=") &&
@@ -294,6 +298,8 @@ public:
     
     if(AgoraRestartGasHalo)
 	    std::cout << "Gas Halo ON" << std::endl;
+    if(AgoraRestartGasBulge)
+	    std::cout << "Gas Bulge ON" << std::endl;
     // Read in circular velocity table
 
     this->ReadInVcircData();
@@ -363,6 +369,10 @@ public:
     //halo_init(CGM_data, thisgrid, MetaData, binned_mass, 6, 10); 
     if(AgoraRestartGasHalo) 
     	this->InitializeGridb(TopGrid.GridData, TopGrid, MetaData, binned_mass);
+    
+    //lay down gas in bulge
+    if(AgoraRestartGasBulge)
+    	this->InitializeGridGasBulge(TopGrid.GridData, TopGrid, MetaData, binned_mass);
 
     /* Convert minimum initial overdensity for refinement to mass
        (unless MinimumMass itself was actually set). */
@@ -407,6 +417,9 @@ public:
 		    ENZO_FAIL("Error in AgoraRestart->InitializeGridb");
 		  }
 	  }
+	  //lay down gas in bulge
+	  if(AgoraRestartGasBulge)
+	  	this->InitializeGridGasBulge(Temp->GridData, TopGrid, MetaData, binned_mass);
 	  Temp = Temp->NextGridThisLevel;
 	} // end: loop over grids on this level
       } // end: loop over levels
@@ -957,6 +970,7 @@ public:
    DiskGasEnergy = this->DiskTemperature / mu / (Gamma - 1) /
      TemperatureUnits;
 
+   /*
    //gas bulge setup 
    float gas_bulge_density[100]; 
    float gas_bulge_pressure[100]; 
@@ -968,8 +982,9 @@ public:
    } 
    float gas_bulge_Rstop = 0.022; //code approx 30 kpc 
    gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, gas_bulge_Rstop, binned_mass, thisgrid); 
-
-    for (k = 0; k < thisgrid->GridDimension[2]; k++)
+   */
+    
+   for (k = 0; k < thisgrid->GridDimension[2]; k++)
     {
       for (j = 0; j < thisgrid->GridDimension[1]; j++)
       {
@@ -999,9 +1014,9 @@ public:
 				   z/LengthUnits, cellwidth) / POW(cellwidth, 3);
 	  float HaloDensityPrecip = HaloGasDensity(radius, CGM_data, thisgrid);
 	  float HaloTemperaturePrecip = HaloGasTemperature(radius, CGM_data, thisgrid);
-	  float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits) / DensityUnits; 
-	  float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits); 
-      float temperature = HaloTemperaturePrecip; 
+	  //float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits) / DensityUnits; 
+	  //float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits); 
+      	  float temperature = HaloTemperaturePrecip; 
 	  if(HaloTemperaturePrecip < 0.0) continue; //we're above the stop radius, so nothing to do for CGM 
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1);
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) )
@@ -1014,12 +1029,6 @@ public:
 		    if (TestProblemData.UseMetallicityField)
 		      thisgrid->BaryonField[MetalNum][index] = thisgrid->BaryonField[DensNum][index] *
 			TestProblemData.MetalFractionByMass * HaloMetallicity; 
-		    if(GasBulgeDensity > 0.0 && 0){ //gas bulge toggle 
-			   thisgrid->BaryonField[DensNum][index] = GasBulgeDensity; 
-			   thisgrid->BaryonField[TENum][index] -= HaloGasEnergyPrecip; 
-			   thisgrid->BaryonField[TENum][index] += GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits;
-			   
-		    } 
 	  if(TestProblemData.MultiSpecies)
 	  {
 	    thisgrid->BaryonField[HINum][index] = TestProblemData.HI_Fraction *
@@ -1115,6 +1124,222 @@ public:
     return SUCCESS;
 
   } // InitializeGrid
+
+  int InitializeGridGasBulge(grid *thisgrid_orig, HierarchyEntry &TopGrid,
+     TopGridData &MetaData, float* binned_mass)
+  {
+    AgoraRestartGrid *thisgrid =
+      static_cast<AgoraRestartGrid *>(thisgrid_orig);
+
+    if (thisgrid->ProcessorNumber != MyProcessorNumber)
+      return SUCCESS;
+    /* Get units */
+    float DensityUnits=1, LengthUnits=1, VelocityUnits=1, TimeUnits=1,
+      TemperatureUnits=1;
+    double MassUnits=1;
+
+    if (GetUnits(&DensityUnits, &LengthUnits, &TemperatureUnits,
+		 &TimeUnits, &VelocityUnits, &MassUnits, thisgrid->Time) == FAIL) {
+      ENZO_FAIL("Error in GetUnits.");
+    }
+    int DensNum, GENum, TENum, Vel1Num, Vel2Num, Vel3Num, B1Num, B2Num, B3Num, PhiNum, MetalNum;
+
+    int DeNum, HINum, HIINum, HeINum, HeIINum, HeIIINum, HMNum, H2INum, H2IINum,
+      DINum, DIINum, HDINum;
+
+    if (thisgrid->IdentifyPhysicalQuantities(DensNum, GENum, Vel1Num, Vel2Num,
+					     Vel3Num, TENum, B1Num, B2Num, B3Num, PhiNum) == FAIL) {
+      fprintf(stderr, "Error in IdentifyPhysicalQuantities.\n");
+      ENZO_FAIL("");
+    }
+    if (TestProblemData.MultiSpecies)
+      if (thisgrid->IdentifySpeciesFields(
+	    DeNum, HINum, HIINum, HeINum, HeIINum, HeIIINum,
+	    HMNum, H2INum, H2IINum, DINum, DIINum, HDINum) == FAIL)
+	ENZO_FAIL("error in grid->identifyspeciesfields.");
+
+    int MetallicityField = FALSE;
+    if ((MetalNum = FindField(
+	   Metallicity, thisgrid->FieldType, thisgrid->NumberOfBaryonFields)
+	  ) != -1)
+      MetallicityField = TRUE;
+    else
+      MetalNum = 0;
+    
+    //this function will esentially just lay down the halo. everything else should be taken care of by now.
+    float RhoZero, DiskGasEnergy, DiskDensity, HaloGasEnergy, HaloDensity,
+      BoxVolume, vcirc, mu;
+    BoxVolume = 1.0;  
+    for (int dim = 0; dim < TopGrid.GridData->GetGridRank(); dim++)
+      BoxVolume *= (DomainRightEdge[dim] - DomainLeftEdge[dim]);
+    int i,j,k,index = 0; 
+    int size; 
+    FLOAT x, y, z, radius, xy_radius, cellwidth;
+    /* Compute size of this grid */
+    size = 1;
+    for (int dim = 0; dim < thisgrid->GridRank; dim++)
+      size *= thisgrid->GridDimension[dim];
+    cellwidth = thisgrid->CellWidth[0][0];
+    /* Find the mean molecular weight */
+
+    if (MultiSpecies == FALSE)
+      mu = Mu;
+    else
+    {
+      // Atomic hydrogen
+      mu = TestProblemData.HydrogenFractionByMass *
+	(TestProblemData.HI_Fraction + 2.0*TestProblemData.HII_Fraction);
+
+      // Helium
+      mu += TestProblemData.HeliumFractionByMass / 4.0 *
+	(TestProblemData.HeI_Fraction + 2.0*TestProblemData.HeII_Fraction +
+	 3.0*TestProblemData.HeIII_Fraction);
+
+      // Molecular hydrogen, ignore Deuterium
+      if (TestProblemData.MultiSpecies > 1)
+	mu += TestProblemData.HydrogenFractionByMass / 2.0 *
+	  (TestProblemData.H2I_Fraction + 2.0*TestProblemData.H2II_Fraction);
+
+      // Metals
+      if (TestProblemData.UseMetallicityField)
+	mu += TestProblemData.MetalFractionByMass / 16.0;
+
+      mu = POW(mu, -1);
+
+    }
+
+   /* Find global physical properties */
+   RhoZero = this->DiskMass * this->GasFraction / (4.*pi) /
+     (POW((this->ScaleLength),2)*(this->ScaleHeight));
+
+   HaloGasEnergy = this->HaloTemperature / mu / (Gamma - 1) /
+     TemperatureUnits;
+
+   HaloDensity = this->HaloMass / BoxVolume;
+
+   DiskGasEnergy = this->DiskTemperature / mu / (Gamma - 1) /
+     TemperatureUnits;
+
+   //gas bulge setup 
+   float gas_bulge_density[100]; 
+   float gas_bulge_pressure[100]; 
+   float gas_bulge_temperature[100]; 
+   for(int i = 0; i < 100; i++){ 
+	gas_bulge_density[i] = 0.0; 
+	gas_bulge_pressure[i] = 0.0; 
+	gas_bulge_temperature[i] = 0.0; 
+   } 
+   float gas_bulge_Rstop = 0.022; //code approx 30 kpc 
+   gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, gas_bulge_Rstop, binned_mass, thisgrid); 
+
+    for (k = 0; k < thisgrid->GridDimension[2]; k++)
+    {
+      for (j = 0; j < thisgrid->GridDimension[1]; j++)
+      {
+	for (i = 0; i < thisgrid->GridDimension[0]; i++, index++)
+	{
+	  /* Compute position */
+
+	  x = (thisgrid->CellLeftEdge[0][i] + 0.5*thisgrid->CellWidth[0][i]) *
+	    LengthUnits;
+	  y = (thisgrid->CellLeftEdge[1][j] + 0.5*thisgrid->CellWidth[1][j]) *
+	    LengthUnits;
+	  z = (thisgrid->CellLeftEdge[2][k] + 0.5*thisgrid->CellWidth[2][k]) *
+	    LengthUnits;
+
+	  x -= this->CenterPosition[0]*LengthUnits;
+	  y -= this->CenterPosition[1]*LengthUnits;
+	  z -= this->CenterPosition[2]*LengthUnits;
+
+
+	  radius = sqrt(POW(x, 2) +
+			POW(y, 2) +
+			POW(z, 2) );
+
+	  xy_radius = sqrt(POW(x, 2) +
+			   POW(y, 2) );
+	  DiskDensity = gauss_mass(RhoZero, x/LengthUnits, y/LengthUnits,
+				   z/LengthUnits, cellwidth) / POW(cellwidth, 3);
+	  float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits) / DensityUnits; 
+	  float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits); 
+	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) )
+		  {
+		    if(GasBulgeDensity > 0.0){ 
+			   std::cout << "dens and temp for gas bulge set " << GasBulgeDensity*MassUnits/pow(LengthUnits,3) << " " << GasBulgeTemperature << " " << radius/LengthUnits << " " << x << " " << y << " " << z << std::endl;
+			   std::cout << "prev dens " << thisgrid->BaryonField[DensNum][index] << std::endl;
+			   thisgrid->BaryonField[DensNum][index] = GasBulgeDensity; 
+			   std::cout << "new dens " << thisgrid->BaryonField[DensNum][index] << std::endl;
+			   thisgrid->BaryonField[TENum][index] = GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits;
+			   if(DualEnergyFormalism)
+				   thisgrid->BaryonField[GENum][index] = GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits; 
+			   
+		    } 
+	  if(TestProblemData.MultiSpecies)
+	  {
+	    thisgrid->BaryonField[HINum][index] = TestProblemData.HI_Fraction *
+	      TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    thisgrid->BaryonField[HIINum][index] = TestProblemData.HII_Fraction *
+	      TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    thisgrid->BaryonField[HeINum][index] = TestProblemData.HeI_Fraction *
+	      TestProblemData.HeliumFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    thisgrid->BaryonField[HeIINum][index] = TestProblemData.HeII_Fraction *
+	      TestProblemData.HeliumFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    thisgrid->BaryonField[HeIIINum][index] = TestProblemData.HeIII_Fraction *
+	      TestProblemData.HeliumFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	    if(TestProblemData.MultiSpecies > 1){
+	      thisgrid->BaryonField[HMNum][index] = TestProblemData.HM_Fraction *
+		TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	      thisgrid->BaryonField[H2INum][index] = 2 * TestProblemData.H2I_Fraction *
+		TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+
+	      thisgrid->BaryonField[H2IINum][index] = 2 * TestProblemData.H2II_Fraction *
+		TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
+	    }
+
+	    if (TestProblemData.MultiSpecies > 1)
+	      thisgrid->BaryonField[HIINum][index] -=
+		(thisgrid->BaryonField[HMNum][index] + thisgrid->BaryonField[H2IINum][index]
+		 + thisgrid->BaryonField[H2INum][index]);
+
+	    // Electron "density" (remember, this is a factor of m_p/m_e scaled
+	    // from the 'normal' density for convenience) is calculated by
+	    // summing up all of the ionized species.  The factors of 0.25 and
+	    // 0.5 in front of HeII and HeIII are to fix the fact that we're
+	    // calculating mass density, not number density (because the
+	    // thisgrid->BaryonField values are 4x as heavy for helium for a single
+	    // electron)
+	    thisgrid->BaryonField[DeNum][index] = thisgrid->BaryonField[HIINum][index] +
+	      0.25*thisgrid->BaryonField[HeIINum][index] +
+	      0.5*thisgrid->BaryonField[HeIIINum][index];
+
+	    if (TestProblemData.MultiSpecies > 1)
+	      thisgrid->BaryonField[DeNum][index] += 0.5*thisgrid->BaryonField[H2IINum][index] -
+		thisgrid->BaryonField[HMNum][index];
+
+	    // Set deuterium species (assumed to be a negligible fraction of the
+	    // total, so not counted in the conservation)
+	    if(TestProblemData.MultiSpecies > 2){
+	      thisgrid->BaryonField[DINum ][index] =
+		CoolData.DeuteriumToHydrogenRatio * thisgrid->BaryonField[HINum][index];
+	      thisgrid->BaryonField[DIINum][index] =
+		CoolData.DeuteriumToHydrogenRatio * thisgrid->BaryonField[HIINum][index];
+	      thisgrid->BaryonField[HDINum][index] = 0.75 *
+		CoolData.DeuteriumToHydrogenRatio * thisgrid->BaryonField[H2INum][index];
+	    }
+	  } // if(TestProblemData.MultiSpecies)
+	}
+	}
+      }
+    }
+
+    return SUCCESS;
+}
 
   void InitializeParticles(grid *thisgrid_orig, HierarchyEntry &TopGrid,
 			  TopGridData &MetaData)
@@ -1674,7 +1899,6 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	      ENZO_FAIL("Error in GetUnits.");
 	    }
     	double MassUnitsDouble = double(DensityUnits)*POW(double(LengthUnits), 3.0);
-	std::cout << "mass units check " << MassUnitsDouble << std::endl;
 	double delta_r = (log10(sqrt(3.0)) - log10(min_value)) / num_bins; 
 	double prev_menc = 0.0;
 	double next_menc = 0.0; 
@@ -1698,7 +1922,8 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	prev_menc = binned_mass[bin_index - 1]; 
 	next_menc = binned_mass[bin_index + 1]; 
 	//ans = 0.5 * ((((binned_mass[bin_index] - prev_menc) / (pow(10,delta_r)) * (rad - prev_r_bin)) + prev_menc) + (((next_menc - binned_mass[bin_index]) / pow(10,delta_r) * (next_r_bin - rad)) + binned_mass[bin_index])); 
-	ans = binned_mass[bin_index]; 
+	ans = binned_mass[bin_index] + ((log10(rad) - log10(this_r_bin))/(log10(next_r_bin) - log10(this_r_bin)))*(next_menc - binned_mass[bin_index]); 
+	//ans = binned_mass[bin_index]; 
 	return ans*MassUnitsDouble; //cgs 
 }
 double halo_mod_g_of_r(double r, FLOAT *binned_mass, grid* Grid){
@@ -1762,28 +1987,19 @@ double gas_bulge_dens(double x, double y, double z, double rho_0, double LengthU
 }	
 
 double gas_bulge_dP_dr(double r, double this_pressure, grid* Grid, FLOAT* binned_mass){
-	double res = -1.0 * halo_mod_g_of_r(r, binned_mass, Grid) * Mu * mh *this_pressure/(1.0e4 * kboltz); 
+	double res = -1.0 * halo_mod_g_of_r(r, binned_mass, Grid) * Mu * mh * this_pressure / (1.0e6 * kboltz); 
 	std::cout << "gas bulge g " << halo_mod_g_of_r(r, binned_mass,Grid) << std::endl;
 	std::cout << "gas bulge pressure " << this_pressure << std::endl;
-	double g = halo_mod_g_of_r(r, binned_mass, Grid);
-
-double A = g * Mu * mh / (1.0e4 * kboltz);
-
-std::cout << "r = " << r
-          << ", g = " << g
-          << ", A = " << A
-          << ", dlnP/dr = " << -A
-          << std::endl;
 	return res; 
 }
 
 void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, double* gas_bulge_temperature, double gas_bulge_Rstop, FLOAT* binned_mass, grid* Grid){
-	double gas_bulge_rho_0 = Mu * mh; // * 1e-6; // g/cm^3 
+	double gas_bulge_rho_0 = Mu * mh; // g/cm^3 
 	double LengthUnits = 4.04446e24; 
 	int num_bins = 100; 
 	double r_0 = 1 * gas_bulge_Rstop * LengthUnits; //scale radius for later
 	double dr = (gas_bulge_Rstop / num_bins) * LengthUnits; 
-	double T_gas_bulge = 1e4; 
+	double T_gas_bulge = 1e6; 
 	for(int i = 0; i < num_bins; i++){ 
 		gas_bulge_density[i] = gas_bulge_rho_0 * exp(-1.0 * (i + 0.5) * dr / r_0); 
 	}
@@ -1800,7 +2016,7 @@ void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, dou
 		if(index < num_bins && index >= 0){
 			this_density = gas_bulge_density[index]; 
 			gas_bulge_pressure[index] = this_pressure; 
-			gas_bulge_temperature[index] = 1e4; //(this_pressure * Mu * mh / (this_density * kboltz)); 
+			gas_bulge_temperature[index] = 1e6; //(this_pressure * Mu * mh / (this_density * kboltz)); 
 			std::cout << "set index " << index << std::endl; 
 			std::cout << "density " << this_density << std::endl; 
 			std::cout << "pressure " << this_pressure << std::endl;
@@ -1828,8 +2044,10 @@ double gas_bulge_rho_of_r(double* gas_bulge_density, double r){
 	int num_bins = 100; 
 	float dr = 0.022 / num_bins; 
 	int index = int(r / dr); 
-	if(index > num_bins || index < 0)
+	if(index >= num_bins || index < 0)
 		return 0.0; 
+	if(gas_bulge_density[index] > 1e-20) 
+		std::cout << "fire " << index << " " << gas_bulge_density[index] << std::endl;
 	return gas_bulge_density[index]; 
 }
 
@@ -1837,7 +2055,7 @@ double gas_bulge_P_of_r(double* gas_bulge_pressure, double r){
 	int num_bins = 100; 
 	float dr = 0.022 / num_bins; 
 	int index = int(r / dr); 
-	if(index > num_bins || index < 0)
+	if(index >= num_bins || index < 0)
 		return 0.0; 
 	return gas_bulge_pressure[index]; 
 }
@@ -1846,7 +2064,8 @@ double gas_bulge_T_of_r(double* gas_bulge_temperature, double r){
 	int num_bins = 100; 
 	float dr = 0.022 / num_bins; 
 	int index = int(r / dr); 
-	if(index > num_bins || index < 0)
+	if(index >= num_bins || index < 0)
 		return 0.0; 
 	return gas_bulge_temperature[index]; 
 }
+
