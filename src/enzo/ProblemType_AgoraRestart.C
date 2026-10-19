@@ -1265,10 +1265,7 @@ public:
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) )
 		  {
 		    if(GasBulgeDensity > 0.0){ 
-			   std::cout << "dens and temp for gas bulge set " << GasBulgeDensity*MassUnits/pow(LengthUnits,3) << " " << GasBulgeTemperature << " " << radius/LengthUnits << " " << x << " " << y << " " << z << std::endl;
-			   std::cout << "prev dens " << thisgrid->BaryonField[DensNum][index] << std::endl;
 			   thisgrid->BaryonField[DensNum][index] = GasBulgeDensity; 
-			   std::cout << "new dens " << thisgrid->BaryonField[DensNum][index] << std::endl;
 			   thisgrid->BaryonField[TENum][index] = GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits;
 			   if(DualEnergyFormalism)
 				   thisgrid->BaryonField[GENum][index] = GasBulgeTemperature / Mu / (Gamma - 1) / TemperatureUnits; 
@@ -1988,8 +1985,6 @@ double gas_bulge_dens(double x, double y, double z, double rho_0, double LengthU
 
 double gas_bulge_dP_dr(double r, double this_pressure, grid* Grid, FLOAT* binned_mass){
 	double res = -1.0 * halo_mod_g_of_r(r, binned_mass, Grid) * Mu * mh * this_pressure / (1.0e6 * kboltz); 
-	std::cout << "gas bulge g " << halo_mod_g_of_r(r, binned_mass,Grid) << std::endl;
-	std::cout << "gas bulge pressure " << this_pressure << std::endl;
 	return res; 
 }
 
@@ -2017,23 +2012,12 @@ void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, dou
 			this_density = gas_bulge_density[index]; 
 			gas_bulge_pressure[index] = this_pressure; 
 			gas_bulge_temperature[index] = 1e6; //(this_pressure * Mu * mh / (this_density * kboltz)); 
-			std::cout << "set index " << index << std::endl; 
-			std::cout << "density " << this_density << std::endl; 
-			std::cout << "pressure " << this_pressure << std::endl;
-			std::cout << "temp " << gas_bulge_temperature[index] << std::endl;	
 		}
-		std::cout << "this_pressure " << this_pressure << std::endl;
-		std::cout << "this_radius " << this_radius/LengthUnits << std::endl; 
 		k1 = gas_bulge_dP_dr(this_radius,          this_pressure,             Grid, binned_mass);
 		k2 = gas_bulge_dP_dr(this_radius + 0.5*dr, this_pressure + 0.5*dr*k1, Grid, binned_mass);
 		k3 = gas_bulge_dP_dr(this_radius + 0.5*dr, this_pressure + 0.5*dr*k2, Grid, binned_mass);
 		k4 = gas_bulge_dP_dr(this_radius + dr,     this_pressure + dr*k3,     Grid, binned_mass);
-	        std::cout << "this_density " << this_density << std::endl;	
-		std::cout << "ks " << k1 << " " << k2 << " " << k3 << " " << k4 << std::endl;
-		std::cout << "prev_p " << this_pressure << std::endl; 
       		this_pressure += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); 
-		std::cout << "new_p " << this_pressure << std::endl; 
-		std::cout << "Gas Bulge set index " << index << std::endl;
 		this_radius += dr;
 		index--; 
 	}
