@@ -375,7 +375,7 @@ public:
     
     //lay down gas in bulge
     if(AgoraRestartGasBulge)
-    	this->InitializeGridGasBulge(TopGrid.GridData, TopGrid, MetaData, binned_mass);
+    	this->InitializeGridGasBulge(TopGrid.GridData, TopGrid, MetaData, binned_mass, AgoraRestartGasBulgeRstop);
 
     /* Convert minimum initial overdensity for refinement to mass
        (unless MinimumMass itself was actually set). */
@@ -422,7 +422,7 @@ public:
 	  }
 	  //lay down gas in bulge
 	  if(AgoraRestartGasBulge)
-	  	this->InitializeGridGasBulge(Temp->GridData, TopGrid, MetaData, binned_mass);
+	  	this->InitializeGridGasBulge(Temp->GridData, TopGrid, MetaData, binned_mass, AgoraRestartGasBulgeRstop);
 	  Temp = Temp->NextGridThisLevel;
 	} // end: loop over grids on this level
       } // end: loop over levels
@@ -1129,7 +1129,7 @@ public:
   } // InitializeGrid
 
   int InitializeGridGasBulge(grid *thisgrid_orig, HierarchyEntry &TopGrid,
-     TopGridData &MetaData, float* binned_mass)
+     TopGridData &MetaData, float* binned_mass, float Rstop)
   {
     AgoraRestartGrid *thisgrid =
       static_cast<AgoraRestartGrid *>(thisgrid_orig);
@@ -1233,7 +1233,7 @@ public:
 	gas_bulge_temperature[i] = 0.0; 
    } 
    
-   gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, AgoraRestartGasBulgeRstop, binned_mass, thisgrid); 
+   gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, Rstop, binned_mass, thisgrid); 
 
     for (k = 0; k < thisgrid->GridDimension[2]; k++)
     {
@@ -1263,8 +1263,8 @@ public:
 			   POW(y, 2) );
 	  DiskDensity = gauss_mass(RhoZero, x/LengthUnits, y/LengthUnits,
 				   z/LengthUnits, cellwidth) / POW(cellwidth, 3);
-	  float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits,gas_bulge_Rstop ) / DensityUnits; 
-	  float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits, gas_bulge_Rstop); 
+	  float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits, Rstop ) / DensityUnits; 
+	  float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits, Rstop); 
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) )
 		  {
 		    if(GasBulgeDensity > 0.0){ 
