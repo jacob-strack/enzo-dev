@@ -225,6 +225,7 @@ public:
     TestProblemData.MultiSpecies = MultiSpecies;
     int AgoraRestartGasHalo = 0; 
     int AgoraRestartGasBulge = 0;
+    float AgoraRestartGasBulgeRstop = 0.012; //code 
     /* read input from file */
     while (fgets(line, MAX_LINE_LENGTH, fptr) != NULL)
     {
@@ -285,6 +286,8 @@ public:
 		    &AgoraRestartGasHalo);
       ret += sscanf(line, "AgoraRestartGasBulge  = %"ISYM,
 		    &AgoraRestartGasBulge);
+      ret += sscanf(line, "AgoraRestartGasBulgeRstop  = %"FSYM,
+		    &AgoraRestartGasBulgeRstop);
 
 
       if (ret == 0 && strstr(line, "=") &&
@@ -1229,8 +1232,8 @@ public:
 	gas_bulge_pressure[i] = 0.0; 
 	gas_bulge_temperature[i] = 0.0; 
    } 
-   float gas_bulge_Rstop = 0.012; //code approx 6 kpc 
-   gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, gas_bulge_Rstop, binned_mass, thisgrid); 
+   
+   gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, AgoraRestartGasBulgeRstop, binned_mass, thisgrid); 
 
     for (k = 0; k < thisgrid->GridDimension[2]; k++)
     {
