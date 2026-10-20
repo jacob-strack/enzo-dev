@@ -1229,7 +1229,7 @@ public:
 	gas_bulge_pressure[i] = 0.0; 
 	gas_bulge_temperature[i] = 0.0; 
    } 
-   float gas_bulge_Rstop = 0.012; //code approx 15 kpc 
+   float gas_bulge_Rstop = 0.012; //code approx 6 kpc 
    gas_bulge_dens_2(gas_bulge_density, gas_bulge_pressure, gas_bulge_temperature, gas_bulge_Rstop, binned_mass, thisgrid); 
 
     for (k = 0; k < thisgrid->GridDimension[2]; k++)
@@ -1918,9 +1918,7 @@ double MassEnclosed_r(FLOAT *binned_mass, double rad, grid* Grid){
 	}
 	prev_menc = binned_mass[bin_index - 1]; 
 	next_menc = binned_mass[bin_index + 1]; 
-	//ans = 0.5 * ((((binned_mass[bin_index] - prev_menc) / (pow(10,delta_r)) * (rad - prev_r_bin)) + prev_menc) + (((next_menc - binned_mass[bin_index]) / pow(10,delta_r) * (next_r_bin - rad)) + binned_mass[bin_index])); 
-	ans = binned_mass[bin_index] + ((log10(rad) - log10(this_r_bin))/(log10(next_r_bin) - log10(this_r_bin)))*(next_menc - binned_mass[bin_index]); 
-	//ans = binned_mass[bin_index]; 
+	ans = 0.5 * (binned_mass[bin_index] + ((log10(rad) - log10(this_r_bin))/(log10(next_r_bin) - log10(this_r_bin)))*(next_menc - binned_mass[bin_index]) + prev_menc + ((log10(rad) - log10(prev_r_bin)) / (log10(this_r_bin) - log10(prev_r_bin))*(binned_mass[bin_index] - prev_menc))); 
 	return ans*MassUnitsDouble; //cgs 
 }
 double halo_mod_g_of_r(double r, FLOAT *binned_mass, grid* Grid){
@@ -1989,7 +1987,7 @@ double gas_bulge_dP_dr(double r, double this_pressure, grid* Grid, FLOAT* binned
 }
 
 void gas_bulge_dens_2(double* gas_bulge_density, double* gas_bulge_pressure, double* gas_bulge_temperature, double gas_bulge_Rstop, FLOAT* binned_mass, grid* Grid){
-	double gas_bulge_rho_0 = Mu * mh * 1e-2; // g/cm^3 
+	double gas_bulge_rho_0 = Mu * mh; // g/cm^3 
 	double LengthUnits = 4.04446e24; 
 	int num_bins = 100; 
 	double r_0 = 1 * gas_bulge_Rstop * LengthUnits; //scale radius for later
