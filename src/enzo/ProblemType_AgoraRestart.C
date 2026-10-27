@@ -861,6 +861,17 @@ public:
 		       POW(thisgrid->BaryonField[B2Num][index], 2) + 
 		       POW(thisgrid->BaryonField[B3Num][index], 2))/thisgrid->BaryonField[DensNum][index];
 	      }
+        
+        //add the baryonic mass to binned mass 
+        float min_value = 5e-7; 
+        int num_bins = 10000;
+        float code_x = thisgrid->CellLeftEdge[0][i] + 0.5*thisgrid->CellWidth[0][i] - this->CenterPosition[0]; 
+        float code_y = thisgrid->CellLeftEdge[1][j] + 0.5*thisgrid->CellWidth[1][j] - this->CenterPosition[1]; 
+        float code_z = thisgrid->CellLeftEdge[2][k] + 0.5*thisgrid->CellWidth[2][k] - this->CenterPosition[2]; 
+	    float r_sph = sqrt(POW(fabs(x),2) + POW(fabs(y),2) + POW(fabs(z),2)); 
+        float delta_r = (log10(sqrt(3.0)) - log10(min_value)) / num_bins; 
+        int ind_r = int((log10(r_sph) - log10(min_value)) / delta_r); 
+        binned_mass[ind_r] += thisgrid->BaryonField[DensNum][index] * thisgrid->CellWidth[0][i] * thisgrid->CellWidth[1][j] * thisgrid->CellWidth[2][k]; //add mass in code units to histogram   
 
 
 
