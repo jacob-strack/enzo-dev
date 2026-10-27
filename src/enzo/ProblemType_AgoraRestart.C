@@ -357,6 +357,9 @@ public:
 		ENZO_FAIL("Negative Index");	
 	binned_mass[ind_r] += p_dens; 
     }
+    
+    this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData,binned_mass); //setup baryons. needed for CGM setup
+    
     //Now make binned_mass a cumulative sum in radius 
     float total_mass_enc = 0.0;
     for(int i = 0; i < num_bins; i++){
@@ -364,8 +367,6 @@ public:
 	binned_mass[i] = total_mass_enc; 
 	std::cout << "binned mass i " << i << " " << total_mass_enc << " r " << 5e-7 * pow(10,i*((log10(sqrt(3.0)) - log10(5e-7))/num_bins)) << std::endl;
     }
-    
-    this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData,binned_mass); //setup baryons. needed for CGM setup
 
     //fill CGM data here to be used to add halo later. Adding here means one integration for entire domain. 
     //struct CGMdata CGM_data(8192);
@@ -871,9 +872,13 @@ public:
         float code_x = thisgrid->CellLeftEdge[0][i] + 0.5*thisgrid->CellWidth[0][i] - this->CenterPosition[0]; 
         float code_y = thisgrid->CellLeftEdge[1][j] + 0.5*thisgrid->CellWidth[1][j] - this->CenterPosition[1]; 
         float code_z = thisgrid->CellLeftEdge[2][k] + 0.5*thisgrid->CellWidth[2][k] - this->CenterPosition[2]; 
-	    float r_sph = sqrt(POW(fabs(x),2) + POW(fabs(y),2) + POW(fabs(z),2)); 
+	    float r_sph = sqrt(POW(fabs(code_x),2) + POW(fabs(code_y),2) + POW(fabs(code_z),2)); 
         float delta_r = (log10(sqrt(3.0)) - log10(min_value)) / num_bins; 
         int ind_r = int((log10(r_sph) - log10(min_value)) / delta_r); 
+        if(ind_r >= num_bins)
+            ENZO_FAIL("Bad index");
+        if(ind_r < 0) 
+            ENZO_FAIL("Negative Index");	
         binned_mass[ind_r] += thisgrid->BaryonField[DensNum][index] * thisgrid->CellWidth[0][i] * thisgrid->CellWidth[1][j] * thisgrid->CellWidth[2][k]; //add mass in code units to histogram   
 
 
