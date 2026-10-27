@@ -358,7 +358,7 @@ public:
 	binned_mass[ind_r] += p_dens; 
     }
     
-    this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData,binned_mass); //setup baryons. needed for CGM setup
+    this->InitializeGrida(TopGrid.GridData, TopGrid, MetaData,binned_mass, 1); //setup baryons. needed for CGM setup
     
     //Now make binned_mass a cumulative sum in radius 
     float total_mass_enc = 0.0;
@@ -541,7 +541,7 @@ public:
 
   } // InitializeSimulation
 
-  int InitializeGrida(grid *thisgrid_orig, HierarchyEntry &TopGrid, TopGridData &MetaData, float* binned_mass){
+  int InitializeGrida(grid *thisgrid_orig, HierarchyEntry &TopGrid, TopGridData &MetaData, float* binned_mass, int AddGasMass = 0){
 
     AgoraRestartGrid *thisgrid =
       static_cast<AgoraRestartGrid *>(thisgrid_orig);
@@ -866,21 +866,22 @@ public:
 		       POW(thisgrid->BaryonField[B3Num][index], 2))/thisgrid->BaryonField[DensNum][index];
 	      }
         
-        //add the baryonic mass to binned mass 
-        float min_value = 5e-7; 
-        int num_bins = 10000;
-        float code_x = thisgrid->CellLeftEdge[0][i] + 0.5*thisgrid->CellWidth[0][i] - this->CenterPosition[0]; 
-        float code_y = thisgrid->CellLeftEdge[1][j] + 0.5*thisgrid->CellWidth[1][j] - this->CenterPosition[1]; 
-        float code_z = thisgrid->CellLeftEdge[2][k] + 0.5*thisgrid->CellWidth[2][k] - this->CenterPosition[2]; 
-	    float r_sph = sqrt(POW(fabs(code_x),2) + POW(fabs(code_y),2) + POW(fabs(code_z),2)); 
-        float delta_r = (log10(sqrt(3.0)) - log10(min_value)) / num_bins; 
-        int ind_r = int((log10(r_sph) - log10(min_value)) / delta_r); 
-        if(ind_r >= num_bins)
-            ENZO_FAIL("Bad index");
-        if(ind_r < 0) 
-            ENZO_FAIL("Negative Index");	
-        binned_mass[ind_r] += thisgrid->BaryonField[DensNum][index] * thisgrid->CellWidth[0][i] * thisgrid->CellWidth[1][j] * thisgrid->CellWidth[2][k]; //add mass in code units to histogram   
-
+        //add the baryonic mass to binned mass if needed 
+        if(AddGasMass == 1){
+            float min_value = 5e-7; 
+            int num_bins = 10000;
+            float code_x = thisgrid->CellLeftEdge[0][i] + 0.5*thisgrid->CellWidth[0][i] - this->CenterPosition[0]; 
+            float code_y = thisgrid->CellLeftEdge[1][j] + 0.5*thisgrid->CellWidth[1][j] - this->CenterPosition[1]; 
+            float code_z = thisgrid->CellLeftEdge[2][k] + 0.5*thisgrid->CellWidth[2][k] - this->CenterPosition[2]; 
+            float r_sph = sqrt(POW(fabs(code_x),2) + POW(fabs(code_y),2) + POW(fabs(code_z),2)); 
+            float delta_r = (log10(sqrt(3.0)) - log10(min_value)) / num_bins; 
+            int ind_r = int((log10(r_sph) - log10(min_value)) / delta_r); 
+            if(ind_r >= num_bins)
+                ENZO_FAIL("Bad index");
+            if(ind_r < 0) 
+                ENZO_FAIL("Negative Index");	
+            binned_mass[ind_r] += thisgrid->BaryonField[DensNum][index] * thisgrid->CellWidth[0][i] * thisgrid->CellWidth[1][j] * thisgrid->CellWidth[2][k]; //add mass in code units to histogram   
+        }
 
 
 	} // i
