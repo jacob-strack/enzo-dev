@@ -1039,13 +1039,13 @@ public:
       	  float temperature = HaloTemperaturePrecip; 
 	  if(HaloTemperaturePrecip < 0.0) continue; //we're above the stop radius, so nothing to do for CGM 
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1);
-	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) )
+	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) || 1 )
 		  {
-		    thisgrid->BaryonField[DensNum][index] = HaloDensityPrecip;
-		    thisgrid->BaryonField[TENum][index] -= HaloGasEnergy; //get rid of energy from overwritten placeholder density
+		    thisgrid->BaryonField[DensNum][index] += HaloDensityPrecip;
+		    //thisgrid->BaryonField[TENum][index] -= HaloGasEnergy; //get rid of energy from overwritten placeholder density
 		    thisgrid->BaryonField[TENum][index] += HaloGasEnergyPrecip;//but DO NOT get rid of the magnetic energy
 		    if (DualEnergyFormalism)
-		      thisgrid->BaryonField[GENum][index] = HaloGasEnergyPrecip;
+		      thisgrid->BaryonField[GENum][index] += HaloGasEnergyPrecip;
 		    if (TestProblemData.UseMetallicityField)
 		      thisgrid->BaryonField[MetalNum][index] = thisgrid->BaryonField[DensNum][index] *
 			TestProblemData.MetalFractionByMass * HaloMetallicity; 
