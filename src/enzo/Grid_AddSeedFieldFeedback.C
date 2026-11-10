@@ -31,7 +31,7 @@ int grid::AddSeedFieldFeedback(float tau){
     if(ProcessorNumber != MyProcessorNumber){
         return SUCCESS;
     }
-    if(UseMagneticSupernovaFeedback && HydroMethod == 6){
+    if(UseMagneticSupernovaFeedback){
         snsf_source_terms S;
         int igrid, index;
         std::vector<SuperNova>::iterator P = this->MagneticSupernovaList.begin(); 
