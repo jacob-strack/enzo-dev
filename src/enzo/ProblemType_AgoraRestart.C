@@ -1038,6 +1038,7 @@ public:
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1);
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) || 1 )
 		  {
+		    float OldDensity = thisgrid->BaryonField[DensNum][index]; 
 		    //get rid of the magnetic energy, it's reset at the end of the function. 
 		    thisgrid->BaryonField[TENum][index] -= 
 		  0.5*(POW(thisgrid->BaryonField[B1Num][index], 2) +
@@ -1046,9 +1047,9 @@ public:
 		    //update density with gas halo value, don't worry about overwriting background density, it's small enough to ignore
 		    thisgrid->BaryonField[DensNum][index] += HaloDensityPrecip;
 		    //update total and gas energy
-		    thisgrid->BaryonField[TENum][index] += HaloGasEnergyPrecip;
+		    thisgrid->BaryonField[TENum][index] = (thisgrid->BaryonField[TENum][index] * OldDensity + HaloGasEnergyPrecip * HaloDensityPrecip) / (thisgrid->BaryonField[DensNum][index]);
 		    if (DualEnergyFormalism){
-		      	    thisgrid->BaryonField[GENum][index] += HaloGasEnergyPrecip;
+		    	thisgrid->BaryonField[GENum][index] = (thisgrid->BaryonField[GENum][index] * OldDensity + HaloGasEnergyPrecip * HaloDensityPrecip) / (thisgrid->BaryonField[DensNum][index]);
 		    }
 		    //update chem species fields 
 		    if (TestProblemData.UseMetallicityField)
