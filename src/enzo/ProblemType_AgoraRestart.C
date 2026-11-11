@@ -365,7 +365,6 @@ public:
     for(int i = 0; i < num_bins; i++){
 	total_mass_enc += binned_mass[i]; 
 	binned_mass[i] = total_mass_enc; 
-	std::cout << "binned mass i " << i << " " << total_mass_enc << " r " << 5e-7 * pow(10,i*((log10(sqrt(3.0)) - log10(5e-7))/num_bins)) << std::endl;
     }
 
     //fill CGM data here to be used to add halo later. Adding here means one integration for entire domain. 
@@ -422,8 +421,8 @@ public:
 		  }
 	  }
 	  //lay down gas in bulge
-	  if(AgoraRestartGasBulge)
-	  	this->InitializeGridGasBulge(Temp->GridData, TopGrid, MetaData, binned_mass, AgoraRestartGasBulgeRstop);
+	  //if(AgoraRestartGasBulge)
+	  	//this->InitializeGridGasBulge(Temp->GridData, TopGrid, MetaData, binned_mass, AgoraRestartGasBulgeRstop);
 	  Temp = Temp->NextGridThisLevel;
 	} // end: loop over grids on this level
       } // end: loop over levels
@@ -1034,18 +1033,25 @@ public:
 				   z/LengthUnits, cellwidth) / POW(cellwidth, 3);
 	  float HaloDensityPrecip = HaloGasDensity(radius, CGM_data, thisgrid);
 	  float HaloTemperaturePrecip = HaloGasTemperature(radius, CGM_data, thisgrid);
-	  //float GasBulgeDensity = gas_bulge_rho_of_r(gas_bulge_density, radius/LengthUnits) / DensityUnits; 
-	  //float GasBulgeTemperature = gas_bulge_T_of_r(gas_bulge_temperature, radius/LengthUnits); 
       	  float temperature = HaloTemperaturePrecip; 
 	  if(HaloTemperaturePrecip < 0.0) continue; //we're above the stop radius, so nothing to do for CGM 
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1);
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) || 1 )
 		  {
+		    float OldDensity = thisgrid->BaryonField[DensNum][index]; 
+		    //get rid of the magnetic energy, it's reset at the end of the function. 
+		    thisgrid->BaryonField[TENum][index] -= 
+		  0.5*(POW(thisgrid->BaryonField[B1Num][index], 2) +
+		       POW(thisgrid->BaryonField[B2Num][index], 2) + 
+		       POW(thisgrid->BaryonField[B3Num][index], 2))/thisgrid->BaryonField[DensNum][index];
+		    //update density with gas halo value, don't worry about overwriting background density, it's small enough to ignore
 		    thisgrid->BaryonField[DensNum][index] += HaloDensityPrecip;
-		    //thisgrid->BaryonField[TENum][index] -= HaloGasEnergy; //get rid of energy from overwritten placeholder density
-		    thisgrid->BaryonField[TENum][index] += HaloGasEnergyPrecip;//but DO NOT get rid of the magnetic energy
-		    if (DualEnergyFormalism)
-		      thisgrid->BaryonField[GENum][index] += HaloGasEnergyPrecip;
+		    //update total and gas energy
+		    thisgrid->BaryonField[TENum][index] = (thisgrid->BaryonField[TENum][index] * OldDensity + HaloGasEnergyPrecip * HaloDensityPrecip) / (thisgrid->BaryonField[DensNum][index]);
+		    if (DualEnergyFormalism){
+		    	thisgrid->BaryonField[GENum][index] = (thisgrid->BaryonField[GENum][index] * OldDensity + HaloGasEnergyPrecip * HaloDensityPrecip) / (thisgrid->BaryonField[DensNum][index]);
+		    }
+		    //update chem species fields 
 		    if (TestProblemData.UseMetallicityField)
 		      thisgrid->BaryonField[MetalNum][index] = thisgrid->BaryonField[DensNum][index] *
 			TestProblemData.MetalFractionByMass * HaloMetallicity; 
@@ -1136,6 +1142,18 @@ public:
 	  }
 
       }
+      	    //add new magnetic energy to total energy
+	    if (HydroMethod == MHD_RK)
+	      {
+		thisgrid->BaryonField[B1Num][index] = Bfield[0];
+		thisgrid->BaryonField[B2Num][index] = Bfield[1];
+		thisgrid->BaryonField[B3Num][index] = Bfield[2];
+
+		thisgrid->BaryonField[TENum][index] += 
+		  0.5*(POW(thisgrid->BaryonField[B1Num][index], 2) +
+		       POW(thisgrid->BaryonField[B2Num][index], 2) + 
+		       POW(thisgrid->BaryonField[B3Num][index], 2))/thisgrid->BaryonField[DensNum][index];
+	      }
 		  }
 	}
       }
@@ -1148,6 +1166,7 @@ public:
   int InitializeGridGasBulge(grid *thisgrid_orig, HierarchyEntry &TopGrid,
      TopGridData &MetaData, float* binned_mass, float Rstop)
   {
+    ENZO_FAIL("shouldn't be here");
     AgoraRestartGrid *thisgrid =
       static_cast<AgoraRestartGrid *>(thisgrid_orig);
 

@@ -26,7 +26,7 @@ int GetUnits(float *DensityUnits, float *LengthUnits,
 	     float *VelocityUnits, FLOAT Time);
 int FindField(int field, int farray[], int numfields);
 double ReturnWallTime();
-extern "C" void FORTRAN_NAME(krome_driver)(
+/*extern "C" void FORTRAN_NAME(krome_driver)(
 	float *d, float *e, float *ge, float *u, float *v, float *w, 
         float *De, float *HM, float *CM, float *OM,
  float *HI, float *HeI, float *H2I, float *CI,
@@ -43,7 +43,7 @@ extern "C" void FORTRAN_NAME(krome_driver)(
 	int *is, int *js, int *ks, int *ie, int *je, int *ke, 
 	float *dt, float *aye,  
 	float *utem, float *uxyz, float *uaye, float *urho, float *utim,
-	float *gamma, float *fh, float *dtoh);
+	float *gamma, float *fh, float *dtoh);*/
 
 
 int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
@@ -81,7 +81,7 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
 
   /* Find Multi-species fields. New routine from KROME */
 
-  if (MultiSpecies)
+  /*if (MultiSpecies)
     if (IdentifySpeciesFieldsKrome(
   DeNum, HMNum, CMNum, OMNum, HINum, HeINum,
  H2INum, CINum, OINum, OHINum, COINum, CHINum,
@@ -94,7 +94,7 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
             ENZO_FAIL("Error in grid->IdentifySpeciesFields.");
     }
 
-
+  */
   /* Compute size of the current grid. */
 
   int i, dim, size = 1;
@@ -152,7 +152,7 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
 
   /* Call the fortran routine to solve cooling equations. */
 
-  if(use_krome_cooling == true){
+  /*if(use_krome_cooling == true){
   FORTRAN_NAME(krome_driver)(
     density, totalenergy, gasenergy, velocity1, velocity2, velocity3,
     BaryonField[DeNum], BaryonField[HMNum], BaryonField[CMNum],
@@ -182,7 +182,7 @@ int grid::SolveRateAndCoolEquations(int RTCoupledSolverIntermediateStep)
     &TemperatureUnits, &LengthUnits, &aUnits, &DensityUnits, &TimeUnits,
     &Gamma,
     &CoolData.HydrogenFractionByMass, &CoolData.DeuteriumToHydrogenRatio);
-}
+}*/
   if (HydroMethod == MHD_RK) {
     float B2, v2;
     for (int n = 0; n < size; n++) {

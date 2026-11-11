@@ -29,7 +29,7 @@ int GetUnits(float *DensityUnits, float *LengthUnits,
 int CosmologyComputeExpansionFactor(FLOAT time, FLOAT *a, FLOAT *dadt);
 
 /* THIS IS WHAT YOU NEED YOU WANT TO USE RATE TABLES FROM KROME */
-extern "C" void FORTRAN_NAME(krome_initab)();
+//extern "C" void FORTRAN_NAME(krome_initab)();
 
 int InitializeRateData(FLOAT Time)
 {
@@ -63,7 +63,7 @@ int InitializeRateData(FLOAT Time)
  
   /* Call FORTRAN routine to prepare tables: KROME 2013 */
 
-    FORTRAN_NAME(krome_initab)();
+    //FORTRAN_NAME(krome_initab)();
 
   return SUCCESS;
 }
