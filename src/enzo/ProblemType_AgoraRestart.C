@@ -1669,6 +1669,7 @@ namespace {
   R200 = pow(3.0/(4.0*3.14159)*M/(200.*rho_crit),1./3.);  // virial radius in CGS
   if (Rstop < 0)
     Rstop = fabs(Rstop)*R200;
+  
   CGM_data.R_outer = Rstop;// integrate out to the virial radius of halo
 
   Rstart = 0.00*LengthUnits; // you could force a different start if you liked
@@ -1757,21 +1758,22 @@ namespace {
     //assert (dlP_dlr < 0.0);
     while(this_radius <= CGM_data.R_outer){
       std::cout << "outward integration " << this_radius << " " << CGM_data.R_outer << std::endl;
+      double step = min(dr, CGM_data.R_outer - this_radius); 
       //this_dPdr = this_press/this_radius * dlP_dlr;
       k1 = halo_dP_dr_Agora(this_radius,          this_press,             Grid, binned_mass, MetaData);
-      k2 = halo_dP_dr_Agora(this_radius + 0.5*dr, this_press + 0.5*dr*k1, Grid, binned_mass, MetaData);
-      k3 = halo_dP_dr_Agora(this_radius + 0.5*dr, this_press + 0.5*dr*k2, Grid, binned_mass, MetaData);
-      k4 = halo_dP_dr_Agora(this_radius + dr,     this_press + dr*k3,     Grid, binned_mass, MetaData);
+      k2 = halo_dP_dr_Agora(this_radius + 0.5*step, this_press + 0.5*step*k1, Grid, binned_mass, MetaData);
+      k3 = halo_dP_dr_Agora(this_radius + 0.5*step, this_press + 0.5*step*k2, Grid, binned_mass, MetaData);
+      k4 = halo_dP_dr_Agora(this_radius + step,     this_press + step*k3,     Grid, binned_mass, MetaData);
       // update radius, pressure, entropy
-      this_radius += dr;  // new radius
-      this_press += (1.0/6.0) * dr * (k1 + 2.0*k2 + 2.0*k3 + k4); // P @ new radius
+      this_radius += step;  // new radius
+      this_press += (1.0/6.0) * step * (k1 + 2.0*k2 + 2.0*k3 + k4); // P @ new radius
       this_ent = halo_S_of_r_Agora(this_radius, Grid, binned_mass,MetaData); // entropy @ new radius
       // update density and radius
       //this_dens = -2.0 * this_dPdr/(1.22*mh*halo_mod_g_of_r(this_radius, binned_mass)); // n_e = n_i
       //this_temp = POW(10, sigmoid(log10(this_radius), r0, k, y0, y_offset));
       //this_press = POW(10, dlP_dlr*log10(this_radius/R200) + log10(press_vir));
       // store everything in the struct
-      index = int((this_radius - CGM_data.R_inner)/dr + 1.0e-3); 
+      index = int((this_radius - CGM_data.R_inner)/step + 1.0e-3); 
       if (index < CGM_data.nbins) {
 	CGM_data.n_rad[index] = 2 * POW(this_press/(mu_ratio*this_ent), 1./Gamma);
 	CGM_data.T_rad[index] = POW(POW(this_press/mu_ratio, Gamma-1.) * this_ent, 1./Gamma) / kboltz;
