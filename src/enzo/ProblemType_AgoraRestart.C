@@ -1640,7 +1640,6 @@ namespace {
 }
 
 
-#endif
 
 
 
@@ -2092,4 +2091,4 @@ double gas_bulge_T_of_r(double* gas_bulge_temperature, double r, double Rstop){
 		return 0.0; 
 	return gas_bulge_temperature[index]; 
 }
-
+#endif
