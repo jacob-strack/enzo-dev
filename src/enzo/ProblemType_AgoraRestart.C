@@ -1038,6 +1038,15 @@ public:
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1);
 	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) || 1 )
 		  {
+		    //take away disk kinetic energy for now, reset later 
+		    if(HaloDensity*this->HaloTemperature <= DiskDensity*this->DiskTemperature){
+		    if(HydroMethod != Zeus_Hydro) {
+		      thisgrid->BaryonField[TENum][index] -=  0.5 *
+			(POW(thisgrid->BaryonField[Vel1Num][index],2) +
+			 POW(thisgrid->BaryonField[Vel2Num][index],2) +
+			 POW(thisgrid->BaryonField[Vel3Num][index],2));
+	    }
+		    } 
 		    float OldDensity = thisgrid->BaryonField[DensNum][index]; 
 		    //get rid of the magnetic energy, it's reset at the end of the function. 
 		    thisgrid->BaryonField[TENum][index] -= 
@@ -1154,7 +1163,13 @@ public:
 		       POW(thisgrid->BaryonField[B2Num][index], 2) + 
 		       POW(thisgrid->BaryonField[B3Num][index], 2))/thisgrid->BaryonField[DensNum][index];
 	      }
+	    if (HydroMethod != Zeus_Hydro){
+		      thisgrid->BaryonField[TENum][index] +=  0.5 *
+			(POW(thisgrid->BaryonField[Vel1Num][index],2) +
+			 POW(thisgrid->BaryonField[Vel2Num][index],2) +
+			 POW(thisgrid->BaryonField[Vel3Num][index],2));
 		  }
+		}
 	}
       }
     }
@@ -1640,6 +1655,7 @@ namespace {
 }
 
 
+#endif
 
 
 
@@ -2091,4 +2107,4 @@ double gas_bulge_T_of_r(double* gas_bulge_temperature, double r, double Rstop){
 		return 0.0; 
 	return gas_bulge_temperature[index]; 
 }
-#endif
+
