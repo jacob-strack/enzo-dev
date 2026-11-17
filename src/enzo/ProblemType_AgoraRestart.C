@@ -1771,7 +1771,7 @@ namespace {
     dlP_dlr = (log10(this_press) - log10(prev_press))
             / (log10(this_radius) - log10(this_radius-dr));
     //assert (dlP_dlr < 0.0);
-    while(this_radius <= CGM_data.R_outer){
+    while(this_radius < CGM_data.R_outer){
       std::cout << "outward integration " << this_radius << " " << CGM_data.R_outer << std::endl;
       double step = min(dr, CGM_data.R_outer - this_radius); 
       //this_dPdr = this_press/this_radius * dlP_dlr;
