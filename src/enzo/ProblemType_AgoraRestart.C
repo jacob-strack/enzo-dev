@@ -764,7 +764,7 @@ public:
               ENZO_FAIL("Thought we would find a SNII field but did not.");
           }
       }
-      if(0){ //init chem the way GalaxySimulation does with EquilibriumTable. 
+      if(1){ //init chem the way GalaxySimulation does with EquilibriumTable. 
 	     //trying to be consistent with what is done in S(r) for gas halo. 
 	  int EquilibrateChem = 1;
 
@@ -793,7 +793,7 @@ public:
 
       }
 
-	  if(TestProblemData.MultiSpecies)
+	  if(TestProblemData.MultiSpecies && 0)
 	  {
 	    thisgrid->BaryonField[HINum][index] = TestProblemData.HI_Fraction *
 	      TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
@@ -1036,7 +1036,7 @@ public:
       	  float temperature = HaloTemperaturePrecip; 
 	  if(HaloTemperaturePrecip < 0.0) continue; //we're above the stop radius, so nothing to do for CGM 
 	  float HaloGasEnergyPrecip = HaloTemperaturePrecip / Mu / (Gamma - 1);
-	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) || 1 )
+	  if ( (HaloDensity*this->HaloTemperature > DiskDensity*this->DiskTemperature) || 1)
 		  {
 		    //take away disk kinetic energy for now, reset later 
 		    if(HaloDensity*this->HaloTemperature <= DiskDensity*this->DiskTemperature){
@@ -1062,9 +1062,9 @@ public:
 		    }
 		    //update chem species fields 
 		    if (TestProblemData.UseMetallicityField)
-		      thisgrid->BaryonField[MetalNum][index] = thisgrid->BaryonField[DensNum][index] *
+		      thisgrid->BaryonField[MetalNum][index] += HaloDensityPrecip *
 			TestProblemData.MetalFractionByMass * HaloMetallicity; 
-	  if(TestProblemData.MultiSpecies)
+	  if(TestProblemData.MultiSpecies && 0)
 	  {
 	    thisgrid->BaryonField[HINum][index] = TestProblemData.HI_Fraction *
 	      TestProblemData.HydrogenFractionByMass * thisgrid->BaryonField[DensNum][index];
@@ -1123,19 +1123,37 @@ public:
 		CoolData.DeuteriumToHydrogenRatio * thisgrid->BaryonField[H2INum][index];
 	    }
 	  } // if(TestProblemData.MultiSpecies)
-      if(0){ //init chem the way GalaxySimulation does with EquilibriumTable. 
-	     //trying to be consistent with what is done in S(r) for gas halo. 
-	  int EquilibrateChem = 1;
+	if(TestProblemData.MultiSpecies){ 
+		float de, hi, hii, hei, heii, heiii, hm, h2i, h2ii, hdi, di, dii; 
+		setup_chem(HaloDensityPrecip, HaloTemperaturePrecip*TemperatureUnits, 1, de, hi, hii, hei, heii, heiii, hm, h2i, h2ii, di, dii, hdi);
+	        thisgrid->BaryonField[DeNum][index] += de; 
+	        thisgrid->BaryonField[HINum][index] += hi; 
+	        thisgrid->BaryonField[HIINum][index] += hii; 
+	        thisgrid->BaryonField[HeINum][index] += hei; 
+	        thisgrid->BaryonField[HeIINum][index] += heii; 
+	        thisgrid->BaryonField[HeIIINum][index] += heiii;
+	        if(MultiSpecies > 1){ 
+			thisgrid->BaryonField[HMNum][index] += hm;
+			thisgrid->BaryonField[H2INum][index] += h2i;
+			thisgrid->BaryonField[H2IINum][index] += h2ii;
+		}	
+	        if(MultiSpecies > 2){ 
+			thisgrid->BaryonField[DINum][index] += di;
+			thisgrid->BaryonField[DIINum][index] += dii;
+			thisgrid->BaryonField[HDINum][index] += hdi;
+		}	
 
+	}
+/*
 	  if (MultiSpecies == 3)
-	    setup_chem(thisgrid->BaryonField[DensNum][index], temperature, EquilibrateChem,
+	    setup_chem(HaloDensityPrecip, HaloTemperaturePrecip*TemperatureUnits, EquilibrateChem,
 		       thisgrid->BaryonField[DeNum][index], thisgrid->BaryonField[HINum][index], thisgrid->BaryonField[HIINum][index],
 		       thisgrid->BaryonField[HeINum][index], thisgrid->BaryonField[HeIINum][index], thisgrid->BaryonField[HeIIINum][index],
 		       thisgrid->BaryonField[HMNum][index], thisgrid->BaryonField[H2INum][index], thisgrid->BaryonField[H2IINum][index],
 		       thisgrid->BaryonField[DINum][index], thisgrid->BaryonField[DIINum][index], thisgrid->BaryonField[HDINum][index]);
 	  else if (MultiSpecies == 2) {
 	    float temp;
-	    setup_chem(thisgrid->BaryonField[DensNum][index], temperature, EquilibrateChem,
+	    setup_chem(HaloDensityPrecip, HaloTemperaturePrecip*TemperatureUnits, EquilibrateChem,
 		       thisgrid->BaryonField[DeNum][index], thisgrid->BaryonField[HINum][index], thisgrid->BaryonField[HIINum][index],
 		       thisgrid->BaryonField[HeINum][index], thisgrid->BaryonField[HeIINum][index], thisgrid->BaryonField[HeIIINum][index],
 		       thisgrid->BaryonField[HMNum][index], thisgrid->BaryonField[H2INum][index], thisgrid->BaryonField[H2IINum][index],
@@ -1143,14 +1161,14 @@ public:
 	  }
 	  else {
 	    float temp;
-	    setup_chem(thisgrid->BaryonField[DensNum][index], temperature, EquilibrateChem,
+	    setup_chem(HaloDensityPrecip, HaloTemperaturePrecip*TemperatureUnits, EquilibrateChem,
 		       thisgrid->BaryonField[DeNum][index], thisgrid->BaryonField[HINum][index], thisgrid->BaryonField[HIINum][index],
 		       thisgrid->BaryonField[HeINum][index], thisgrid->BaryonField[HeIINum][index], thisgrid->BaryonField[HeIIINum][index],
 		       temp, temp, temp,
 		       temp, temp, temp);
-	  }
+	  }*/
 
-      }
+      //}
       	    //add new magnetic energy to total energy
 	    if (HydroMethod == MHD_RK)
 	      {
@@ -1873,8 +1891,8 @@ double halo_dP_dr_Agora(double r, double P, grid* Grid, FLOAT *binned_mass, TopG
 	ENZO_FAIL("Error in grid->IdentifySpeciesFields.");
     // setup_chem has densities in code, temperature in K
     setup_chem(dens, Tgrav, 1, de, hi, hii, hei, heii, heiii, hm, h2i, h2ii, di, dii, hdi);
-    metal = 1e-6 * CoolData.SolarMetalFractionByMass * dens;
-    //metal = 0.3 * CoolData.SolarMetalFractionByMass * dens;
+    //metal = 1e-6 * CoolData.SolarMetalFractionByMass * dens;
+    metal = 0.3 * CoolData.SolarMetalFractionByMass * dens;
     // temporarily disable UV background; makes S(r) trend downward at large r instead of upward
     // because of low Tgrav
     int saved_UVB = grackle_data->UVbackground;
